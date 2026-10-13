@@ -325,7 +325,7 @@ export default function AgentFormPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!agentId) return toast.error('Please select calling executive name.');
+    if (!agentId) return toast.error('Please select executive name.');
     if (phone.length !== 10) return toast.error('Please enter valid 10-digit mobile number.');
     if (!name.trim()) return toast.error('Customer name is required.');
     if (!projectName) return toast.error('Please select an SS Realty project.');
@@ -472,16 +472,16 @@ export default function AgentFormPage() {
             <p className="text-xs text-slate-500 mt-0.5">Please fill details below. Smart deduplication updates existing records automatically.</p>
           </div>
 
-          {/* 1. CALLING EXECUTIVE NAME */}
+          {/* 1. EXECUTIVE NAME */}
           <div className="space-y-1.5">
             <label className="form-label">
-              <span>Calling Executive Name <span className="text-rose-500">*</span></span>
+              <span>Executive Name <span className="text-rose-500">*</span></span>
             </label>
             <CustomSelect
               value={agentId}
               onChange={handleAgentChange}
               options={agents.map((a) => ({ value: a.id, label: a.name }))}
-              placeholder="-- Select Calling Executive --"
+              placeholder="-- Select Executive --"
               required
             />
           </div>
@@ -520,7 +520,7 @@ export default function AgentFormPage() {
                 {/* If lead belongs to another executive, show alert that it was auto-selected */}
                 {wasAssignedToOtherAgent && (
                   <div className="p-2 rounded-lg bg-amber-100/90 border border-amber-300 text-amber-900 font-semibold text-[11px] flex items-center gap-1.5">
-                    <span>⚠️ Already registered with Executive: <strong>{wasAssignedToOtherAgent}</strong>. Calling Executive Name has been auto-selected.</span>
+                    <span>⚠️ Already registered with Executive: <strong>{wasAssignedToOtherAgent}</strong>. Executive Name has been auto-selected.</span>
                   </div>
                 )}
 
@@ -568,7 +568,7 @@ export default function AgentFormPage() {
           {/* 4. SS REALTY PROJECT (CLEAN NAMES: Nivasa II, The Arch, Floria, Nirvana, etc.) */}
           <div className="space-y-1.5">
             <label className="form-label">
-              <span>SS Realty Project (Live on ssrealty.org) <span className="text-rose-500">*</span></span>
+              <span>SS Realty Project <span className="text-rose-500">*</span></span>
             </label>
             <CustomSelect
               value={projectName}
