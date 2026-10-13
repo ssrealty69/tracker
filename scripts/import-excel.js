@@ -1,4 +1,4 @@
-﻿const { PrismaClient } = require("@prisma/client");
+const { PrismaClient } = require("@prisma/client");
 const XLSX = require("xlsx");
 const prisma = new PrismaClient({ log: ["warn", "error"] });
 
@@ -47,7 +47,11 @@ function mapBudget(val) {
 
 function excelDateToJS(serial) {
   if (!serial || isNaN(Number(serial))) return null;
-  return new Date((Math.floor(Number(serial)) - 25569) * 86400 * 1000);
+  const p = XLSX.SSF.parse_date_code(Number(serial));
+  if (!p) return null;
+  const pad = (n) => String(n).padStart(2, "0");
+  const istIso = `${p.y}-${pad(p.m)}-${pad(p.d)}T${pad(p.H)}:${pad(p.M)}:${pad(Math.floor(p.S))}+05:30`;
+  return new Date(istIso);
 }
 
 function cleanPhone(val) {

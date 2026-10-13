@@ -70,7 +70,7 @@ export default function LeadsGridClient({ initialLeads, agents }: Props) {
   const [filterVisitStatus, setFilterVisitStatus] = useState('');
   const [filterInteractions, setFilterInteractions] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [sortField, setSortField] = useState<'createdAt' | 'updatedAt' | 'totalInteractions' | 'name' | 'agent'>('createdAt');
+  const [sortField, setSortField] = useState<'updatedAt' | 'createdAt' | 'totalInteractions' | 'name' | 'agent'>('updatedAt');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
   const refreshLeads = useCallback(async (isSilent = false) => {
@@ -132,12 +132,12 @@ export default function LeadsGridClient({ initialLeads, agents }: Props) {
     result = [...result].sort((a, b) => {
       let av: string | number | Date = a[sortField as keyof Lead] as string | number | Date;
       let bv: string | number | Date = b[sortField as keyof Lead] as string | number | Date;
-      if (sortField === 'createdAt') {
+      if (sortField === 'updatedAt') {
+        av = new Date(a.updatedAt || a.createdAt).getTime();
+        bv = new Date(b.updatedAt || b.createdAt).getTime();
+      } else if (sortField === 'createdAt') {
         av = new Date(a.createdAt).getTime();
         bv = new Date(b.createdAt).getTime();
-      } else if (sortField === 'updatedAt') {
-        av = new Date(a.updatedAt).getTime();
-        bv = new Date(b.updatedAt).getTime();
       } else if (sortField === 'agent') {
         av = a.assignedAgent?.name || '';
         bv = b.assignedAgent?.name || '';
@@ -161,7 +161,9 @@ export default function LeadsGridClient({ initialLeads, agents }: Props) {
 
   const exportExcel = () => {
     const headers = [
-      'Punch Timestamp',
+      'S.No.',
+      'Punch Timestamp (Latest)',
+      'First Punch Timestamp',
       'Executive',
       'Customer Name',
       'Mobile Number',
@@ -174,9 +176,10 @@ export default function LeadsGridClient({ initialLeads, agents }: Props) {
       'Visit Status',
       'Follow-Up Date',
       'Latest Remark / Notes',
-      'Last Updated',
     ];
-    const rows = filteredLeads.map((l) => [
+    const rows = filteredLeads.map((l, idx) => [
+      idx + 1,
+      formatDateTime(l.updatedAt || l.createdAt),
       formatDateTime(l.createdAt),
       l.assignedAgent?.name || '',
       l.name,
@@ -192,7 +195,6 @@ export default function LeadsGridClient({ initialLeads, agents }: Props) {
       VISIT_STATUS_LABELS[l.visitStatus] || l.visitStatus,
       l.followUpDate ? formatDate(l.followUpDate) : '',
       l.latestRemark || '',
-      formatDateTime(l.updatedAt),
     ]);
 
     const csvContent = [headers, ...rows]
@@ -358,10 +360,15 @@ export default function LeadsGridClient({ initialLeads, agents }: Props) {
           <table className="data-table">
             <thead>
               <tr>
+                {/* 0. S.No. */}
+                <th className="w-12 text-center whitespace-nowrap font-bold text-slate-700">
+                  S.No.
+                </th>
+
                 {/* 1. Punch Timestamp */}
                 <th>
                   <button
-                    onClick={() => handleSort('createdAt')}
+                    onClick={() => handleSort('updatedAt')}
                     className="flex items-center gap-1 font-bold cursor-pointer hover:text-slate-900 transition-colors whitespace-nowrap"
                   >
                     <Clock size={11} className="text-indigo-600" /> Punch Time
@@ -441,25 +448,40 @@ export default function LeadsGridClient({ initialLeads, agents }: Props) {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={13} className="text-center py-12 text-slate-400">
+                  <td colSpan={14} className="text-center py-12 text-slate-400">
                     <RefreshCcw size={22} className="animate-spin mx-auto mb-2 text-indigo-600" />
                     Loading leads...
                   </td>
                 </tr>
               ) : filteredLeads.length === 0 ? (
                 <tr>
-                  <td colSpan={13} className="text-center py-12 text-slate-500 font-medium">
+                  <td colSpan={14} className="text-center py-12 text-slate-500 font-medium">
                     No leads match your active filters
                   </td>
                 </tr>
               ) : (
-                filteredLeads.map((lead) => (
-                  <tr key={lead.id}>
-                    {/* 1. Punch Timestamp */}
+                filteredLeads.map((lead, idx) => (
+                  <tr key={lead.id} className="hover:bg-slate-50/80 transition-colors">
+                    {/* 0. S.No. (1 to N, newest on top) */}
+                    <td className="text-center font-bold text-slate-600 text-xs whitespace-nowrap">
+                      {idx + 1}
+                    </td>
+
+                    {/* 1. Punch Timestamp (Latest) */}
                     <td>
-                      <span className="font-semibold text-slate-800 text-xs whitespace-nowrap">
-                        {formatDateTime(lead.createdAt)}
-                      </span>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-slate-900 text-xs whitespace-nowrap">
+                          {formatDateTime(lead.updatedAt || lead.createdAt)}
+                        </span>
+                        {lead.totalInteractions > 1 && (
+                          <span
+                            className="text-[10px] text-amber-700 font-semibold whitespace-nowrap"
+                            title={`Initial punch: ${formatDateTime(lead.createdAt)}`}
+                          >
+                            1st: {formatDateTime(lead.createdAt)}
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     {/* 2. Executive */}

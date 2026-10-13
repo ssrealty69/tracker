@@ -60,10 +60,11 @@ const formatToDDMMYY = (dateInput: string | Date | null | undefined) => {
   try {
     const d = new Date(dateInput);
     if (isNaN(d.getTime())) return String(dateInput);
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const month = months[d.getMonth()] || String(d.getMonth() + 1).padStart(2, '0');
     const year = String(d.getFullYear()).slice(-2);
-    return `${day}/${month}/${year}`;
+    return `${day}-${month}-${year}`;
   } catch {
     return '—';
   }

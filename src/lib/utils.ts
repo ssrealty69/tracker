@@ -35,11 +35,14 @@ export function formatDate(date: Date | string | null | undefined): string {
     const parts = new Intl.DateTimeFormat('en-GB', {
       timeZone: 'Asia/Kolkata',
       day: '2-digit',
-      month: '2-digit',
+      month: 'short',
       year: '2-digit',
     }).formatToParts(d);
     const get = (type: string) => parts.find((p) => p.type === type)?.value || '';
-    return `${get('day')}/${get('month')}/${get('year')}`;
+    const day = get('day');
+    const month = get('month');
+    const year = get('year');
+    return `${day}-${month}-${year}`;
   } catch {
     return '—';
   }
@@ -53,7 +56,7 @@ export function formatDateTime(date: Date | string | null | undefined): string {
     const parts = new Intl.DateTimeFormat('en-GB', {
       timeZone: 'Asia/Kolkata',
       day: '2-digit',
-      month: '2-digit',
+      month: 'short',
       year: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
@@ -68,7 +71,7 @@ export function formatDateTime(date: Date | string | null | undefined): string {
     const minute = get('minute');
     const dayPeriod = (get('dayPeriod') || '').toLowerCase();
 
-    return `${day}/${month}/${year}, ${hour}:${minute} ${dayPeriod}`;
+    return `${day}-${month}-${year}, ${hour}:${minute} ${dayPeriod}`;
   } catch {
     return '—';
   }
