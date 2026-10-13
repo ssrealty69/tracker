@@ -98,7 +98,7 @@ export default function DashboardClient({ initialStats }: Props) {
   const [customEnd, setCustomEnd] = useState('');
   const [loading, setLoading] = useState(false);
   const [expandedAgentId, setExpandedAgentId] = useState<string | null>(null);
-  const [agentSubTab, setAgentSubTab] = useState<{ [agentId: string]: 'all' | 'visits' | 'followup' | 'other' }>({});
+  const [agentSubTab, setAgentSubTab] = useState<{ [agentId: string]: 'scheduled' | 'dropped' | 'done' | 'followup' | 'not_connected' | 'all' }>({});
 
   const applyFilter = async (filter: string, isSilent = false) => {
     if (!isSilent) setLoading(true);
@@ -520,27 +520,28 @@ export default function DashboardClient({ initialStats }: Props) {
                         {/* ── EXPANDED AGENT DRILL-DOWN PANEL (ALL LEADS & VISITS LIVE) ── */}
                         {isExpanded && (() => {
                           const allLeadsList = agent.allLeads || [];
-                          const visitLeadsList = agent.visitLeads || [];
+                          const scheduledLeadsList = allLeadsList.filter((l) => l.isUpcoming);
+                          const droppedLeadsList = allLeadsList.filter((l) => l.isDropped);
+                          const doneLeadsList = allLeadsList.filter((l) => l.isDone);
                           const followUpLeadsList = allLeadsList.filter(
-                            (l) => l.disposition === 'INTERESTED_FOLLOW_UP' || (l.followUpDate && !l.visitDate)
+                            (l) => l.disposition === 'INTERESTED_FOLLOW_UP' || (l.followUpDate && !l.isUpcoming && !l.isDone)
                           );
-                          const otherLeadsList = allLeadsList.filter(
-                            (l) =>
-                              l.callOutcome === 'NOT_CONNECTED' ||
-                              l.disposition === 'NOT_INTERESTED' ||
-                              l.disposition === 'BUDGET_MISMATCH' ||
-                              l.disposition === 'LOCATION_MISMATCH' ||
-                              l.disposition === 'JUNK_BROKER'
+                          const notConnectedLeadsList = allLeadsList.filter(
+                            (l) => l.callOutcome === 'NOT_CONNECTED'
                           );
 
-                          const activeSub = agentSubTab[agent.id] || 'all';
+                          const activeSub = agentSubTab[agent.id] || 'scheduled';
                           const displayLeads =
-                            activeSub === 'visits'
-                              ? visitLeadsList
+                            activeSub === 'scheduled'
+                              ? scheduledLeadsList
+                              : activeSub === 'dropped'
+                              ? droppedLeadsList
+                              : activeSub === 'done'
+                              ? doneLeadsList
                               : activeSub === 'followup'
                               ? followUpLeadsList
-                              : activeSub === 'other'
-                              ? otherLeadsList
+                              : activeSub === 'not_connected'
+                              ? notConnectedLeadsList
                               : allLeadsList;
 
                           return (
@@ -554,34 +555,55 @@ export default function DashboardClient({ initialStats }: Props) {
                                       <span>{agent.name}&apos;s Live Portfolio</span>
                                     </div>
                                     <div className="flex flex-wrap items-center gap-1.5">
+                                      {/* 1. Visit Scheduled */}
                                       <button
                                         type="button"
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          setAgentSubTab((prev) => ({ ...prev, [agent.id]: 'all' }));
+                                          setAgentSubTab((prev) => ({ ...prev, [agent.id]: 'scheduled' }));
                                         }}
                                         className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                                          activeSub === 'all'
-                                            ? 'bg-indigo-600 text-white shadow-xs'
-                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                                        }`}
-                                      >
-                                        All Leads ({allLeadsList.length})
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setAgentSubTab((prev) => ({ ...prev, [agent.id]: 'visits' }));
-                                        }}
-                                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                                          activeSub === 'visits'
+                                          activeSub === 'scheduled'
                                             ? 'bg-emerald-600 text-white shadow-xs'
-                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                                         }`}
                                       >
-                                        Site Visits ({visitLeadsList.length})
+                                        Visit Scheduled ({scheduledLeadsList.length})
                                       </button>
+
+                                      {/* 2. Visit Dropped */}
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setAgentSubTab((prev) => ({ ...prev, [agent.id]: 'dropped' }));
+                                        }}
+                                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                          activeSub === 'dropped'
+                                            ? 'bg-rose-600 text-white shadow-xs'
+                                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                        }`}
+                                      >
+                                        Visit Dropped ({droppedLeadsList.length})
+                                      </button>
+
+                                      {/* 3. Visit Done */}
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setAgentSubTab((prev) => ({ ...prev, [agent.id]: 'done' }));
+                                        }}
+                                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                          activeSub === 'done'
+                                            ? 'bg-slate-800 text-white shadow-xs'
+                                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                        }`}
+                                      >
+                                        Visit Done ({doneLeadsList.length})
+                                      </button>
+
+                                      {/* 4. Follow-Up */}
                                       <button
                                         type="button"
                                         onClick={(e) => {
@@ -591,24 +613,42 @@ export default function DashboardClient({ initialStats }: Props) {
                                         className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                                           activeSub === 'followup'
                                             ? 'bg-amber-600 text-white shadow-xs'
-                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                                         }`}
                                       >
-                                        Follow-Ups ({followUpLeadsList.length})
+                                        Follow-Up ({followUpLeadsList.length})
                                       </button>
+
+                                      {/* 5. Not Connected */}
                                       <button
                                         type="button"
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          setAgentSubTab((prev) => ({ ...prev, [agent.id]: 'other' }));
+                                          setAgentSubTab((prev) => ({ ...prev, [agent.id]: 'not_connected' }));
                                         }}
                                         className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                                          activeSub === 'other'
-                                            ? 'bg-slate-700 text-white shadow-xs'
-                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                          activeSub === 'not_connected'
+                                            ? 'bg-rose-700 text-white shadow-xs'
+                                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                                         }`}
                                       >
-                                        Other Outcomes ({otherLeadsList.length})
+                                        Not Connected ({notConnectedLeadsList.length})
+                                      </button>
+
+                                      {/* 6. All Leads (Last) */}
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setAgentSubTab((prev) => ({ ...prev, [agent.id]: 'all' }));
+                                        }}
+                                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                          activeSub === 'all'
+                                            ? 'bg-indigo-600 text-white shadow-xs'
+                                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                        }`}
+                                      >
+                                        All Leads ({allLeadsList.length})
                                       </button>
                                     </div>
                                   </div>
