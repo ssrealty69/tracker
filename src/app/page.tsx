@@ -586,31 +586,31 @@ export default function AgentFormPage() {
               <span className="text-[10px] text-slate-400">Did the customer pick up?</span>
             </label>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
               <button
                 type="button"
                 onClick={() => setCallOutcome('CONNECTED')}
-                className={`p-3.5 rounded-xl border-2 font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                className={`py-3 px-2 sm:px-3 rounded-xl border-2 font-bold text-xs sm:text-sm flex flex-row items-center justify-center gap-2 whitespace-nowrap transition-all cursor-pointer ${
                   callOutcome === 'CONNECTED'
                     ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
                     : 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
                 }`}
               >
-                <PhoneCall size={18} />
-                <span>Call Connected 🟢</span>
+                <PhoneCall size={17} className="shrink-0" />
+                <span className="whitespace-nowrap">Connected</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setCallOutcome('NOT_CONNECTED')}
-                className={`p-3.5 rounded-xl border-2 font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                className={`py-3 px-2 sm:px-3 rounded-xl border-2 font-bold text-xs sm:text-sm flex flex-row items-center justify-center gap-2 whitespace-nowrap transition-all cursor-pointer ${
                   callOutcome === 'NOT_CONNECTED'
                     ? 'bg-rose-600 text-white border-rose-600 shadow-sm'
                     : 'bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100'
                 }`}
               >
-                <PhoneOff size={18} />
-                <span>Not Connected 🔴</span>
+                <PhoneOff size={17} className="shrink-0" />
+                <span className="whitespace-nowrap">Not Connected</span>
               </button>
             </div>
           </div>
