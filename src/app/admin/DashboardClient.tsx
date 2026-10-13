@@ -256,7 +256,7 @@ export default function DashboardClient({ initialStats }: Props) {
       value: nf.format(stats.totalLeads),
       icon: Users,
       color: 'from-indigo-600 to-indigo-700',
-      badge: 'Deduplicated',
+      badge: 'Unique',
     },
     {
       label: 'Visits Scheduled (Upcoming)',
