@@ -50,311 +50,14 @@ export interface LeadFormResult {
   interactions?: number;
 }
 
-// ─── IN-MEMORY STORE FALLBACK (ACTIVATES WHEN POSTGRESQL IS OFFLINE) ───────────
-interface FallbackAgent {
-  id: string;
-  name: string;
-  email: string;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-interface FallbackLead {
-  id: string;
-  phone: string;
-  name: string;
-  alternatePhone?: string;
-  email?: string;
-  customerCity?: string;
-  leadSource?: string;
-  totalInteractions: number;
-  callOutcome: CallOutcome;
-  notConnectedReason: NotConnectedReason | null;
-  disposition: Disposition | null;
-  projectName?: string;
-  microMarket?: string;
-  requirement: Requirement | string | null;
-  budget: Budget | string | null;
-  purpose?: string;
-  possessionTimeline?: string;
-  fundingMode?: string;
-  leadPriority?: string;
-  followUpDate?: Date | null;
-  visitDate: Date | null;
-  visitTimeSlot?: string;
-  cabRequired?: boolean;
-  pickupLocation?: string;
-  accompanyingPerson?: string;
-  visitStatus: VisitStatus;
-  previousVisitDate: Date | null;
-  latestRemark: string | null;
-  assignedAgentId: string;
-  createdAt: Date;
-  updatedAt: Date;
-  assignedAgent?: { id: string; name: string };
-}
-
-interface FallbackLog {
-  id: string;
-  leadId: string;
-  agentId: string | null;
-  callOutcome: CallOutcome;
-  notConnectedReason: NotConnectedReason | null;
-  disposition: Disposition | null;
-  requirement: Requirement | string | null;
-  budget: Budget | string | null;
-  visitDate: Date | null;
-  visitStatus: VisitStatus;
-  remark: string | null;
-  interactionNumber: number;
-  createdAt: Date;
-}
-
-const initialAgents: FallbackAgent[] = [
-  { id: 'agent-nihal', name: 'Nihal', email: 'nihal@ssrealty.org', isActive: true, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'agent-ayaan', name: 'Ayaan', email: 'ayaan@ssrealty.org', isActive: true, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'agent-nikhil', name: 'Nikhil', email: 'nikhil@ssrealty.org', isActive: true, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'agent-bhavishya', name: 'Bhavishya', email: 'bhavishya@ssrealty.org', isActive: true, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'agent-gulshan', name: 'Gulshan', email: 'gulshan@ssrealty.org', isActive: true, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'agent-vikas', name: 'Vikas', email: 'vikas@ssrealty.org', isActive: true, createdAt: new Date(), updatedAt: new Date() },
-];
-
-const today = new Date();
-const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-
-const initialLeads: FallbackLead[] = [
-  {
-    id: 'lead-1',
-    phone: '9876543210',
-    name: 'Rajesh Sharma',
-    totalInteractions: 2,
-    callOutcome: CallOutcome.CONNECTED,
-    notConnectedReason: null,
-    disposition: Disposition.SITE_VISIT_SCHEDULED,
-    requirement: Requirement.BHK_3,
-    budget: Budget.L50_75,
-    projectName: 'Nivasa II',
-    visitDate: new Date(`${todayStr}T11:00:00`),
-    visitStatus: VisitStatus.SCHEDULED,
-    previousVisitDate: null,
-    latestRemark: 'Interested in Nivasa II, Gwal Pahari. Scheduled site visit today.',
-    assignedAgentId: 'agent-nihal',
-    createdAt: new Date(Date.now() - 86400000 * 2),
-    updatedAt: new Date(),
-    assignedAgent: { id: 'agent-nihal', name: 'Nihal' },
-  },
-  {
-    id: 'lead-2',
-    phone: '9811223344',
-    name: 'Amit Verma',
-    totalInteractions: 1,
-    callOutcome: CallOutcome.CONNECTED,
-    notConnectedReason: null,
-    disposition: Disposition.INTERESTED_FOLLOW_UP,
-    requirement: Requirement.BHK_3,
-    budget: Budget.L75_PLUS,
-    projectName: 'The Arch',
-    followUpDate: new Date(Date.now() + 86400000),
-    visitDate: null,
-    visitStatus: VisitStatus.NONE,
-    previousVisitDate: null,
-    latestRemark: 'Looking for 3BHK in The Arch, Mandi Road. Callback tomorrow.',
-    assignedAgentId: 'agent-ayaan',
-    createdAt: new Date(Date.now() - 86400000),
-    updatedAt: new Date(),
-    assignedAgent: { id: 'agent-ayaan', name: 'Ayaan' },
-  },
-  {
-    id: 'lead-3',
-    phone: '9822334455',
-    name: 'Priya Patel',
-    totalInteractions: 3,
-    callOutcome: CallOutcome.CONNECTED,
-    notConnectedReason: null,
-    disposition: Disposition.SITE_VISIT_SCHEDULED,
-    requirement: Requirement.INDEPENDENT_FLOOR,
-    budget: Budget.L75_PLUS,
-    projectName: 'Velora',
-    visitDate: new Date(`${todayStr}T15:30:00`),
-    visitStatus: VisitStatus.VISIT_DONE,
-    previousVisitDate: null,
-    latestRemark: 'Completed site visit for Velora, Chattarpur. Very positive response.',
-    assignedAgentId: 'agent-nikhil',
-    createdAt: new Date(Date.now() - 86400000 * 5),
-    updatedAt: new Date(),
-    assignedAgent: { id: 'agent-nikhil', name: 'Nikhil' },
-  },
-  {
-    id: 'lead-4',
-    phone: '9833445566',
-    name: 'Sunita Gupta',
-    totalInteractions: 1,
-    callOutcome: CallOutcome.NOT_CONNECTED,
-    notConnectedReason: NotConnectedReason.CALL_NOT_PICKED,
-    disposition: null,
-    projectName: 'Floria',
-    followUpDate: new Date(Date.now() + 86400000 * 2),
-    requirement: null,
-    budget: null,
-    visitDate: null,
-    visitStatus: VisitStatus.NONE,
-    previousVisitDate: null,
-    latestRemark: 'Ringing, no response. Will re-dial tomorrow.',
-    assignedAgentId: 'agent-bhavishya',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    assignedAgent: { id: 'agent-bhavishya', name: 'Bhavishya' },
-  },
-  {
-    id: 'lead-5',
-    phone: '9844556677',
-    name: 'Karan Mehra',
-    totalInteractions: 2,
-    callOutcome: CallOutcome.CONNECTED,
-    notConnectedReason: null,
-    disposition: Disposition.SITE_VISIT_SCHEDULED,
-    requirement: '3BHK',
-    budget: '₹1–1.5 Crore',
-    projectName: 'The Arch',
-    visitDate: new Date(Date.now() - 86400000 * 2), // 2 days ago: Scheduled date passed -> DROPPED
-    visitStatus: VisitStatus.SCHEDULED,
-    previousVisitDate: null,
-    latestRemark: 'Customer requested 3BHK visit on weekend with family for flat inspection.',
-    assignedAgentId: 'agent-ayaan',
-    createdAt: new Date(Date.now() - 86400000 * 3),
-    updatedAt: new Date(Date.now() - 86400000 * 2),
-    assignedAgent: { id: 'agent-ayaan', name: 'Ayaan' },
-  },
-  {
-    id: 'lead-6',
-    phone: '9855667788',
-    name: 'Suresh Singhania',
-    totalInteractions: 1,
-    callOutcome: CallOutcome.CONNECTED,
-    notConnectedReason: null,
-    disposition: Disposition.NOT_INTERESTED,
-    requirement: '2BHK',
-    budget: '₹75 Lakh–₹1 Crore',
-    projectName: 'Floria',
-    visitDate: null,
-    visitStatus: VisitStatus.NONE,
-    previousVisitDate: null,
-    latestRemark: '[Reason: Financial / Budget Constraints] Dropped property purchase plan.',
-    assignedAgentId: 'agent-ayaan',
-    createdAt: new Date(Date.now() - 86400000),
-    updatedAt: new Date(),
-    assignedAgent: { id: 'agent-ayaan', name: 'Ayaan' },
-  },
-];
-
-// Persistent across HMR in development
-const globalStore = ((global as unknown as { __SS_REALTY_STORE__?: {
-  agents: FallbackAgent[];
-  leads: FallbackLead[];
-  logs: FallbackLog[];
-} }).__SS_REALTY_STORE__ ||= {
-  agents: initialAgents,
-  leads: initialLeads,
-  logs: [
-    {
-      id: 'log-1',
-      leadId: 'lead-1',
-      agentId: 'agent-nihal',
-      callOutcome: CallOutcome.CONNECTED,
-      notConnectedReason: null,
-      disposition: Disposition.SITE_VISIT_SCHEDULED,
-      requirement: Requirement.BHK_3,
-      budget: Budget.L50_75,
-      visitDate: new Date(`${todayStr}T11:00:00`),
-      visitStatus: VisitStatus.SCHEDULED,
-      remark: 'Scheduled site visit today.',
-      interactionNumber: 1,
-      createdAt: new Date(Date.now() - 86400000),
-    },
-    {
-      id: 'log-2',
-      leadId: 'lead-2',
-      agentId: 'agent-ayaan',
-      callOutcome: CallOutcome.CONNECTED,
-      notConnectedReason: null,
-      disposition: Disposition.INTERESTED_FOLLOW_UP,
-      requirement: Requirement.BHK_2,
-      budget: Budget.L35_50,
-      visitDate: null,
-      visitStatus: VisitStatus.NONE,
-      remark: 'Looking for 2BHK.',
-      interactionNumber: 1,
-      createdAt: new Date(),
-    },
-    {
-      id: 'log-3',
-      leadId: 'lead-3',
-      agentId: 'agent-nikhil',
-      callOutcome: CallOutcome.CONNECTED,
-      notConnectedReason: null,
-      disposition: Disposition.SITE_VISIT_SCHEDULED,
-      requirement: Requirement.INDEPENDENT_FLOOR,
-      budget: Budget.L75_PLUS,
-      visitDate: new Date(`${todayStr}T15:30:00`),
-      visitStatus: VisitStatus.VISIT_DONE,
-      remark: 'Visit completed.',
-      interactionNumber: 3,
-      createdAt: new Date(),
-    },
-    {
-      id: 'log-4',
-      leadId: 'lead-4',
-      agentId: 'agent-bhavishya',
-      callOutcome: CallOutcome.NOT_CONNECTED,
-      notConnectedReason: NotConnectedReason.CALL_NOT_PICKED,
-      disposition: null,
-      requirement: null,
-      budget: null,
-      visitDate: null,
-      visitStatus: VisitStatus.NONE,
-      remark: 'Call not picked.',
-      interactionNumber: 1,
-      createdAt: new Date(),
-    },
-    {
-      id: 'log-5',
-      leadId: 'lead-5',
-      agentId: 'agent-ayaan',
-      callOutcome: CallOutcome.CONNECTED,
-      notConnectedReason: null,
-      disposition: Disposition.SITE_VISIT_SCHEDULED,
-      requirement: '3BHK',
-      budget: '₹1–1.5 Crore',
-      visitDate: new Date(Date.now() - 86400000 * 2),
-      visitStatus: VisitStatus.SCHEDULED,
-      remark: 'Customer requested 3BHK visit on weekend with family for flat inspection.',
-      interactionNumber: 1,
-      createdAt: new Date(Date.now() - 86400000 * 3),
-    },
-    {
-      id: 'log-6',
-      leadId: 'lead-6',
-      agentId: 'agent-ayaan',
-      callOutcome: CallOutcome.CONNECTED,
-      notConnectedReason: null,
-      disposition: Disposition.NOT_INTERESTED,
-      requirement: '2BHK',
-      budget: '₹75 Lakh–₹1 Crore',
-      visitDate: null,
-      visitStatus: VisitStatus.NONE,
-      remark: '[Reason: Financial / Budget Constraints] Not interested.',
-      interactionNumber: 1,
-      createdAt: new Date(Date.now() - 86400000),
-    },
-  ],
-});
-
-// Sync updated mock remark in runtime in-memory cache
-const lead5Cached = globalStore.leads.find((l) => l.id === 'lead-5');
-if (lead5Cached) {
-  lead5Cached.latestRemark = 'Customer requested 3BHK visit on weekend with family for flat inspection.';
-}
+// ─── FILE-BACKED PERSISTENT STORE (PERSISTS ACROSS RELOADS & RESTARTS) ───────────
+import {
+  getCrmStore,
+  saveCrmStore,
+  type FallbackAgent,
+  type FallbackLead,
+  type FallbackLog,
+} from '@/lib/crmStore';
 
 // ─── FAST DB PROBE (AVOIDS 4s CONNECTION TIMEOUT WHEN POSTGRESQL IS OFFLINE) ───
 let isDatabaseAvailable = false;
@@ -408,30 +111,154 @@ export async function checkPhoneExists(phone: string) {
     }
   }
 
-  // Database offline, check fallback store
-  const memLead = globalStore.leads.find((l) => l.phone === cleanPhone);
-    if (memLead) {
-      const agent = globalStore.agents.find((a) => a.id === memLead.assignedAgentId);
-      return {
-        name: memLead.name,
-        alternatePhone: memLead.alternatePhone,
-        email: memLead.email,
-        customerCity: memLead.customerCity,
-        leadSource: memLead.leadSource,
-        totalInteractions: memLead.totalInteractions,
-        disposition: memLead.disposition,
-        agentId: memLead.assignedAgentId,
-        agentName: agent?.name,
-        latestRemark: memLead.latestRemark,
-        projectName: memLead.projectName,
-        microMarket: memLead.microMarket,
-        budget: memLead.budget,
-        requirement: memLead.requirement,
-        leadPriority: memLead.leadPriority,
-      };
-    }
+  // Database offline, check persistent store
+  const store = getCrmStore();
+  const memLead = store.leads.find((l) => l.phone === cleanPhone);
+  if (memLead) {
+    const agent = store.agents.find((a) => a.id === memLead.assignedAgentId);
+    return {
+      name: memLead.name,
+      alternatePhone: memLead.alternatePhone,
+      email: memLead.email,
+      customerCity: memLead.customerCity,
+      leadSource: memLead.leadSource,
+      totalInteractions: memLead.totalInteractions,
+      disposition: memLead.disposition,
+      agentId: memLead.assignedAgentId,
+      agentName: agent?.name,
+      latestRemark: memLead.latestRemark,
+      projectName: memLead.projectName,
+      microMarket: memLead.microMarket,
+      budget: memLead.budget,
+      requirement: memLead.requirement,
+      leadPriority: memLead.leadPriority,
+    };
+  }
 
   return null;
+}
+
+function submitLeadToStore(
+  data: LeadFormData,
+  cleanPhone: string,
+  visitStatus: VisitStatus,
+  visitDateObj: Date | null
+): { isNew: boolean; interactionCount: number } {
+  const store = getCrmStore();
+  const existingIndex = store.leads.findIndex((l) => l.phone === cleanPhone);
+  const assignedAgent = store.agents.find((a) => a.id === data.agentId);
+
+  let isNew = false;
+  let interactionCount = 1;
+  let leadId = `lead-${Date.now()}`;
+
+  if (existingIndex >= 0) {
+    const existing = store.leads[existingIndex];
+    leadId = existing.id;
+    interactionCount = existing.totalInteractions + 1;
+
+    let finalVisitStatus = visitStatus;
+    if (
+      data.disposition === Disposition.SITE_VISIT_SCHEDULED &&
+      visitDateObj &&
+      existing.visitDate &&
+      !isSameDay(existing.visitDate, visitDateObj) &&
+      existing.visitStatus === VisitStatus.SCHEDULED &&
+      !data.markVisitDone
+    ) {
+      finalVisitStatus = ((VisitStatus as any).RESCHEDULED || VisitStatus.SCHEDULED);
+    }
+
+    store.leads[existingIndex] = {
+      ...existing,
+      name: data.name || existing.name,
+      alternatePhone: data.alternatePhone || existing.alternatePhone,
+      email: data.email || existing.email,
+      customerCity: data.customerCity || existing.customerCity,
+      leadSource: data.leadSource || existing.leadSource,
+      totalInteractions: interactionCount,
+      callOutcome: data.callOutcome,
+      notConnectedReason: data.notConnectedReason ?? null,
+      disposition: data.disposition ?? existing.disposition,
+      projectName: data.projectName || existing.projectName,
+      microMarket: data.microMarket || existing.microMarket,
+      requirement: data.requirement ?? existing.requirement,
+      budget: data.budget ?? existing.budget,
+      purpose: data.purpose || existing.purpose,
+      possessionTimeline: data.possessionTimeline || existing.possessionTimeline,
+      fundingMode: data.fundingMode || existing.fundingMode,
+      leadPriority: data.leadPriority || existing.leadPriority,
+      followUpDate: data.followUpDate ? new Date(data.followUpDate) : existing.followUpDate,
+      visitDate: visitDateObj !== null ? visitDateObj : existing.visitDate,
+      visitTimeSlot: data.visitTimeSlot || existing.visitTimeSlot,
+      cabRequired: data.cabRequired !== undefined ? data.cabRequired : existing.cabRequired,
+      pickupLocation: data.pickupLocation || existing.pickupLocation,
+      accompanyingPerson: data.accompanyingPerson || existing.accompanyingPerson,
+      visitStatus: finalVisitStatus !== VisitStatus.NONE ? finalVisitStatus : existing.visitStatus,
+      previousVisitDate: existing.visitDate ?? null,
+      latestRemark: data.remark || existing.latestRemark,
+      assignedAgentId: data.agentId,
+      assignedAgent: assignedAgent ? { id: assignedAgent.id, name: assignedAgent.name } : existing.assignedAgent,
+      updatedAt: new Date(),
+    };
+  } else {
+    isNew = true;
+    store.leads.unshift({
+      id: leadId,
+      phone: cleanPhone,
+      name: data.name,
+      alternatePhone: data.alternatePhone,
+      email: data.email,
+      customerCity: data.customerCity,
+      leadSource: data.leadSource,
+      totalInteractions: 1,
+      callOutcome: data.callOutcome,
+      notConnectedReason: data.notConnectedReason ?? null,
+      disposition: data.disposition ?? null,
+      projectName: data.projectName,
+      microMarket: data.microMarket,
+      requirement: data.requirement ?? null,
+      budget: data.budget ?? null,
+      purpose: data.purpose,
+      possessionTimeline: data.possessionTimeline,
+      fundingMode: data.fundingMode,
+      leadPriority: data.leadPriority,
+      followUpDate: data.followUpDate ? new Date(data.followUpDate) : null,
+      visitDate: visitDateObj,
+      visitTimeSlot: data.visitTimeSlot,
+      cabRequired: data.cabRequired,
+      pickupLocation: data.pickupLocation,
+      accompanyingPerson: data.accompanyingPerson,
+      visitStatus,
+      previousVisitDate: null,
+      latestRemark: data.remark ?? null,
+      assignedAgentId: data.agentId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      assignedAgent: assignedAgent ? { id: assignedAgent.id, name: assignedAgent.name } : undefined,
+    });
+  }
+
+  // Always record audit log in persistent store
+  store.logs.unshift({
+    id: `log-${Date.now()}`,
+    leadId,
+    agentId: data.agentId,
+    callOutcome: data.callOutcome,
+    notConnectedReason: data.notConnectedReason ?? null,
+    disposition: data.disposition ?? null,
+    requirement: data.requirement ?? null,
+    budget: data.budget ?? null,
+    visitDate: visitDateObj,
+    visitStatus,
+    remark: data.remark ?? null,
+    interactionNumber: interactionCount,
+    createdAt: new Date(),
+  });
+
+  saveCrmStore(store);
+
+  return { isNew, interactionCount };
 }
 
 // ─── SUBMIT LEAD (UPSERT WITH FULL DEDUPLICATION BUSINESS LOGIC) ─────────────
@@ -483,230 +310,120 @@ export async function submitLead(data: LeadFormData): Promise<LeadFormResult> {
     return null;
   })(data.budget);
 
-  try {
-    const result = await prisma.$transaction(async (tx) => {
-      const existingLead = await tx.lead.findUnique({
-        where: { phone: cleanPhone },
-      });
+  let isNew = false;
+  let interactionCount = 1;
 
-      const previousVisitDate: Date | null = existingLead?.visitDate ?? null;
-      let finalVisitStatus = visitStatus;
-
-      if (
-        data.disposition === Disposition.SITE_VISIT_SCHEDULED &&
-        visitDateObj &&
-        existingLead?.visitDate &&
-        !isSameDay(existingLead.visitDate, visitDateObj) &&
-        existingLead.visitStatus === VisitStatus.SCHEDULED &&
-        !data.markVisitDone
-      ) {
-        finalVisitStatus = ((VisitStatus as any).RESCHEDULED || VisitStatus.SCHEDULED);
-      }
-
-      let lead: Lead;
-      let isNew = false;
-      let interactionCount = 1;
-
-      if (existingLead) {
-        interactionCount = existingLead.totalInteractions + 1;
-        lead = await tx.lead.update({
+  if (await isDbLive()) {
+    try {
+      const result = await prisma.$transaction(async (tx) => {
+        const existingLead = await tx.lead.findUnique({
           where: { phone: cleanPhone },
-          data: {
-            name: data.name || existingLead.name,
-            totalInteractions: interactionCount,
-            callOutcome: data.callOutcome,
-            notConnectedReason: data.notConnectedReason ?? null,
-            disposition: data.disposition ?? existingLead.disposition,
-            requirement: prismaReq ?? existingLead.requirement,
-            budget: prismaBudget ?? existingLead.budget,
-            visitDate: visitDateObj !== null ? visitDateObj : existingLead.visitDate,
-            visitStatus:
-              finalVisitStatus !== VisitStatus.NONE ? finalVisitStatus : existingLead.visitStatus,
-            previousVisitDate: previousVisitDate,
-            latestRemark: data.remark || existingLead.latestRemark,
-            assignedAgentId: data.agentId,
-          },
         });
-      } else {
-        isNew = true;
-        lead = await tx.lead.create({
+
+        const previousVisitDate: Date | null = existingLead?.visitDate ?? null;
+        let finalVisitStatus = visitStatus;
+
+        if (
+          data.disposition === Disposition.SITE_VISIT_SCHEDULED &&
+          visitDateObj &&
+          existingLead?.visitDate &&
+          !isSameDay(existingLead.visitDate, visitDateObj) &&
+          existingLead.visitStatus === VisitStatus.SCHEDULED &&
+          !data.markVisitDone
+        ) {
+          finalVisitStatus = ((VisitStatus as any).RESCHEDULED || VisitStatus.SCHEDULED);
+        }
+
+        let lead: Lead;
+        let isNewLocal = false;
+        let interactionCountLocal = 1;
+
+        if (existingLead) {
+          interactionCountLocal = existingLead.totalInteractions + 1;
+          lead = await tx.lead.update({
+            where: { phone: cleanPhone },
+            data: {
+              name: data.name || existingLead.name,
+              totalInteractions: interactionCountLocal,
+              callOutcome: data.callOutcome,
+              notConnectedReason: data.notConnectedReason ?? null,
+              disposition: data.disposition ?? existingLead.disposition,
+              requirement: prismaReq ?? existingLead.requirement,
+              budget: prismaBudget ?? existingLead.budget,
+              visitDate: visitDateObj !== null ? visitDateObj : existingLead.visitDate,
+              visitStatus:
+                finalVisitStatus !== VisitStatus.NONE ? finalVisitStatus : existingLead.visitStatus,
+              previousVisitDate: previousVisitDate,
+              latestRemark: data.remark || existingLead.latestRemark,
+              assignedAgentId: data.agentId,
+            },
+          });
+        } else {
+          isNewLocal = true;
+          lead = await tx.lead.create({
+            data: {
+              phone: cleanPhone,
+              name: data.name,
+              totalInteractions: 1,
+              callOutcome: data.callOutcome,
+              notConnectedReason: data.notConnectedReason ?? null,
+              disposition: data.disposition ?? null,
+              requirement: prismaReq ?? null,
+              budget: prismaBudget ?? null,
+              visitDate: visitDateObj,
+              visitStatus: finalVisitStatus,
+              previousVisitDate: null,
+              latestRemark: data.remark ?? null,
+              assignedAgentId: data.agentId,
+            },
+          });
+        }
+
+        await tx.activityLog.create({
           data: {
-            phone: cleanPhone,
-            name: data.name,
-            totalInteractions: 1,
+            leadId: lead.id,
+            agentId: data.agentId,
             callOutcome: data.callOutcome,
             notConnectedReason: data.notConnectedReason ?? null,
             disposition: data.disposition ?? null,
-            requirement: prismaReq ?? null,
-            budget: prismaBudget ?? null,
+            requirement: (data.requirement as any) ?? null,
+            budget: (data.budget as any) ?? null,
             visitDate: visitDateObj,
             visitStatus: finalVisitStatus,
-            previousVisitDate: null,
-            latestRemark: data.remark ?? null,
-            assignedAgentId: data.agentId,
+            remark: data.remark ?? null,
+            interactionNumber: interactionCountLocal,
           },
         });
-      }
 
-      await tx.activityLog.create({
-        data: {
-          leadId: lead.id,
-          agentId: data.agentId,
-          callOutcome: data.callOutcome,
-          notConnectedReason: data.notConnectedReason ?? null,
-          disposition: data.disposition ?? null,
-          requirement: (data.requirement as any) ?? null,
-          budget: (data.budget as any) ?? null,
-          visitDate: visitDateObj,
-          visitStatus: finalVisitStatus,
-          remark: data.remark ?? null,
-          interactionNumber: interactionCount,
-        },
+        return { isNew: isNewLocal, interactionCount: interactionCountLocal };
       });
 
-      return { isNew, interactionCount };
-    });
-
-    revalidatePath('/');
-    revalidatePath('/admin');
-    revalidatePath('/admin/visits');
-    revalidatePath('/admin/leads');
-
-    return {
-      success: true,
-      message: result.isNew
-        ? `✅ New lead created for ${data.name}`
-        : `✅ Lead updated (${result.interactionCount}x interaction)`,
-      isNew: result.isNew,
-      interactions: result.interactionCount,
-    };
-  } catch {
-    // ─── FALLBACK IN-MEMORY UPSERT LOGIC ───
-    const existingIndex = globalStore.leads.findIndex((l) => l.phone === cleanPhone);
-    const assignedAgent = globalStore.agents.find((a) => a.id === data.agentId);
-
-    let isNew = false;
-    let interactionCount = 1;
-    let leadId = `lead-${Date.now()}`;
-
-    if (existingIndex >= 0) {
-      const existing = globalStore.leads[existingIndex];
-      leadId = existing.id;
-      interactionCount = existing.totalInteractions + 1;
-
-      let finalVisitStatus = visitStatus;
-      if (
-        data.disposition === Disposition.SITE_VISIT_SCHEDULED &&
-        visitDateObj &&
-        existing.visitDate &&
-        !isSameDay(existing.visitDate, visitDateObj) &&
-        existing.visitStatus === VisitStatus.SCHEDULED &&
-        !data.markVisitDone
-      ) {
-        finalVisitStatus = ((VisitStatus as any).RESCHEDULED || VisitStatus.SCHEDULED);
-      }
-
-      globalStore.leads[existingIndex] = {
-        ...existing,
-        name: data.name || existing.name,
-        alternatePhone: data.alternatePhone || existing.alternatePhone,
-        email: data.email || existing.email,
-        customerCity: data.customerCity || existing.customerCity,
-        leadSource: data.leadSource || existing.leadSource,
-        totalInteractions: interactionCount,
-        callOutcome: data.callOutcome,
-        notConnectedReason: data.notConnectedReason ?? null,
-        disposition: data.disposition ?? existing.disposition,
-        projectName: data.projectName || existing.projectName,
-        microMarket: data.microMarket || existing.microMarket,
-        requirement: data.requirement ?? existing.requirement,
-        budget: data.budget ?? existing.budget,
-        purpose: data.purpose || existing.purpose,
-        possessionTimeline: data.possessionTimeline || existing.possessionTimeline,
-        fundingMode: data.fundingMode || existing.fundingMode,
-        leadPriority: data.leadPriority || existing.leadPriority,
-        followUpDate: data.followUpDate ? new Date(data.followUpDate) : existing.followUpDate,
-        visitDate: visitDateObj !== null ? visitDateObj : existing.visitDate,
-        visitTimeSlot: data.visitTimeSlot || existing.visitTimeSlot,
-        cabRequired: data.cabRequired !== undefined ? data.cabRequired : existing.cabRequired,
-        pickupLocation: data.pickupLocation || existing.pickupLocation,
-        accompanyingPerson: data.accompanyingPerson || existing.accompanyingPerson,
-        visitStatus: finalVisitStatus !== VisitStatus.NONE ? finalVisitStatus : existing.visitStatus,
-        previousVisitDate: existing.visitDate ?? null,
-        latestRemark: data.remark || existing.latestRemark,
-        assignedAgentId: data.agentId,
-        assignedAgent: assignedAgent ? { id: assignedAgent.id, name: assignedAgent.name } : existing.assignedAgent,
-        updatedAt: new Date(),
-      };
-    } else {
-      isNew = true;
-      globalStore.leads.unshift({
-        id: leadId,
-        phone: cleanPhone,
-        name: data.name,
-        alternatePhone: data.alternatePhone,
-        email: data.email,
-        customerCity: data.customerCity,
-        leadSource: data.leadSource,
-        totalInteractions: 1,
-        callOutcome: data.callOutcome,
-        notConnectedReason: data.notConnectedReason ?? null,
-        disposition: data.disposition ?? null,
-        projectName: data.projectName,
-        microMarket: data.microMarket,
-        requirement: data.requirement ?? null,
-        budget: data.budget ?? null,
-        purpose: data.purpose,
-        possessionTimeline: data.possessionTimeline,
-        fundingMode: data.fundingMode,
-        leadPriority: data.leadPriority,
-        followUpDate: data.followUpDate ? new Date(data.followUpDate) : null,
-        visitDate: visitDateObj,
-        visitTimeSlot: data.visitTimeSlot,
-        cabRequired: data.cabRequired,
-        pickupLocation: data.pickupLocation,
-        accompanyingPerson: data.accompanyingPerson,
-        visitStatus,
-        previousVisitDate: null,
-        latestRemark: data.remark ?? null,
-        assignedAgentId: data.agentId,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        assignedAgent: assignedAgent ? { id: assignedAgent.id, name: assignedAgent.name } : undefined,
-      });
+      isNew = result.isNew;
+      interactionCount = result.interactionCount;
+    } catch {
+      // quiet fallback
     }
-
-    // Always create audit log
-    globalStore.logs.unshift({
-      id: `log-${Date.now()}`,
-      leadId,
-      agentId: data.agentId,
-      callOutcome: data.callOutcome,
-      notConnectedReason: data.notConnectedReason ?? null,
-      disposition: data.disposition ?? null,
-      requirement: data.requirement ?? null,
-      budget: data.budget ?? null,
-      visitDate: visitDateObj,
-      visitStatus,
-      remark: data.remark ?? null,
-      interactionNumber: interactionCount,
-      createdAt: new Date(),
-    });
-
-    revalidatePath('/');
-    revalidatePath('/admin');
-    revalidatePath('/admin/visits');
-    revalidatePath('/admin/leads');
-
-    return {
-      success: true,
-      message: isNew
-        ? `✅ New lead created for ${data.name}`
-        : `✅ Lead updated (${interactionCount}x interaction)`,
-      isNew,
-      interactions: interactionCount,
-    };
   }
+
+  // Always update persistent store on disk
+  const storeRes = submitLeadToStore(data, cleanPhone, visitStatus, visitDateObj);
+  isNew = storeRes.isNew;
+  interactionCount = storeRes.interactionCount;
+
+  revalidatePath('/');
+  revalidatePath('/admin');
+  revalidatePath('/admin/visits');
+  revalidatePath('/admin/leads');
+  revalidatePath('/admin/settings');
+
+  return {
+    success: true,
+    message: isNew
+      ? `✅ New lead created for ${data.name}`
+      : `✅ Lead updated (${interactionCount}x interaction)`,
+    isNew,
+    interactions: interactionCount,
+  };
 }
 
 // ─── MARK VISIT DONE ──────────────────────────────────────────────────────────
@@ -733,12 +450,13 @@ export async function markVisitDone(leadId: string, agentId?: string): Promise<L
 
     return { success: true, message: 'Visit marked as completed.' };
   } catch {
-    // Fallback store
-    const targetLead = globalStore.leads.find((l) => l.id === leadId);
+    // Fallback persistent store
+    const store = getCrmStore();
+    const targetLead = store.leads.find((l) => l.id === leadId);
     if (targetLead) {
       targetLead.visitStatus = VisitStatus.VISIT_DONE;
       targetLead.updatedAt = new Date();
-      globalStore.logs.unshift({
+      store.logs.unshift({
         id: `log-${Date.now()}`,
         leadId,
         agentId: agentId ?? null,
@@ -753,8 +471,10 @@ export async function markVisitDone(leadId: string, agentId?: string): Promise<L
         interactionNumber: targetLead.totalInteractions,
         createdAt: new Date(),
       });
+      saveCrmStore(store);
       revalidatePath('/admin/visits');
       revalidatePath('/admin');
+      revalidatePath('/admin/leads');
       return { success: true, message: 'Visit marked as completed.' };
     }
     return { success: false, message: 'Failed to update visit status.' };
@@ -795,18 +515,20 @@ export async function rescheduleVisit(
 
     revalidatePath('/admin/visits');
     revalidatePath('/admin');
+    revalidatePath('/admin/leads');
 
     return { success: true, message: `Visit rescheduled to ${newDate}.` };
   } catch {
-    // Fallback store
-    const targetLead = globalStore.leads.find((l) => l.id === leadId);
+    // Fallback persistent store
+    const store = getCrmStore();
+    const targetLead = store.leads.find((l) => l.id === leadId);
     if (targetLead) {
       targetLead.previousVisitDate = targetLead.visitDate;
       targetLead.visitDate = newDateObj;
       targetLead.visitStatus = VisitStatus.RESCHEDULED;
       targetLead.updatedAt = new Date();
 
-      globalStore.logs.unshift({
+      store.logs.unshift({
         id: `log-${Date.now()}`,
         leadId,
         agentId: agentId ?? null,
@@ -821,9 +543,11 @@ export async function rescheduleVisit(
         interactionNumber: targetLead.totalInteractions,
         createdAt: new Date(),
       });
+      saveCrmStore(store);
 
       revalidatePath('/admin/visits');
       revalidatePath('/admin');
+      revalidatePath('/admin/leads');
       return { success: true, message: `Visit rescheduled to ${newDate}.` };
     }
     return { success: false, message: 'Failed to reschedule visit.' };
@@ -843,7 +567,8 @@ export async function getActiveAgents() {
       // Database offline
     }
   }
-  return globalStore.agents.filter((a) => a.isActive !== false);
+  const store = getCrmStore();
+  return store.agents.filter((a) => a.isActive !== false);
 }
 
 export async function getAllAgents() {
@@ -857,7 +582,8 @@ export async function getAllAgents() {
       // Database offline
     }
   }
-  return globalStore.agents;
+  const store = getCrmStore();
+  return store.agents;
 }
 
 export async function addAgentToStore(name: string, email?: string) {
@@ -887,18 +613,19 @@ export async function addAgentToStore(name: string, email?: string) {
     };
   }
 
-  const existingIdx = globalStore.agents.findIndex(
+  const store = getCrmStore();
+  const existingIdx = store.agents.findIndex(
     (a) => a.id === createdAgent!.id || a.name.toLowerCase() === cleanName.toLowerCase()
   );
   if (existingIdx >= 0) {
-    globalStore.agents[existingIdx] = {
-      ...globalStore.agents[existingIdx],
+    store.agents[existingIdx] = {
+      ...store.agents[existingIdx],
       name: cleanName,
       isActive: true,
       updatedAt: new Date(),
     };
   } else {
-    globalStore.agents.push({
+    store.agents.push({
       id: createdAgent.id,
       name: cleanName,
       email: createdAgent.email || '',
@@ -907,6 +634,7 @@ export async function addAgentToStore(name: string, email?: string) {
       updatedAt: new Date(),
     });
   }
+  saveCrmStore(store);
 
   revalidatePath('/');
   revalidatePath('/admin/settings');
@@ -930,11 +658,13 @@ export async function updateAgentInStore(agentId: string, name: string, email?: 
     } catch {}
   }
 
-  const agent = globalStore.agents.find((a) => a.id === agentId);
+  const store = getCrmStore();
+  const agent = store.agents.find((a) => a.id === agentId);
   if (agent) {
     agent.name = cleanName;
     if (email !== undefined) agent.email = email.trim();
     agent.updatedAt = new Date();
+    saveCrmStore(store);
   }
 
   revalidatePath('/');
@@ -956,10 +686,12 @@ export async function toggleAgentInStore(agentId: string, isActive: boolean) {
     } catch {}
   }
 
-  const agent = globalStore.agents.find((a) => a.id === agentId);
+  const store = getCrmStore();
+  const agent = store.agents.find((a) => a.id === agentId);
   if (agent) {
     agent.isActive = isActive;
     agent.updatedAt = new Date();
+    saveCrmStore(store);
   }
 
   revalidatePath('/');
@@ -980,7 +712,9 @@ export async function deleteAgentFromStore(agentId: string) {
     } catch {}
   }
 
-  globalStore.agents = globalStore.agents.filter((a) => a.id !== agentId);
+  const store = getCrmStore();
+  store.agents = store.agents.filter((a) => a.id !== agentId);
+  saveCrmStore(store);
 
   revalidatePath('/');
   revalidatePath('/admin/settings');
@@ -1004,6 +738,9 @@ export interface AgentVisitLead {
   visitDate: string | null;
   visitTimeSlot?: string | null;
   visitStatus: string;
+  callOutcome?: string;
+  disposition?: string | null;
+  followUpDate?: string | null;
   updatedAt: string;
   createdAt: string;
   latestRemark: string | null;
@@ -1026,6 +763,7 @@ export interface AgentStatRow {
   visitsDropped: number;
   visitsDone: number;
   visitLeads: AgentVisitLead[];
+  allLeads: AgentVisitLead[];
 }
 
 export interface DashboardStatsResult {
@@ -1095,8 +833,7 @@ export async function getDashboardStats(startDate?: Date, endDate?: Date): Promi
           let visitsDropped = 0;
           let visitsDone = 0;
 
-          const visitLeads: AgentVisitLead[] = agent.leads
-            .filter((l: Lead) => l.visitDate || l.visitStatus === VisitStatus.SCHEDULED || (VisitStatus as any).RESCHEDULED && l.visitStatus === (VisitStatus as any).RESCHEDULED || l.visitStatus === VisitStatus.VISIT_DONE)
+          const allLeads: AgentVisitLead[] = agent.leads
             .map((l: Lead) => {
               const isScheduled = l.visitStatus === VisitStatus.SCHEDULED || (VisitStatus as any).RESCHEDULED && l.visitStatus === (VisitStatus as any).RESCHEDULED;
               const isDone = l.visitStatus === VisitStatus.VISIT_DONE;
@@ -1108,17 +845,12 @@ export async function getDashboardStats(startDate?: Date, endDate?: Date): Promi
                   const vDate = new Date(l.visitDate);
                   if (vDate >= todayStart) {
                     isUpcoming = true;
-                    visitsUpcoming++;
                   } else {
                     isDropped = true;
-                    visitsDropped++;
                   }
                 } else {
                   isDropped = true;
-                  visitsDropped++;
                 }
-              } else if (isDone) {
-                visitsDone++;
               }
 
               return {
@@ -1133,6 +865,9 @@ export async function getDashboardStats(startDate?: Date, endDate?: Date): Promi
                 visitDate: l.visitDate ? l.visitDate.toISOString() : null,
                 visitTimeSlot: (l as any).visitTimeSlot || null,
                 visitStatus: l.visitStatus,
+                callOutcome: (l as any).callOutcome || '',
+                disposition: (l as any).disposition || null,
+                followUpDate: (l as any).followUpDate ? new Date((l as any).followUpDate).toISOString() : null,
                 updatedAt: l.updatedAt.toISOString(),
                 createdAt: l.createdAt.toISOString(),
                 latestRemark: l.latestRemark,
@@ -1140,7 +875,18 @@ export async function getDashboardStats(startDate?: Date, endDate?: Date): Promi
                 isUpcoming,
                 isDone,
               };
-            });
+            })
+            .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+
+          const visitLeads: AgentVisitLead[] = allLeads.filter(
+            (l) => l.visitDate || l.visitStatus === VisitStatus.SCHEDULED || (VisitStatus as any).RESCHEDULED && l.visitStatus === (VisitStatus as any).RESCHEDULED || l.visitStatus === VisitStatus.VISIT_DONE
+          );
+
+          visitLeads.forEach((vl) => {
+            if (vl.isUpcoming) visitsUpcoming++;
+            if (vl.isDropped) visitsDropped++;
+            if (vl.isDone) visitsDone++;
+          });
 
           pendingVisits += visitsUpcoming;
           droppedVisits += visitsDropped;
@@ -1159,6 +905,7 @@ export async function getDashboardStats(startDate?: Date, endDate?: Date): Promi
             visitsDropped,
             visitsDone,
             visitLeads,
+            allLeads,
           };
         }
       );
@@ -1183,16 +930,17 @@ export async function getDashboardStats(startDate?: Date, endDate?: Date): Promi
     }
   }
 
-  // Fallback store calculation
-  const totalLeads = globalStore.leads.length;
-  const totalLogs = globalStore.logs.length;
+  // Fallback persistent store calculation
+  const store = getCrmStore();
+  const totalLeads = store.leads.length;
+  const totalLogs = store.logs.length;
 
   let overallPendingVisits = 0;
   let overallDroppedVisits = 0;
   let overallCompletedVisits = 0;
 
-  const agentLeaderboard: AgentStatRow[] = globalStore.agents.map((agent) => {
-    const logs = globalStore.logs.filter((log) => log.agentId === agent.id);
+  const agentLeaderboard: AgentStatRow[] = store.agents.map((agent) => {
+    const logs = store.logs.filter((log) => log.agentId === agent.id);
     const totalDials = logs.length;
     const connectedCalls = logs.filter((l) => l.callOutcome === CallOutcome.CONNECTED).length;
     const notConnected = logs.filter((l) => l.callOutcome === CallOutcome.NOT_CONNECTED).length;
@@ -1200,7 +948,7 @@ export async function getDashboardStats(startDate?: Date, endDate?: Date): Promi
     const interested = logs.filter((l) => l.disposition === Disposition.INTERESTED_FOLLOW_UP).length;
     const notInterested = logs.filter((l) => l.disposition === Disposition.NOT_INTERESTED).length;
 
-    const agentLeads = globalStore.leads.filter((l) => l.assignedAgentId === agent.id);
+    const agentLeads = store.leads.filter((l) => l.assignedAgentId === agent.id);
     const uniqueLeadIdsFromLogs = new Set(logs.map((l) => l.leadId));
     const agentTotalLeads = Math.max(agentLeads.length, uniqueLeadIdsFromLogs.size);
 
@@ -1208,8 +956,7 @@ export async function getDashboardStats(startDate?: Date, endDate?: Date): Promi
     let visitsDropped = 0;
     let visitsDone = 0;
 
-    const visitLeads: AgentVisitLead[] = agentLeads
-      .filter((l) => l.visitDate || l.visitStatus === VisitStatus.SCHEDULED || (VisitStatus as any).RESCHEDULED && l.visitStatus === (VisitStatus as any).RESCHEDULED || l.visitStatus === VisitStatus.VISIT_DONE)
+    const allLeads: AgentVisitLead[] = agentLeads
       .map((l) => {
         const isScheduled = l.visitStatus === VisitStatus.SCHEDULED || (VisitStatus as any).RESCHEDULED && l.visitStatus === (VisitStatus as any).RESCHEDULED;
         const isDone = l.visitStatus === VisitStatus.VISIT_DONE;
@@ -1221,17 +968,12 @@ export async function getDashboardStats(startDate?: Date, endDate?: Date): Promi
             const vDate = new Date(l.visitDate);
             if (vDate >= todayStart) {
               isUpcoming = true;
-              visitsUpcoming++;
             } else {
               isDropped = true;
-              visitsDropped++;
             }
           } else {
             isDropped = true;
-            visitsDropped++;
           }
-        } else if (isDone) {
-          visitsDone++;
         }
 
         return {
@@ -1246,6 +988,9 @@ export async function getDashboardStats(startDate?: Date, endDate?: Date): Promi
           visitDate: l.visitDate ? l.visitDate.toISOString() : null,
           visitTimeSlot: l.visitTimeSlot || null,
           visitStatus: l.visitStatus,
+          callOutcome: l.callOutcome,
+          disposition: l.disposition,
+          followUpDate: l.followUpDate ? l.followUpDate.toISOString() : null,
           updatedAt: l.updatedAt.toISOString(),
           createdAt: l.createdAt.toISOString(),
           latestRemark: l.latestRemark,
@@ -1253,7 +998,18 @@ export async function getDashboardStats(startDate?: Date, endDate?: Date): Promi
           isUpcoming,
           isDone,
         };
-      });
+      })
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+
+    const visitLeads: AgentVisitLead[] = allLeads.filter(
+      (l) => l.visitDate || l.visitStatus === VisitStatus.SCHEDULED || (VisitStatus as any).RESCHEDULED && l.visitStatus === (VisitStatus as any).RESCHEDULED || l.visitStatus === VisitStatus.VISIT_DONE
+    );
+
+    visitLeads.forEach((vl) => {
+      if (vl.isUpcoming) visitsUpcoming++;
+      if (vl.isDropped) visitsDropped++;
+      if (vl.isDone) visitsDone++;
+    });
 
     overallPendingVisits += visitsUpcoming;
     overallDroppedVisits += visitsDropped;
@@ -1273,10 +1029,11 @@ export async function getDashboardStats(startDate?: Date, endDate?: Date): Promi
       visitsDropped,
       visitsDone,
       visitLeads,
+      allLeads,
     };
   });
 
-  const connectedTotal = globalStore.logs.filter((l) => l.callOutcome === CallOutcome.CONNECTED).length;
+  const connectedTotal = store.logs.filter((l) => l.callOutcome === CallOutcome.CONNECTED).length;
   const contactRatio = totalLogs > 0 ? Math.round((connectedTotal / totalLogs) * 100) : 0;
 
   return {
@@ -1314,8 +1071,9 @@ export async function getVisitsForDate(date: Date) {
     }
   }
 
-  // Fallback store
-  return globalStore.leads
+  // Fallback persistent store
+  const store = getCrmStore();
+  return store.leads
     .filter((l) => {
       if (!l.visitDate) return false;
       const v = new Date(l.visitDate);
@@ -1328,7 +1086,7 @@ export async function getVisitsForDate(date: Date) {
       );
     })
     .map((l) => {
-      const agent = globalStore.agents.find((a) => a.id === l.assignedAgentId);
+      const agent = store.agents.find((a) => a.id === l.assignedAgentId);
       return {
         ...l,
         assignedAgent: agent ? { id: agent.id, name: agent.name } : null,
@@ -1398,39 +1156,41 @@ export async function getAllLeads(filters?: {
       // quiet
     }
   }
-    // Fallback store
-    let filtered = [...globalStore.leads];
 
-    if (filters?.agentId) {
-      filtered = filtered.filter((l) => l.assignedAgentId === filters.agentId);
-    }
-    if (filters?.disposition) {
-      filtered = filtered.filter((l) => l.disposition === filters.disposition);
-    }
-    if (filters?.visitStatus) {
-      filtered = filtered.filter((l) => l.visitStatus === filters.visitStatus);
-    }
-    if (filters?.minInteractions && filters.minInteractions > 1) {
-      filtered = filtered.filter((l) => l.totalInteractions >= filters.minInteractions!);
-    }
-    if (filters?.search) {
-      const q = filters.search.toLowerCase();
-      filtered = filtered.filter(
-        (l) => l.name.toLowerCase().includes(q) || l.phone.includes(q)
-      );
-    }
+  // Fallback persistent store
+  const store = getCrmStore();
+  let filtered = [...store.leads];
 
-    return filtered
-      .map((l) => {
-        const agent = globalStore.agents.find((a) => a.id === l.assignedAgentId);
-        return {
-          ...l,
-          projectName: l.projectName || 'General Enquiry',
-          followUpDate: l.followUpDate || null,
-          assignedAgent: agent ? { name: agent.name } : null,
-        };
-      })
-      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()) as AdminLeadItem[];
+  if (filters?.agentId) {
+    filtered = filtered.filter((l) => l.assignedAgentId === filters.agentId);
+  }
+  if (filters?.disposition) {
+    filtered = filtered.filter((l) => l.disposition === filters.disposition);
+  }
+  if (filters?.visitStatus) {
+    filtered = filtered.filter((l) => l.visitStatus === filters.visitStatus);
+  }
+  if (filters?.minInteractions && filters.minInteractions > 1) {
+    filtered = filtered.filter((l) => l.totalInteractions >= filters.minInteractions!);
+  }
+  if (filters?.search) {
+    const q = filters.search.toLowerCase();
+    filtered = filtered.filter(
+      (l) => l.name.toLowerCase().includes(q) || l.phone.includes(q)
+    );
+  }
+
+  return filtered
+    .map((l) => {
+      const agent = store.agents.find((a) => a.id === l.assignedAgentId);
+      return {
+        ...l,
+        projectName: l.projectName || 'General Enquiry',
+        followUpDate: l.followUpDate || null,
+        assignedAgent: agent ? { name: agent.name } : null,
+      };
+    })
+    .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()) as AdminLeadItem[];
 }
 
 // ─── HELPER ───────────────────────────────────────────────────────────────────

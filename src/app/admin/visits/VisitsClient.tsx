@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
 import {
   MapPin,
@@ -97,17 +97,41 @@ export default function VisitsClient({ initialVisits, initialDate }: Props) {
     return visits.filter((v) => (v.assignedAgent?.name || 'Unassigned') === selectedExecutive);
   }, [visits, selectedExecutive]);
 
-  const loadDate = async (dateStr: string) => {
+  const loadDate = async (dateStr: string, isSilent = false) => {
     setSelectedDate(dateStr);
-    setLoading(true);
+    if (!isSilent) setLoading(true);
     try {
       const d = new Date(dateStr + 'T00:00:00');
       const data = await getVisitsForDate(d);
       setVisits(data);
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   };
+
+  // Live Auto-Sync every 8 seconds & on tab focus
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible' && !rescheduleId) {
+        loadDate(selectedDate, true);
+      }
+    }, 8000);
+
+    const handleFocus = () => {
+      if (!rescheduleId) {
+        loadDate(selectedDate, true);
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleFocus);
+    };
+  }, [selectedDate, rescheduleId]);
 
   const handleMarkDone = async (visitId: string) => {
     const result = await markVisitDone(visitId);
@@ -238,6 +262,13 @@ export default function VisitsClient({ initialVisits, initialDate }: Props) {
             Site Visit Operations Center
           </h1>
           <p className="text-slate-500 text-sm mt-0.5">Coordinate, track and confirm client on-ground site visits</p>
+        </div>
+        <div className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold shadow-2xs">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          Auto-Sync Live
         </div>
       </div>
 
