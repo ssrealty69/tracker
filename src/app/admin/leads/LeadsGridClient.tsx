@@ -162,8 +162,7 @@ export default function LeadsGridClient({ initialLeads, agents }: Props) {
   const exportExcel = () => {
     const headers = [
       'S.No.',
-      'Punch Timestamp (Latest)',
-      'First Punch Timestamp',
+      'Punch Timestamp',
       'Executive',
       'Customer Name',
       'Mobile Number',
@@ -179,8 +178,7 @@ export default function LeadsGridClient({ initialLeads, agents }: Props) {
     ];
     const rows = filteredLeads.map((l, idx) => [
       idx + 1,
-      formatDateTime(l.updatedAt || l.createdAt),
-      formatDateTime(l.createdAt),
+      formatDateTime(l.createdAt || l.updatedAt),
       l.assignedAgent?.name || '',
       l.name,
       l.phone,
@@ -467,21 +465,11 @@ export default function LeadsGridClient({ initialLeads, agents }: Props) {
                       {idx + 1}
                     </td>
 
-                    {/* 1. Punch Timestamp (Latest) */}
+                    {/* 1. Punch Timestamp */}
                     <td>
-                      <div className="flex flex-col">
-                        <span className="font-bold text-slate-900 text-xs whitespace-nowrap">
-                          {formatDateTime(lead.updatedAt || lead.createdAt)}
-                        </span>
-                        {lead.totalInteractions > 1 && (
-                          <span
-                            className="text-[10px] text-amber-700 font-semibold whitespace-nowrap"
-                            title={`Initial punch: ${formatDateTime(lead.createdAt)}`}
-                          >
-                            1st: {formatDateTime(lead.createdAt)}
-                          </span>
-                        )}
-                      </div>
+                      <span className="font-bold text-slate-900 text-xs whitespace-nowrap">
+                        {formatDateTime(lead.createdAt || lead.updatedAt)}
+                      </span>
                     </td>
 
                     {/* 2. Executive */}

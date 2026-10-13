@@ -71,6 +71,7 @@ model Lead {
   id                  String       @id @default(cuid())
   phone               String       @unique
   name                String
+  projectName         String?
   totalInteractions   Int          @default(1)
   callOutcome         CallOutcome  @default(NOT_CONNECTED)
   notConnectedReason  NotConnectedReason?
@@ -97,6 +98,7 @@ model ActivityLog {
   callOutcome        CallOutcome?
   notConnectedReason NotConnectedReason?
   disposition        Disposition?
+  projectName        String?
   requirement        Requirement?
   budget             Budget?
   visitDate          DateTime?

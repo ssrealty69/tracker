@@ -369,6 +369,7 @@ export async function submitLead(data: LeadFormData): Promise<LeadFormResult> {
             where: { phone: cleanPhone },
             data: {
               name: data.name || existingLead.name,
+              projectName: data.projectName || existingLead.projectName,
               totalInteractions: interactionCountLocal,
               callOutcome: data.callOutcome,
               notConnectedReason: data.notConnectedReason ?? null,
@@ -389,6 +390,7 @@ export async function submitLead(data: LeadFormData): Promise<LeadFormResult> {
             data: {
               phone: cleanPhone,
               name: data.name,
+              projectName: data.projectName ?? null,
               totalInteractions: 1,
               callOutcome: data.callOutcome,
               notConnectedReason: data.notConnectedReason ?? null,
@@ -411,6 +413,7 @@ export async function submitLead(data: LeadFormData): Promise<LeadFormResult> {
             callOutcome: data.callOutcome,
             notConnectedReason: data.notConnectedReason ?? null,
             disposition: data.disposition ?? null,
+            projectName: data.projectName ?? null,
             requirement: prismaReq ?? null,
             budget: prismaBudget ?? null,
             visitDate: visitDateObj,
@@ -1202,33 +1205,69 @@ export async function getAllLeads(filters?: {
   minInteractions?: number;
   search?: string;
 }): Promise<AdminLeadItem[]> {
-  const where: Record<string, unknown> = {};
-
-  if (filters?.agentId) where.assignedAgentId = filters.agentId;
-  if (filters?.disposition) where.disposition = filters.disposition;
-  if (filters?.visitStatus) where.visitStatus = filters.visitStatus;
-  if (filters?.minInteractions && filters.minInteractions > 1) {
-    where.totalInteractions = { gte: filters.minInteractions };
-  }
-  if (filters?.search) {
-    where.OR = [
-      { name: { contains: filters.search, mode: 'insensitive' } },
-      { phone: { contains: filters.search } },
-    ];
-  }
-
   if (await isDbLive()) {
     try {
-      const dbLeads = await prisma.lead.findMany({
-        where,
-        include: { assignedAgent: { select: { name: true } } },
-        orderBy: { updatedAt: 'desc' },
+      const logs = await prisma.activityLog.findMany({
+        include: {
+          lead: {
+            include: {
+              assignedAgent: { select: { name: true } },
+            },
+          },
+          agent: { select: { name: true } },
+        },
+        orderBy: { createdAt: 'desc' },
       });
-      return dbLeads.map((l) => ({
-        ...l,
-        projectName: (l as any).projectName || 'Other',
-        followUpDate: (l as any).followUpDate || null,
-      })) as AdminLeadItem[];
+
+      let items: AdminLeadItem[] = logs.map((log) => {
+        const lead = log.lead;
+        return {
+          id: log.id,
+          phone: lead.phone,
+          name: lead.name,
+          totalInteractions: lead.totalInteractions,
+          callOutcome: (log.callOutcome || lead.callOutcome) as CallOutcome,
+          notConnectedReason: (log.notConnectedReason ?? lead.notConnectedReason) as NotConnectedReason | null,
+          disposition: (log.disposition ?? lead.disposition) as Disposition | null,
+          projectName: log.projectName || lead.projectName || 'General Enquiry',
+          requirement: log.requirement ?? lead.requirement ?? null,
+          budget: log.budget ?? lead.budget ?? null,
+          visitDate: log.visitDate ?? lead.visitDate ?? null,
+          visitStatus: (log.visitStatus ?? lead.visitStatus) as VisitStatus,
+          previousVisitDate: lead.previousVisitDate ?? null,
+          followUpDate: (lead as any).followUpDate || null,
+          latestRemark: log.remark || lead.latestRemark || null,
+          assignedAgentId: log.agentId || lead.assignedAgentId || null,
+          assignedAgent: log.agent ? { name: log.agent.name } : lead.assignedAgent ? { name: lead.assignedAgent.name } : null,
+          createdAt: log.createdAt,
+          updatedAt: log.createdAt,
+        };
+      });
+
+      if (filters?.agentId) {
+        items = items.filter((i) => i.assignedAgentId === filters.agentId);
+      }
+      if (filters?.disposition) {
+        items = items.filter((i) => i.disposition === filters.disposition);
+      }
+      if (filters?.visitStatus) {
+        items = items.filter((i) => i.visitStatus === filters.visitStatus);
+      }
+      if (filters?.minInteractions && filters.minInteractions > 1) {
+        items = items.filter((i) => i.totalInteractions >= filters.minInteractions!);
+      }
+      if (filters?.search) {
+        const q = filters.search.toLowerCase();
+        items = items.filter(
+          (i) =>
+            i.name.toLowerCase().includes(q) ||
+            i.phone.includes(q) ||
+            (i.projectName || '').toLowerCase().includes(q) ||
+            (i.assignedAgent?.name || '').toLowerCase().includes(q)
+        );
+      }
+
+      return items;
     } catch {
       // quiet
     }
@@ -1236,38 +1275,90 @@ export async function getAllLeads(filters?: {
 
   // Fallback persistent store
   const store = getCrmStore();
-  let filtered = [...store.leads];
+  let items: AdminLeadItem[] = (store.logs.length > 0 ? store.logs : store.leads.map(l => ({
+    id: l.id,
+    leadId: l.id,
+    agentId: l.assignedAgentId,
+    callOutcome: l.callOutcome,
+    notConnectedReason: l.notConnectedReason,
+    disposition: l.disposition,
+    requirement: l.requirement,
+    budget: l.budget,
+    visitDate: l.visitDate,
+    visitStatus: l.visitStatus,
+    remark: l.latestRemark,
+    projectName: l.projectName,
+    interactionNumber: 1,
+    createdAt: l.createdAt,
+  }))).map((log: any) => {
+    const lead = store.leads.find((l) => l.id === log.leadId || l.phone === log.phone) || {
+      id: log.leadId,
+      phone: log.phone || '',
+      name: log.name || '',
+      totalInteractions: 1,
+      callOutcome: log.callOutcome || 'NOT_CONNECTED',
+      notConnectedReason: log.notConnectedReason,
+      disposition: log.disposition,
+      projectName: log.projectName || 'General Enquiry',
+      requirement: log.requirement,
+      budget: log.budget,
+      visitDate: log.visitDate,
+      visitStatus: log.visitStatus || 'NONE',
+      previousVisitDate: null,
+      latestRemark: log.remark,
+      assignedAgentId: log.agentId,
+      assignedAgent: null,
+      createdAt: log.createdAt,
+      updatedAt: log.createdAt,
+    };
+    const agent = store.agents.find((a) => a.id === (log.agentId || lead.assignedAgentId));
+    return {
+      id: log.id,
+      phone: lead.phone,
+      name: lead.name,
+      totalInteractions: lead.totalInteractions,
+      callOutcome: (log.callOutcome || lead.callOutcome) as CallOutcome,
+      notConnectedReason: (log.notConnectedReason ?? lead.notConnectedReason) as NotConnectedReason | null,
+      disposition: (log.disposition ?? lead.disposition) as Disposition | null,
+      projectName: log.projectName || lead.projectName || 'General Enquiry',
+      requirement: log.requirement ?? lead.requirement ?? null,
+      budget: log.budget ?? lead.budget ?? null,
+      visitDate: log.visitDate ?? lead.visitDate ?? null,
+      visitStatus: (log.visitStatus ?? lead.visitStatus) as VisitStatus,
+      previousVisitDate: lead.previousVisitDate ?? null,
+      followUpDate: (lead as any).followUpDate || null,
+      latestRemark: log.remark || lead.latestRemark || null,
+      assignedAgentId: log.agentId || lead.assignedAgentId || null,
+      assignedAgent: agent ? { name: agent.name } : null,
+      createdAt: new Date(log.createdAt),
+      updatedAt: new Date(log.createdAt),
+    };
+  }).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
   if (filters?.agentId) {
-    filtered = filtered.filter((l) => l.assignedAgentId === filters.agentId);
+    items = items.filter((i) => i.assignedAgentId === filters.agentId);
   }
   if (filters?.disposition) {
-    filtered = filtered.filter((l) => l.disposition === filters.disposition);
+    items = items.filter((i) => i.disposition === filters.disposition);
   }
   if (filters?.visitStatus) {
-    filtered = filtered.filter((l) => l.visitStatus === filters.visitStatus);
+    items = items.filter((i) => i.visitStatus === filters.visitStatus);
   }
   if (filters?.minInteractions && filters.minInteractions > 1) {
-    filtered = filtered.filter((l) => l.totalInteractions >= filters.minInteractions!);
+    items = items.filter((i) => i.totalInteractions >= filters.minInteractions!);
   }
   if (filters?.search) {
     const q = filters.search.toLowerCase();
-    filtered = filtered.filter(
-      (l) => l.name.toLowerCase().includes(q) || l.phone.includes(q)
+    items = items.filter(
+      (i) =>
+        i.name.toLowerCase().includes(q) ||
+        i.phone.includes(q) ||
+        (i.projectName || '').toLowerCase().includes(q) ||
+        (i.assignedAgent?.name || '').toLowerCase().includes(q)
     );
   }
 
-  return filtered
-    .map((l) => {
-      const agent = store.agents.find((a) => a.id === l.assignedAgentId);
-      return {
-        ...l,
-        projectName: l.projectName || 'Other',
-        followUpDate: l.followUpDate || null,
-        assignedAgent: agent ? { name: agent.name } : null,
-      };
-    })
-    .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()) as AdminLeadItem[];
+  return items;
 }
 
 // ─── HELPER ───────────────────────────────────────────────────────────────────

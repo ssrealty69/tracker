@@ -119,6 +119,7 @@ async function main() {
         data: {
           phone,
           name: String(latest[2] || "").trim(),
+          projectName: String(latest[4] || "").trim() || "General Enquiry",
           totalInteractions: interactions.length,
           callOutcome,
           notConnectedReason: callOutcome === "NOT_CONNECTED" ? mapNotConnectedReason(latest[6]) : null,
@@ -145,6 +146,7 @@ async function main() {
             callOutcome: rCallOutcome,
             notConnectedReason: rCallOutcome === "NOT_CONNECTED" ? mapNotConnectedReason(r[6]) : null,
             disposition: rDisposition,
+            projectName: String(r[4] || "").trim() || "General Enquiry",
             budget: mapBudget(r[9]),
             visitDate: rDisposition === "SITE_VISIT_SCHEDULED" ? excelDateToJS(r[8]) : null,
             visitStatus: rDisposition === "SITE_VISIT_SCHEDULED" ? "SCHEDULED" : null,
