@@ -8,7 +8,6 @@ import {
   PhoneCall,
   Lock,
   Clock,
-  Car,
   AlertTriangle,
   CheckCircle2,
   RotateCcw,
@@ -116,24 +115,22 @@ export default function AgentFormPage() {
   const [budgets, setBudgets] = useState<string[]>(BUDGETS);
   const [notInterestedReasons, setNotInterestedReasons] = useState<string[]>(NOT_INTERESTED_REASONS);
 
-  // Project Selection
-  const [projectName, setProjectName] = useState(SS_REALTY_PROJECTS[0]);
+  // Project Selection (Starts unselected)
+  const [projectName, setProjectName] = useState('');
 
-  // Call Outcome & Disposition
+  // Call Outcome & Disposition (Starts unselected)
   const [callOutcome, setCallOutcome] = useState<'CONNECTED' | 'NOT_CONNECTED' | ''>('');
-  const [notConnectedReason, setNotConnectedReason] = useState('CALL_NOT_PICKED');
-  const [disposition, setDisposition] = useState('INTERESTED_FOLLOW_UP');
-  const [notInterestedReason, setNotInterestedReason] = useState(NOT_INTERESTED_REASONS[0]);
+  const [notConnectedReason, setNotConnectedReason] = useState('');
+  const [disposition, setDisposition] = useState('');
+  const [notInterestedReason, setNotInterestedReason] = useState('');
 
-  // Preferences
-  const [requirement, setRequirement] = useState(CONFIGURATIONS[1]); // Default 3BHK
-  const [budget, setBudget] = useState(BUDGETS[1]); // Default 75L-1Cr
+  // Preferences (Starts unselected)
+  const [requirement, setRequirement] = useState('');
+  const [budget, setBudget] = useState('');
 
   // Site Visit Coordination & Calendar
   const [visitDate, setVisitDate] = useState('');
-  const [visitTimeSlot, setVisitTimeSlot] = useState(VISIT_TIME_SLOTS[0]);
-  const [cabRequired, setCabRequired] = useState(false);
-  const [pickupLocation, setPickupLocation] = useState('');
+  const [visitTimeSlot, setVisitTimeSlot] = useState('');
   const [markVisitDone, setMarkVisitDone] = useState(false);
   const [activeDateChip, setActiveDateChip] = useState<'today' | 'tomorrow' | 'saturday' | 'sunday' | null>(null);
 
@@ -174,20 +171,20 @@ export default function AgentFormPage() {
       if (cfg) {
         if (cfg.projects && cfg.projects.length > 0) {
           setProjects(cfg.projects);
-          setProjectName((prev) => (cfg.projects.includes(prev) ? prev : cfg.projects[0]));
+          setProjectName((prev) => (prev && cfg.projects.includes(prev) ? prev : ''));
         }
         if (cfg.configurations && cfg.configurations.length > 0) {
           setConfigurations(cfg.configurations);
-          setRequirement((prev) => (cfg.configurations.includes(prev) ? prev : cfg.configurations[0]));
+          setRequirement((prev) => (prev && cfg.configurations.includes(prev) ? prev : ''));
         }
         if (cfg.budgets && cfg.budgets.length > 0) {
           setBudgets(cfg.budgets);
-          setBudget((prev) => (cfg.budgets.includes(prev) ? prev : cfg.budgets[0]));
+          setBudget((prev) => (prev && cfg.budgets.includes(prev) ? prev : ''));
         }
         if (cfg.notInterestedReasons && cfg.notInterestedReasons.length > 0) {
           setNotInterestedReasons(cfg.notInterestedReasons);
           setNotInterestedReason((prev) =>
-            cfg.notInterestedReasons.includes(prev) ? prev : cfg.notInterestedReasons[0]
+            prev && cfg.notInterestedReasons.includes(prev) ? prev : ''
           );
         }
       }
@@ -309,15 +306,14 @@ export default function AgentFormPage() {
     setPhone('');
     setName('');
     setCallOutcome('');
-    setNotConnectedReason('CALL_NOT_PICKED');
-    setDisposition('INTERESTED_FOLLOW_UP');
-    setNotInterestedReason(notInterestedReasons[0] || NOT_INTERESTED_REASONS[0]);
-    setProjectName(projects[0] || SS_REALTY_PROJECTS[0]);
-    setRequirement(configurations[1] || configurations[0] || '3BHK');
-    setBudget(budgets[1] || budgets[0] || '₹75 Lakh–₹1 Crore');
+    setNotConnectedReason('');
+    setDisposition('');
+    setNotInterestedReason('');
+    setProjectName('');
+    setRequirement('');
+    setBudget('');
     setVisitDate('');
-    setPickupLocation('');
-    setCabRequired(false);
+    setVisitTimeSlot('');
     setMarkVisitDone(false);
     setActiveDateChip(null);
     setFollowUpDate('');
@@ -332,10 +328,23 @@ export default function AgentFormPage() {
     if (!agentId) return toast.error('Please select calling executive name.');
     if (phone.length !== 10) return toast.error('Please enter valid 10-digit mobile number.');
     if (!name.trim()) return toast.error('Customer name is required.');
+    if (!projectName) return toast.error('Please select an SS Realty project.');
     if (!callOutcome) return toast.error('Please choose call outcome (Connected or Not Connected).');
 
-    if (callOutcome === 'CONNECTED' && disposition === 'SITE_VISIT_SCHEDULED' && !visitDate && !markVisitDone) {
-      return toast.error('Please select site visit date from calendar.');
+    if (callOutcome === 'NOT_CONNECTED') {
+      if (!notConnectedReason) return toast.error('Please select reason call not connected.');
+    }
+
+    if (callOutcome === 'CONNECTED') {
+      if (!disposition) return toast.error('Please select customer disposition.');
+      if (disposition === 'NOT_INTERESTED' && !notInterestedReason) {
+        return toast.error('Please select reason for not interested.');
+      }
+      if (disposition === 'SITE_VISIT_SCHEDULED') {
+        if (!visitDate && !markVisitDone) {
+          return toast.error('Please select site visit date from the calendar.');
+        }
+      }
     }
 
     setSubmitting(true);
@@ -357,12 +366,12 @@ export default function AgentFormPage() {
         notConnectedReason: callOutcome === 'NOT_CONNECTED' ? (notConnectedReason as LeadFormData['notConnectedReason']) : undefined,
         disposition: callOutcome === 'CONNECTED' ? (disposition as LeadFormData['disposition']) : undefined,
         projectName,
-        requirement: callOutcome === 'CONNECTED' && disposition !== 'NOT_INTERESTED' && disposition !== 'JUNK_BROKER' ? requirement : undefined,
-        budget: callOutcome === 'CONNECTED' && disposition !== 'NOT_INTERESTED' && disposition !== 'JUNK_BROKER' ? budget : undefined,
-        visitDate: callOutcome === 'CONNECTED' && disposition === 'SITE_VISIT_SCHEDULED' ? visitDate || undefined : undefined,
-        visitTimeSlot: callOutcome === 'CONNECTED' && disposition === 'SITE_VISIT_SCHEDULED' ? visitTimeSlot : undefined,
-        cabRequired: callOutcome === 'CONNECTED' && disposition === 'SITE_VISIT_SCHEDULED' ? cabRequired : false,
-        pickupLocation: cabRequired ? pickupLocation.trim() || undefined : undefined,
+        requirement: callOutcome === 'CONNECTED' && disposition !== 'NOT_INTERESTED' && disposition !== 'JUNK_BROKER' ? (requirement || undefined) : undefined,
+        budget: callOutcome === 'CONNECTED' && disposition !== 'NOT_INTERESTED' && disposition !== 'JUNK_BROKER' ? (budget || undefined) : undefined,
+        visitDate: callOutcome === 'CONNECTED' && disposition === 'SITE_VISIT_SCHEDULED' ? (visitDate || (markVisitDone ? todayStr : undefined)) : undefined,
+        visitTimeSlot: callOutcome === 'CONNECTED' && disposition === 'SITE_VISIT_SCHEDULED' ? (visitTimeSlot || undefined) : undefined,
+        cabRequired: false,
+        pickupLocation: undefined,
         markVisitDone,
         followUpDate: callOutcome === 'CONNECTED' && disposition === 'INTERESTED_FOLLOW_UP' ? followUpDate || undefined : undefined,
         remark: finalRemark || undefined,
@@ -472,7 +481,7 @@ export default function AgentFormPage() {
               value={agentId}
               onChange={handleAgentChange}
               options={agents.map((a) => ({ value: a.id, label: a.name }))}
-              placeholder="-- Select Name --"
+              placeholder="-- Select Calling Executive --"
               required
             />
           </div>
@@ -565,6 +574,7 @@ export default function AgentFormPage() {
               value={projectName}
               onChange={setProjectName}
               options={projects}
+              placeholder="-- Select Project --"
               required
             />
           </div>
@@ -615,6 +625,7 @@ export default function AgentFormPage() {
                 value={notConnectedReason}
                 onChange={setNotConnectedReason}
                 options={NOT_CONNECTED_REASONS}
+                placeholder="-- Select Not Connected Reason --"
                 triggerClassName="border-rose-300 text-rose-950 font-medium"
               />
             </div>
@@ -633,6 +644,7 @@ export default function AgentFormPage() {
                   value={disposition}
                   onChange={setDisposition}
                   options={DISPOSITIONS}
+                  placeholder="-- Select Customer Disposition --"
                   triggerClassName="font-bold text-slate-800"
                 />
               </div>
@@ -648,13 +660,14 @@ export default function AgentFormPage() {
                     value={notInterestedReason}
                     onChange={setNotInterestedReason}
                     options={notInterestedReasons}
+                    placeholder="-- Select Reason for Not Interested --"
                     triggerClassName="font-semibold text-slate-800"
                   />
                 </div>
               )}
 
               {/* ── IF INTERESTED / SITE VISIT / MISMATCH: CONFIG & BUDGET ── */}
-              {disposition !== 'NOT_INTERESTED' && disposition !== 'JUNK_BROKER' && (
+              {disposition && disposition !== 'NOT_INTERESTED' && disposition !== 'JUNK_BROKER' && (
                 <>
                   {/* PROPERTY CONFIGURATION */}
                   <div className="space-y-1.5">
@@ -665,6 +678,7 @@ export default function AgentFormPage() {
                       value={requirement}
                       onChange={setRequirement}
                       options={configurations}
+                      placeholder="-- Select Property Configuration --"
                       triggerClassName="font-medium"
                     />
                   </div>
@@ -678,6 +692,7 @@ export default function AgentFormPage() {
                       value={budget}
                       onChange={setBudget}
                       options={budgets}
+                      placeholder="-- Select Budget Range --"
                       triggerClassName="font-medium"
                     />
                   </div>
@@ -689,7 +704,7 @@ export default function AgentFormPage() {
                 <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-emerald-50 via-white to-emerald-50 border-2 border-emerald-400 shadow-xs space-y-3.5 animate-fade-in-up">
                   <div className="flex items-center justify-between border-b border-emerald-200 pb-2">
                     <div className="flex items-center gap-2">
-                      <span className="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-xs">🚗</span>
+                      <span className="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-xs">📅</span>
                       <h3 className="text-sm font-bold text-emerald-950 uppercase tracking-wide">Site Visit Calendar & Booking</h3>
                     </div>
                     <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
@@ -804,7 +819,6 @@ export default function AgentFormPage() {
                         value={visitDate}
                         onChange={(e) => handleCalendarDateChange(e.target.value)}
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                        required={!markVisitDone}
                       />
                     </div>
 
@@ -838,43 +852,25 @@ export default function AgentFormPage() {
                       value={visitTimeSlot}
                       onChange={setVisitTimeSlot}
                       options={VISIT_TIME_SLOTS}
+                      placeholder="-- Select Preferred Time Slot --"
                       triggerClassName="border-emerald-300 text-emerald-950 text-xs font-semibold"
                     />
                   </div>
 
-                  {/* CAB FACILITY TOGGLE */}
-                  <div className="p-3.5 rounded-xl bg-white border border-emerald-200 space-y-2.5">
-                    <label className="flex items-center gap-2.5 cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={cabRequired}
-                        onChange={(e) => setCabRequired(e.target.checked)}
-                        className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer"
-                      />
-                      <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                        <Car size={16} className="text-emerald-600" />
-                        Require Company Cab / Site Pickup Facility for Client
-                      </span>
-                    </label>
-
-                    {cabRequired && (
-                      <input
-                        type="text"
-                        placeholder="Enter client pickup address or prominent landmark..."
-                        value={pickupLocation}
-                        onChange={(e) => setPickupLocation(e.target.value)}
-                        className="form-input text-xs"
-                      />
-                    )}
-                  </div>
-
                   {/* ALREADY COMPLETED CHECKBOX */}
-                  <div>
+                  <div className="pt-1">
                     <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-semibold text-emerald-900">
                       <input
                         type="checkbox"
                         checked={markVisitDone}
-                        onChange={(e) => setMarkVisitDone(e.target.checked)}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setMarkVisitDone(checked);
+                          if (checked && !visitDate) {
+                            setVisitDate(todayStr);
+                            setActiveDateChip('today');
+                          }
+                        }}
                         className="rounded text-emerald-700 w-4 h-4 cursor-pointer"
                       />
                       <span>Mark this visit as ALREADY COMPLETED (Client visited site today)</span>

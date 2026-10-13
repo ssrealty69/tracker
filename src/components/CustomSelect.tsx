@@ -36,12 +36,19 @@ export default function CustomSelect({
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Normalize options into { value, label } objects
-  const normalizedOptions: SelectOption[] = options.map((opt) => {
+  const rawOptions: SelectOption[] = options.map((opt) => {
     if (typeof opt === 'string') {
       return { value: opt, label: opt };
     }
     return opt;
   });
+
+  // Prepend placeholder option at the top so user can explicitly pick it or leave unselected
+  const hasEmptyOption = rawOptions.some((o) => o.value === '');
+  const normalizedOptions: SelectOption[] =
+    hasEmptyOption || !placeholder
+      ? rawOptions
+      : [{ value: '', label: placeholder }, ...rawOptions];
 
   const selectedOption = normalizedOptions.find((o) => o.value === value);
 
@@ -77,17 +84,18 @@ export default function CustomSelect({
     setIsOpen(false);
   };
 
+  const isValEmpty = !value || value === '';
+
   return (
     <div
       ref={containerRef}
       className={`relative w-full ${isOpen ? 'z-40' : 'z-10'} ${className}`}
     >
-      {/* Hidden input for HTML form validation */}
+      {/* Hidden input for form state */}
       <input
         type="text"
         id={id}
         value={value}
-        required={required}
         readOnly
         tabIndex={-1}
         className="sr-only"
@@ -108,10 +116,10 @@ export default function CustomSelect({
       >
         <span
           className={`truncate ${
-            selectedOption ? 'text-slate-900' : 'text-slate-400 font-normal'
+            !isValEmpty ? 'text-slate-900 font-semibold' : 'text-slate-400 font-normal'
           }`}
         >
-          {selectedOption ? selectedOption.label : placeholder}
+          {selectedOption && selectedOption.value !== '' ? selectedOption.label : placeholder}
         </span>
 
         <ChevronDown
@@ -122,7 +130,7 @@ export default function CustomSelect({
         />
       </button>
 
-      {/* Dropdown Menu Popup (Strictly constrained within width, mobile friendly) */}
+      {/* Dropdown Menu Popup */}
       {isOpen && (
         <div
           className="absolute left-0 right-0 top-full mt-1.5 w-full max-w-full bg-white border border-slate-200/90 rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto py-1 divide-y divide-slate-50 animate-scale-in"
@@ -132,14 +140,17 @@ export default function CustomSelect({
         >
           {normalizedOptions.map((opt) => {
             const isSelected = opt.value === value;
+            const isPlaceholderOpt = opt.value === '';
             return (
               <button
-                key={opt.value}
+                key={opt.value || '__placeholder__'}
                 type="button"
                 onClick={() => handleSelect(opt.value)}
                 className={`w-full px-3.5 py-2.5 text-xs sm:text-sm text-left flex items-center justify-between gap-2 transition-colors cursor-pointer select-none ${
                   isSelected
                     ? 'bg-indigo-50/90 text-indigo-700 font-bold'
+                    : isPlaceholderOpt
+                    ? 'text-slate-400 hover:bg-slate-50 hover:text-slate-600 font-medium italic'
                     : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-medium'
                 }`}
               >

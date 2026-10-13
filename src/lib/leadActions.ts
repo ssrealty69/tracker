@@ -279,6 +279,9 @@ export async function submitLead(data: LeadFormData): Promise<LeadFormResult> {
 
   if (data.callOutcome === CallOutcome.CONNECTED) {
     if (data.disposition === Disposition.SITE_VISIT_SCHEDULED) {
+      if (!data.visitDate && !data.markVisitDone) {
+        return { success: false, message: 'Please select a site visit date from the calendar.' };
+      }
       visitDateObj = data.visitDate ? new Date(data.visitDate) : new Date();
       if (data.markVisitDone) {
         visitStatus = VisitStatus.VISIT_DONE;
