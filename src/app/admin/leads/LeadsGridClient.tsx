@@ -159,6 +159,13 @@ export default function LeadsGridClient({ initialLeads, agents }: Props) {
     }
   };
 
+  const getSerialNumber = (idx: number) => {
+    if (sortDir === 'asc') {
+      return idx + 1;
+    }
+    return filteredLeads.length - idx;
+  };
+
   const exportExcel = () => {
     const headers = [
       'S.No.',
@@ -177,7 +184,7 @@ export default function LeadsGridClient({ initialLeads, agents }: Props) {
       'Latest Remark / Notes',
     ];
     const rows = filteredLeads.map((l, idx) => [
-      idx + 1,
+      getSerialNumber(idx),
       formatDateTime(l.createdAt || l.updatedAt),
       l.assignedAgent?.name || '',
       l.name,
@@ -460,9 +467,9 @@ export default function LeadsGridClient({ initialLeads, agents }: Props) {
               ) : (
                 filteredLeads.map((lead, idx) => (
                   <tr key={lead.id} className="hover:bg-slate-50/80 transition-colors">
-                    {/* 0. S.No. (1 to N, newest on top) */}
+                    {/* 0. S.No. (Reverse counting: oldest is #1, newest is on top) */}
                     <td className="text-center font-bold text-slate-600 text-xs whitespace-nowrap">
-                      {idx + 1}
+                      {getSerialNumber(idx)}
                     </td>
 
                     {/* 1. Punch Timestamp */}
