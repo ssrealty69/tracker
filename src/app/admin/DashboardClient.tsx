@@ -197,6 +197,35 @@ export default function DashboardClient({ initialStats }: Props) {
     },
   ];
 
+  const leaderboardTotals = stats.agentLeaderboard.reduce(
+    (acc, curr) => {
+      acc.totalLeads += curr.totalLeads || 0;
+      acc.connectedCalls += curr.connectedCalls || 0;
+      acc.notConnected += curr.notConnected || 0;
+      acc.interested += curr.interested || 0;
+      acc.notInterested += curr.notInterested || 0;
+      acc.visitsUpcoming += curr.visitsUpcoming || 0;
+      acc.visitsDropped += curr.visitsDropped || 0;
+      acc.visitsDone += curr.visitsDone || 0;
+      return acc;
+    },
+    {
+      totalLeads: 0,
+      connectedCalls: 0,
+      notConnected: 0,
+      interested: 0,
+      notInterested: 0,
+      visitsUpcoming: 0,
+      visitsDropped: 0,
+      visitsDone: 0,
+    }
+  );
+
+  const teamTotalVisitRatio =
+    leaderboardTotals.totalLeads > 0
+      ? Math.round((leaderboardTotals.visitsDone / leaderboardTotals.totalLeads) * 100)
+      : 0;
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Page Header */}
@@ -739,6 +768,91 @@ export default function DashboardClient({ initialStats }: Props) {
                   })
               )}
             </tbody>
+            {stats.agentLeaderboard.length > 0 && (
+              <tfoot>
+                <tr className="bg-slate-100/90 border-t-2 border-slate-300">
+                  {/* Executive Header */}
+                  <td className="px-3 py-3 text-left">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 inline-block shrink-0 shadow-2xs"></span>
+                      <span className="text-xs font-black uppercase tracking-wider text-slate-900">Total</span>
+                    </div>
+                  </td>
+
+                  {/* Total Leads */}
+                  <td className="text-center px-1.5 py-3">
+                    <span className="font-black text-slate-900 text-xs">{leaderboardTotals.totalLeads}</span>
+                  </td>
+
+                  {/* Connected */}
+                  <td className="text-center px-1.5 py-3">
+                    <span className="text-emerald-800 font-black text-xs">{leaderboardTotals.connectedCalls}</span>
+                  </td>
+
+                  {/* Not Connected */}
+                  <td className="text-center px-1.5 py-3">
+                    <span className="text-rose-700 font-black text-xs">{leaderboardTotals.notConnected}</span>
+                  </td>
+
+                  {/* Interested Follow-Up */}
+                  <td className="text-center px-1.5 py-3">
+                    <span className="badge badge-indigo text-[11px] font-black px-2 py-0.5 shadow-2xs">
+                      {leaderboardTotals.interested}
+                    </span>
+                  </td>
+
+                  {/* Not Interested */}
+                  <td className="text-center px-1.5 py-3">
+                    <span className="badge badge-rose text-[11px] font-black px-2 py-0.5 shadow-2xs">
+                      {leaderboardTotals.notInterested}
+                    </span>
+                  </td>
+
+                  {/* Visits Scheduled */}
+                  <td className="text-center px-1.5 py-3">
+                    <span className="badge badge-emerald text-[11px] font-black px-2 py-0.5 shadow-2xs">
+                      {leaderboardTotals.visitsUpcoming}
+                    </span>
+                  </td>
+
+                  {/* Dropped Scheduled */}
+                  <td className="text-center px-1.5 py-3">
+                    {leaderboardTotals.visitsDropped > 0 ? (
+                      <span className="badge badge-rose font-black text-[11px] px-2.5 py-0.5 ring-1 ring-rose-400 shadow-2xs">
+                        {leaderboardTotals.visitsDropped}
+                      </span>
+                    ) : (
+                      <span className="text-slate-400 font-bold text-xs">0</span>
+                    )}
+                  </td>
+
+                  {/* Visits Done */}
+                  <td className="text-center px-1.5 py-3">
+                    <span className="badge badge-slate text-[11px] font-black px-2 py-0.5 shadow-2xs">
+                      {leaderboardTotals.visitsDone}
+                    </span>
+                  </td>
+
+                  {/* Visit Ratio */}
+                  <td className="text-center px-1.5 py-3">
+                    <span className={`font-black text-xs ${
+                      teamTotalVisitRatio >= 50 ? 'text-emerald-700' :
+                      teamTotalVisitRatio > 0 ? 'text-indigo-700' :
+                      'text-slate-400'
+                    }`}>
+                      {teamTotalVisitRatio}%
+                    </span>
+                  </td>
+
+                  {/* Rank Column */}
+                  <td className="text-center px-1.5 py-3">
+                    <span className="text-[10px] font-black uppercase text-indigo-700 bg-indigo-100/90 px-1.5 py-0.5 rounded shadow-2xs">
+                      ALL
+                    </span>
+                  </td>
+                </tr>
+              </tfoot>
+            )}
           </table>
         </div>
       </div>
