@@ -1,0 +1,37 @@
+{
+  "projects": [
+    "Nirvana",
+    "Nivasa II",
+    "Orchid",
+    "Velora",
+    "The Arch",
+    "Vasundhara",
+    "Amaryllis",
+    "Floria",
+    "General Enquiry"
+  ],
+  "configurations": [
+    "2BHK",
+    "3BHK",
+    "4BHK",
+    "Duplex",
+    "Plot/Villa"
+  ],
+  "budgets": [
+    "Below ₹75 Lakh",
+    "₹75 Lakh–₹1 Crore",
+    "₹1–1.5 Crore",
+    "₹1.5–2 Crore",
+    "₹2-2.5 Crore",
+    "Above ₹2.5 Crore"
+  ],
+  "notInterestedReasons": [
+    "Already Purchased / Bought Elsewhere",
+    "Dropped Property Buying Plan",
+    "Financial / Budget Constraints",
+    "Looking in Another City / Region",
+    "Project Location / Connectivity Not Liked",
+    "Casual Enquiry / Not Serious Buyer",
+    "Other Reason"
+  ]
+}

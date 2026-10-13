@@ -1,0 +1,417 @@
+@import "tailwindcss";
+
+/* ── Modern Lightweight Luxury Design Tokens ─────────────── */
+:root {
+  --color-brand-50: #eef2ff;
+  --color-brand-100: #e0e7ff;
+  --color-brand-200: #c7d2fe;
+  --color-brand-300: #a5b4fc;
+  --color-brand-400: #818cf8;
+  --color-brand-500: #6366f1;
+  --color-brand-600: #4f46e5;
+  --color-brand-700: #4338ca;
+  --color-brand-800: #3730a3;
+  --color-brand-900: #312e81;
+
+  --bg-primary: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f1f5f9;
+  --border-subtle: #e2e8f0;
+  --border-medium: #cbd5e1;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --accent-indigo: #4f46e5;
+  --accent-emerald: #059669;
+  --accent-amber: #d97706;
+  --accent-rose: #dc2626;
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Clean Luxury Cards ──────────────────────────────────── */
+.glass-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+}
+
+.luxury-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.04), 0 4px 12px -2px rgba(15, 23, 42, 0.02);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.luxury-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 14px 35px -5px rgba(15, 23, 42, 0.07), 0 6px 16px -2px rgba(15, 23, 42, 0.03);
+}
+
+/* ── Form Inputs ─────────────────────────────────────────── */
+@layer components {
+  .form-input {
+    width: 100%;
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 11px 15px;
+    color: #0f172a;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    outline: none;
+    font-family: var(--font-sans);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.02);
+  }
+
+  .form-input:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
+    background: #ffffff;
+  }
+
+  .form-input::placeholder {
+    color: #94a3b8;
+    font-weight: 400;
+  }
+
+  .form-input option {
+    background: #ffffff;
+    color: #0f172a;
+    padding: 8px;
+  }
+}
+
+/* ── Labels ─────────────────────────────────────────────── */
+.form-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #475569;
+  margin-bottom: 7px;
+}
+
+/* ── Buttons ─────────────────────────────────────────────── */
+.btn-primary {
+  background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  padding: 14px 28px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.3);
+  font-family: var(--font-sans);
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(79, 70, 229, 0.4);
+  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0px);
+}
+
+.btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ── Tactile Pill Button Controls ────────────────────────── */
+.tactile-pill {
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border: 1.5px solid #e2e8f0;
+  background: #ffffff;
+  color: #334155;
+  transition: all 0.18s ease;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+}
+
+.tactile-pill:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  color: #0f172a;
+  transform: translateY(-1px);
+}
+
+.tactile-pill.active {
+  background: #eef2ff;
+  border-color: #6366f1;
+  color: #4338ca;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.18);
+}
+
+/* ── Outcome Toggle Buttons ──────────────────────────────── */
+.outcome-btn {
+  flex: 1;
+  padding: 16px 18px;
+  border-radius: 16px;
+  border: 2px solid transparent;
+  font-weight: 700;
+  font-size: 14.5px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: center;
+  letter-spacing: 0.02em;
+  font-family: var(--font-sans);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.outcome-btn-connected {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.outcome-btn-connected:hover {
+  background: #dcfce7;
+  border-color: #86efac;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.15);
+}
+
+.outcome-btn-connected.active {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  border-color: #15803d;
+  color: white;
+  box-shadow: 0 6px 20px rgba(22, 163, 74, 0.32);
+}
+
+.outcome-btn-not-connected {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.outcome-btn-not-connected:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+}
+
+.outcome-btn-not-connected.active {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  border-color: #b91c1c;
+  color: white;
+  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.32);
+}
+
+/* ── Stat Cards ──────────────────────────────────────────── */
+.stat-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.stat-card:hover {
+  border-color: #cbd5e1;
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.09);
+}
+
+/* ── Badges ──────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.badge-indigo {
+  background: #eef2ff;
+  color: #4338ca;
+  border: 1px solid #c7d2fe;
+}
+
+.badge-emerald {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.badge-amber {
+  background: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.badge-rose {
+  background: #fff1f2;
+  color: #9f1239;
+  border: 1px solid #fecdd3;
+}
+
+.badge-slate {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+}
+
+/* ── Data Table ──────────────────────────────────────────── */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th {
+  background: #f8fafc;
+  color: #475569;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.data-table td {
+  padding: 13px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 13.5px;
+  color: #1e293b;
+  vertical-align: middle;
+}
+
+.data-table tr:hover td {
+  background: #f8fafc;
+}
+
+.data-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* ── Compact Table for One-Screen View ─────────────────────── */
+.data-table-compact {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table-compact th {
+  background: #f8fafc;
+  color: #475569;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  padding: 8px 6px;
+  border-bottom: 1px solid #e2e8f0;
+  line-height: 1.25;
+}
+
+.data-table-compact td {
+  padding: 8px 6px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 12px;
+  color: #1e293b;
+  vertical-align: middle;
+}
+
+.data-table-compact tr:hover td {
+  background: #f8fafc;
+}
+
+.data-table-compact tr:last-child td {
+  border-bottom: none;
+}
+
+/* ── Scrollbar ───────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* ── Animations ──────────────────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.25s ease-out;
+}
+
+/* ── Nav Links ───────────────────────────────────────────── */
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.nav-link:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.nav-link.active {
+  background: #eef2ff;
+  color: #4338ca;
+  border-color: #c7d2fe;
+}
+
+/* ── Misc helpers ────────────────────────────────────────── */
+input[type="checkbox"] {
+  accent-color: #4f46e5;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+input[type="date"], input[type="datetime-local"] {
+  color-scheme: light;
+}

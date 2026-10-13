@@ -1,0 +1,553 @@
+'use client';
+
+import { useState, useMemo, useCallback } from 'react';
+import { toast } from 'react-hot-toast';
+import {
+  TableProperties,
+  Search,
+  Download,
+  Filter,
+  ChevronDown,
+  RefreshCcw,
+  Phone,
+  User,
+  Calendar,
+  CalendarCheck,
+  Clock,
+  ArrowUpDown,
+  Building,
+} from 'lucide-react';
+import { getAllLeads, getActiveAgents } from '@/lib/leadActions';
+import {
+  formatDate,
+  formatDateTime,
+  DISPOSITION_LABELS,
+  NOT_CONNECTED_REASON_LABELS,
+  REQUIREMENT_LABELS,
+  BUDGET_LABELS,
+  VISIT_STATUS_LABELS,
+} from '@/lib/utils';
+
+type Lead = Awaited<ReturnType<typeof getAllLeads>>[number];
+type Agent = Awaited<ReturnType<typeof getActiveAgents>>[number];
+
+const DISPOSITIONS_OPTIONS = [
+  { value: '', label: 'All Dispositions' },
+  { value: 'SITE_VISIT_SCHEDULED', label: 'Site Visit Scheduled' },
+  { value: 'INTERESTED_FOLLOW_UP', label: 'Interested (Follow-up)' },
+  { value: 'BUDGET_MISMATCH', label: 'Budget Mismatch' },
+  { value: 'LOCATION_MISMATCH', label: 'Location Mismatch' },
+  { value: 'NOT_INTERESTED', label: 'Not Interested' },
+  { value: 'JUNK_BROKER', label: 'Junk / Broker' },
+  { value: 'NOT_CONNECTED', label: 'Not Connected' },
+];
+
+const VISIT_STATUS_OPTIONS = [
+  { value: '', label: 'All Visit Status' },
+  { value: 'NONE', label: 'None' },
+  { value: 'SCHEDULED', label: 'Scheduled' },
+  { value: 'RESCHEDULED', label: 'Rescheduled' },
+  { value: 'VISIT_DONE', label: 'Completed' },
+];
+
+const INTERACTION_FILTERS = [
+  { value: 0, label: 'All Leads' },
+  { value: 2, label: '2+ Times Touched' },
+  { value: 3, label: '3+ Times Touched' },
+  { value: 5, label: '5+ Times Touched' },
+];
+
+interface Props {
+  initialLeads: Lead[];
+  agents: Agent[];
+}
+
+export default function LeadsGridClient({ initialLeads, agents }: Props) {
+  const [leads, setLeads] = useState<Lead[]>(initialLeads);
+  const [search, setSearch] = useState('');
+  const [filterAgent, setFilterAgent] = useState('');
+  const [filterDisposition, setFilterDisposition] = useState('');
+  const [filterVisitStatus, setFilterVisitStatus] = useState('');
+  const [filterInteractions, setFilterInteractions] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [sortField, setSortField] = useState<'createdAt' | 'updatedAt' | 'totalInteractions' | 'name' | 'agent'>('createdAt');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+  const refreshLeads = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await getAllLeads({
+        agentId: filterAgent || undefined,
+        disposition: filterDisposition || undefined,
+        visitStatus: filterVisitStatus || undefined,
+        minInteractions: filterInteractions || undefined,
+        search: search || undefined,
+      });
+      setLeads(data);
+    } finally {
+      setLoading(false);
+    }
+  }, [filterAgent, filterDisposition, filterVisitStatus, filterInteractions, search]);
+
+  const filteredLeads = useMemo(() => {
+    let result = leads;
+
+    if (search) {
+      const q = search.toLowerCase();
+      result = result.filter(
+        (l) =>
+          l.name.toLowerCase().includes(q) ||
+          l.phone.includes(q) ||
+          (l.assignedAgent?.name || '').toLowerCase().includes(q) ||
+          (l.projectName || '').toLowerCase().includes(q)
+      );
+    }
+    if (filterAgent) result = result.filter((l) => l.assignedAgentId === filterAgent);
+    if (filterDisposition) result = result.filter((l) => l.disposition === filterDisposition);
+    if (filterVisitStatus) result = result.filter((l) => l.visitStatus === filterVisitStatus);
+    if (filterInteractions > 0) result = result.filter((l) => l.totalInteractions >= filterInteractions);
+
+    result = [...result].sort((a, b) => {
+      let av: string | number | Date = a[sortField as keyof Lead] as string | number | Date;
+      let bv: string | number | Date = b[sortField as keyof Lead] as string | number | Date;
+      if (sortField === 'createdAt') {
+        av = new Date(a.createdAt).getTime();
+        bv = new Date(b.createdAt).getTime();
+      } else if (sortField === 'updatedAt') {
+        av = new Date(a.updatedAt).getTime();
+        bv = new Date(b.updatedAt).getTime();
+      } else if (sortField === 'agent') {
+        av = a.assignedAgent?.name || '';
+        bv = b.assignedAgent?.name || '';
+      }
+      if (av < bv) return sortDir === 'asc' ? -1 : 1;
+      if (av > bv) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return result;
+  }, [leads, search, filterAgent, filterDisposition, filterVisitStatus, filterInteractions, sortField, sortDir]);
+
+  const handleSort = (field: typeof sortField) => {
+    if (sortField === field) {
+      setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDir('desc');
+    }
+  };
+
+  const exportExcel = () => {
+    const headers = [
+      'Punch Timestamp',
+      'Executive',
+      'Customer Name',
+      'Mobile Number',
+      'Touches (Dedup)',
+      'Call Outcome / Disposition',
+      'Project',
+      'Requirement',
+      'Budget',
+      'Visit Date',
+      'Visit Status',
+      'Follow-Up Date',
+      'Latest Remark / Notes',
+      'Last Updated',
+    ];
+    const rows = filteredLeads.map((l) => [
+      formatDateTime(l.createdAt),
+      l.assignedAgent?.name || '',
+      l.name,
+      l.phone,
+      `${l.totalInteractions}x`,
+      l.callOutcome === 'NOT_CONNECTED'
+        ? `Not Connected (${NOT_CONNECTED_REASON_LABELS[l.notConnectedReason || ''] || 'Ringing'})`
+        : (DISPOSITION_LABELS[l.disposition || ''] || l.disposition || ''),
+      l.projectName || '',
+      REQUIREMENT_LABELS[l.requirement || ''] || l.requirement || '',
+      BUDGET_LABELS[l.budget || ''] || l.budget || '',
+      l.visitDate ? formatDate(l.visitDate) : '',
+      VISIT_STATUS_LABELS[l.visitStatus] || l.visitStatus,
+      l.followUpDate ? formatDate(l.followUpDate) : '',
+      l.latestRemark || '',
+      formatDateTime(l.updatedAt),
+    ]);
+
+    const csvContent = [headers, ...rows]
+      .map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `SS_Realty_Leads_Report_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${filteredLeads.length} leads to Excel successfully`);
+  };
+
+  const dispositionBadge = (
+    d: string | null | undefined,
+    outcome?: string | null,
+    ncReason?: string | null
+  ) => {
+    if (outcome === 'NOT_CONNECTED') {
+      const reasonText = ncReason ? (NOT_CONNECTED_REASON_LABELS[ncReason] || ncReason) : 'Not Connected';
+      return (
+        <span className="badge badge-amber text-[10px] whitespace-nowrap font-medium" title={reasonText}>
+          {reasonText}
+        </span>
+      );
+    }
+    if (!d) return <span className="text-slate-400">—</span>;
+    const colors: Record<string, string> = {
+      INTERESTED_FOLLOW_UP: 'badge-indigo',
+      SITE_VISIT_SCHEDULED: 'badge-emerald',
+      BUDGET_MISMATCH: 'badge-rose',
+      LOCATION_MISMATCH: 'badge-rose',
+      NOT_INTERESTED: 'badge-slate',
+      JUNK_BROKER: 'badge-slate',
+      NOT_CONNECTED: 'badge-amber',
+    };
+    return (
+      <span className={`badge ${colors[d] || 'badge-slate'} text-[10px] whitespace-nowrap font-medium`}>
+        {DISPOSITION_LABELS[d] || d}
+      </span>
+    );
+  };
+
+  return (
+    <div className="space-y-5 max-w-full">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
+            <TableProperties size={24} className="text-indigo-600" />
+            Verified Leads &amp; Deduplication Master Grid
+          </h1>
+          <p className="text-slate-500 text-sm mt-0.5">
+            Showing {filteredLeads.length} leads {filteredLeads.length !== leads.length && `(filtered from ${leads.length} total)`}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={refreshLeads}
+            className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all cursor-pointer shadow-xs"
+            title="Refresh Leads"
+          >
+            <RefreshCcw size={15} className={loading ? 'animate-spin text-indigo-600' : ''} />
+          </button>
+          <button
+            onClick={exportExcel}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+          >
+            <Download size={14} />
+            Export Excel
+          </button>
+        </div>
+      </div>
+
+      {/* Filter Toolbar */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+        <div className="flex flex-wrap gap-3">
+          {/* Search */}
+          <div className="relative flex-1 min-w-48">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              className="form-input pl-9 py-2 text-xs"
+              placeholder="Search by customer name, mobile number, executive, or project..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+
+          {/* Agent Filter */}
+          <div className="relative min-w-40">
+            <Filter size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <select
+              className="form-input pl-8 pr-8 py-2 text-xs appearance-none cursor-pointer"
+              value={filterAgent}
+              onChange={(e) => setFilterAgent(e.target.value)}
+            >
+              <option value="">All Sales Executives</option>
+              {agents.map((a) => (
+                <option key={a.id} value={a.id}>{a.name}</option>
+              ))}
+            </select>
+            <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          </div>
+
+          {/* Disposition Filter */}
+          <div className="relative min-w-44">
+            <select
+              className="form-input pr-8 py-2 text-xs appearance-none cursor-pointer"
+              value={filterDisposition}
+              onChange={(e) => setFilterDisposition(e.target.value)}
+            >
+              {DISPOSITIONS_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+            <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          </div>
+
+          {/* Visit Status Filter */}
+          <div className="relative min-w-40">
+            <select
+              className="form-input pr-8 py-2 text-xs appearance-none cursor-pointer"
+              value={filterVisitStatus}
+              onChange={(e) => setFilterVisitStatus(e.target.value)}
+            >
+              {VISIT_STATUS_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+            <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          </div>
+
+          {/* Interaction Count Filter */}
+          <div className="relative min-w-40">
+            <select
+              className="form-input pr-8 py-2 text-xs appearance-none cursor-pointer"
+              value={filterInteractions}
+              onChange={(e) => setFilterInteractions(Number(e.target.value))}
+            >
+              {INTERACTION_FILTERS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+            <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          </div>
+        </div>
+      </div>
+
+      {/* Leads Table */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="data-table">
+            <thead>
+              <tr>
+                {/* 1. Punch Timestamp */}
+                <th>
+                  <button
+                    onClick={() => handleSort('createdAt')}
+                    className="flex items-center gap-1 font-bold cursor-pointer hover:text-slate-900 transition-colors whitespace-nowrap"
+                  >
+                    <Clock size={11} className="text-indigo-600" /> Punch Time
+                    <ArrowUpDown size={10} />
+                  </button>
+                </th>
+
+                {/* 2. Executive */}
+                <th>
+                  <button
+                    onClick={() => handleSort('agent')}
+                    className="flex items-center gap-1 font-bold cursor-pointer hover:text-slate-900 transition-colors whitespace-nowrap"
+                  >
+                    <User size={11} /> Executive
+                    <ArrowUpDown size={10} />
+                  </button>
+                </th>
+
+                {/* 3. Customer Name */}
+                <th>
+                  <button
+                    onClick={() => handleSort('name')}
+                    className="flex items-center gap-1 font-bold cursor-pointer hover:text-slate-900 transition-colors whitespace-nowrap"
+                  >
+                    Customer Name
+                    <ArrowUpDown size={10} />
+                  </button>
+                </th>
+
+                {/* 4. Mobile */}
+                <th>
+                  <span className="flex items-center gap-1 whitespace-nowrap"><Phone size={11} /> Mobile</span>
+                </th>
+
+                {/* 5. Touches */}
+                <th>
+                  <button
+                    onClick={() => handleSort('totalInteractions')}
+                    className="flex items-center gap-1 font-bold cursor-pointer hover:text-slate-900 transition-colors whitespace-nowrap"
+                  >
+                    Touches (Dedup)
+                    <ArrowUpDown size={10} />
+                  </button>
+                </th>
+
+                {/* 6. Disposition */}
+                <th className="whitespace-nowrap">Disposition</th>
+
+                {/* 7. Project */}
+                <th>
+                  <span className="flex items-center gap-1 whitespace-nowrap"><Building size={11} /> Project</span>
+                </th>
+
+                {/* 8. Requirement */}
+                <th className="whitespace-nowrap">Requirement</th>
+
+                {/* 9. Budget */}
+                <th className="whitespace-nowrap">Budget</th>
+
+                {/* 10. Visit Date */}
+                <th>
+                  <span className="flex items-center gap-1 whitespace-nowrap"><Calendar size={11} /> Visit Date</span>
+                </th>
+
+                {/* 11. Visit Status */}
+                <th className="whitespace-nowrap">Visit Status</th>
+
+                {/* 12. Follow-Up Date */}
+                <th>
+                  <span className="flex items-center gap-1 whitespace-nowrap"><CalendarCheck size={11} /> Follow-Up</span>
+                </th>
+
+                {/* 13. Latest Remark */}
+                <th className="whitespace-nowrap">Latest Remark</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={13} className="text-center py-12 text-slate-400">
+                    <RefreshCcw size={22} className="animate-spin mx-auto mb-2 text-indigo-600" />
+                    Loading leads...
+                  </td>
+                </tr>
+              ) : filteredLeads.length === 0 ? (
+                <tr>
+                  <td colSpan={13} className="text-center py-12 text-slate-500 font-medium">
+                    No leads match your active filters
+                  </td>
+                </tr>
+              ) : (
+                filteredLeads.map((lead) => (
+                  <tr key={lead.id}>
+                    {/* 1. Punch Timestamp */}
+                    <td>
+                      <span className="font-semibold text-slate-800 text-xs whitespace-nowrap">
+                        {formatDateTime(lead.createdAt)}
+                      </span>
+                    </td>
+
+                    {/* 2. Executive */}
+                    <td>
+                      {lead.assignedAgent ? (
+                        <div className="flex items-center gap-1.5 whitespace-nowrap">
+                          <div className="w-5 h-5 rounded-full bg-indigo-600 flex items-center justify-center text-[9px] font-bold text-white shrink-0">
+                            {lead.assignedAgent.name[0]}
+                          </div>
+                          <span className="text-xs font-semibold text-slate-800">{lead.assignedAgent.name}</span>
+                        </div>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                    </td>
+
+                    {/* 3. Customer Name */}
+                    <td>
+                      <span className="font-bold text-slate-900 text-sm block whitespace-nowrap">{lead.name}</span>
+                    </td>
+
+                    {/* 4. Mobile (Full unmasked with dial link) */}
+                    <td>
+                      <a
+                        href={`tel:${lead.phone}`}
+                        className="font-mono text-slate-800 text-xs font-bold hover:text-indigo-600 transition-colors whitespace-nowrap inline-flex items-center gap-1"
+                        title="Click to dial"
+                      >
+                        {lead.phone}
+                      </a>
+                    </td>
+
+                    {/* 5. Touches */}
+                    <td>
+                      <span className={`badge ${lead.totalInteractions > 2 ? 'badge-rose' : lead.totalInteractions > 1 ? 'badge-amber' : 'badge-slate'} text-[11px] whitespace-nowrap`}>
+                        {lead.totalInteractions}× calls
+                      </span>
+                    </td>
+
+                    {/* 6. Disposition */}
+                    <td>{dispositionBadge(lead.disposition, lead.callOutcome, lead.notConnectedReason)}</td>
+
+                    {/* 7. Project */}
+                    <td>
+                      <span className="text-slate-800 text-xs font-semibold whitespace-nowrap">
+                        {lead.projectName || '—'}
+                      </span>
+                    </td>
+
+                    {/* 8. Requirement */}
+                    <td>
+                      <span className="text-slate-600 text-xs font-medium whitespace-nowrap">
+                        {lead.requirement ? REQUIREMENT_LABELS[lead.requirement] || lead.requirement : '—'}
+                      </span>
+                    </td>
+
+                    {/* 9. Budget */}
+                    <td>
+                      <span className="text-slate-600 text-xs font-medium whitespace-nowrap">
+                        {lead.budget ? BUDGET_LABELS[lead.budget] || lead.budget : '—'}
+                      </span>
+                    </td>
+
+                    {/* 10. Visit Date */}
+                    <td>
+                      <span className="text-slate-800 text-xs whitespace-nowrap font-medium">
+                        {formatDate(lead.visitDate)}
+                      </span>
+                    </td>
+
+                    {/* 11. Visit Status */}
+                    <td>
+                      <span className={`badge ${
+                        lead.visitStatus === 'VISIT_DONE' ? 'badge-emerald' :
+                        lead.visitStatus === 'SCHEDULED' ? 'badge-indigo' :
+                        lead.visitStatus === 'RESCHEDULED' ? 'badge-amber' :
+                        'badge-slate'
+                      } text-[10px] whitespace-nowrap`}>
+                        {VISIT_STATUS_LABELS[lead.visitStatus] || lead.visitStatus}
+                      </span>
+                    </td>
+
+                    {/* 12. Follow-Up Date */}
+                    <td>
+                      <span className="text-slate-700 text-xs whitespace-nowrap font-medium">
+                        {formatDate(lead.followUpDate)}
+                      </span>
+                    </td>
+
+                    {/* 13. Latest Remark */}
+                    <td>
+                      <span className="text-xs text-slate-600 max-w-[220px] block line-clamp-2" title={lead.latestRemark || ''}>
+                        {lead.latestRemark || '—'}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {filteredLeads.length > 0 && (
+          <div className="px-5 py-3 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <p className="text-xs text-slate-500 font-medium">
+              Showing <strong>{filteredLeads.length}</strong> of {leads.length} total leads
+            </p>
+            <button
+              onClick={exportExcel}
+              className="flex items-center gap-1.5 text-xs text-emerald-700 font-bold hover:text-emerald-800 transition-colors cursor-pointer"
+            >
+              <Download size={13} />
+              Export Excel
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

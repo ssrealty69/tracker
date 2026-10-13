@@ -1,0 +1,114 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum VisitStatus {
+  NONE
+  SCHEDULED
+  RESCHEDULED
+  VISIT_DONE
+}
+
+enum CallOutcome {
+  NOT_CONNECTED
+  CONNECTED
+}
+
+enum NotConnectedReason {
+  CALL_NOT_PICKED
+  SWITCHED_OFF
+  BUSY
+  WRONG_NUMBER
+  DISCONNECTED
+}
+
+enum Disposition {
+  INTERESTED_FOLLOW_UP
+  SITE_VISIT_SCHEDULED
+  BUDGET_MISMATCH
+  LOCATION_MISMATCH
+  NOT_INTERESTED
+  JUNK_BROKER
+  NOT_CONNECTED
+}
+
+enum Requirement {
+  BHK_1
+  BHK_2
+  BHK_3
+  INDEPENDENT_FLOOR
+  PLOT
+}
+
+enum Budget {
+  UNDER_25L
+  L25_35
+  L35_50
+  L50_75
+  L75_PLUS
+}
+
+model Agent {
+  id           String        @id @default(cuid())
+  name         String
+  email        String?       @unique
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  leads        Lead[]
+  activityLogs ActivityLog[]
+}
+
+model Lead {
+  id                  String       @id @default(cuid())
+  phone               String       @unique
+  name                String
+  totalInteractions   Int          @default(1)
+  callOutcome         CallOutcome  @default(NOT_CONNECTED)
+  notConnectedReason  NotConnectedReason?
+  disposition         Disposition?
+  requirement         Requirement?
+  budget              Budget?
+  visitDate           DateTime?
+  visitStatus         VisitStatus  @default(NONE)
+  previousVisitDate   DateTime?
+  latestRemark        String?
+  assignedAgent       Agent?       @relation(fields: [assignedAgentId], references: [id])
+  assignedAgentId     String?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  activityLogs        ActivityLog[]
+}
+
+model ActivityLog {
+  id                 String       @id @default(cuid())
+  lead               Lead         @relation(fields: [leadId], references: [id])
+  leadId             String
+  agent              Agent?       @relation(fields: [agentId], references: [id])
+  agentId            String?
+  callOutcome        CallOutcome?
+  notConnectedReason NotConnectedReason?
+  disposition        Disposition?
+  requirement        Requirement?
+  budget             Budget?
+  visitDate          DateTime?
+  visitStatus        VisitStatus?
+  remark             String?
+  interactionNumber  Int          @default(1)
+  createdAt          DateTime     @default(now())
+}
+
+model AdminUser {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+}
