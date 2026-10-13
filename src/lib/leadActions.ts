@@ -59,20 +59,33 @@ import {
   type FallbackLog,
 } from '@/lib/crmStore';
 
-// ─── FAST DB PROBE (AVOIDS 4s CONNECTION TIMEOUT WHEN POSTGRESQL IS OFFLINE) ───
+// ─── FAST DB PROBE (DETECTS CLOUD POSTGRESQL VS OFFLINE LOCALHOST) ─────────
 let isDatabaseAvailable = false;
 let lastDbCheck = 0;
 
 async function isDbLive(): Promise<boolean> {
+  const dbUrl = process.env.DATABASE_URL || '';
+  if (!dbUrl || dbUrl.trim() === '') return false;
+
+  const isLocalhost = dbUrl.includes('localhost') || dbUrl.includes('127.0.0.1');
+  const isVercel = process.env.VERCEL === '1';
+
+  // If deployed on Vercel and DATABASE_URL is pointing to localhost, DB is offline
+  if (isVercel && isLocalhost) {
+    return false;
+  }
+
   const now = Date.now();
-  if (!isDatabaseAvailable && now - lastDbCheck < 30000) {
+  if (!isDatabaseAvailable && now - lastDbCheck < 20000) {
     return false;
   }
   lastDbCheck = now;
+
   try {
+    const timeoutMs = isLocalhost ? 600 : 3500;
     const res = await Promise.race([
       prisma.$queryRaw`SELECT 1`,
-      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 400)),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), timeoutMs)),
     ]);
     isDatabaseAvailable = !!res;
     return isDatabaseAvailable;
@@ -943,15 +956,31 @@ export async function getDashboardStats(startDate?: Date, endDate?: Date): Promi
 
   // Fallback persistent store calculation
   const store = getCrmStore();
-  const totalLeads = store.leads.length;
-  const totalLogs = store.logs.length;
+  let baseLeads = store.leads;
+  let baseLogs = store.logs;
+
+  if (startDate && endDate) {
+    const startMs = startDate.getTime();
+    const endMs = endDate.getTime();
+    baseLeads = baseLeads.filter((l) => {
+      const t = new Date(l.createdAt).getTime();
+      return t >= startMs && t <= endMs;
+    });
+    baseLogs = baseLogs.filter((lg) => {
+      const t = new Date(lg.createdAt).getTime();
+      return t >= startMs && t <= endMs;
+    });
+  }
+
+  const totalLeads = baseLeads.length;
+  const totalCalls = baseLogs.length;
 
   let overallPendingVisits = 0;
   let overallDroppedVisits = 0;
   let overallCompletedVisits = 0;
 
   const agentLeaderboard: AgentStatRow[] = store.agents.map((agent) => {
-    const logs = store.logs.filter((log) => log.agentId === agent.id);
+    const logs = baseLogs.filter((log) => log.agentId === agent.id);
     const totalDials = logs.length;
     const connectedCalls = logs.filter((l) => l.callOutcome === CallOutcome.CONNECTED).length;
     const notConnected = logs.filter((l) => l.callOutcome === CallOutcome.NOT_CONNECTED).length;
@@ -965,7 +994,7 @@ export async function getDashboardStats(startDate?: Date, endDate?: Date): Promi
         l.disposition === Disposition.JUNK_BROKER
     ).length;
 
-    const agentLeads = store.leads.filter((l) => l.assignedAgentId === agent.id);
+    const agentLeads = baseLeads.filter((l) => l.assignedAgentId === agent.id);
     const uniqueLeadIdsFromLogs = new Set(logs.map((l) => l.leadId));
     const agentTotalLeads = Math.max(agentLeads.length, uniqueLeadIdsFromLogs.size);
 
@@ -1055,12 +1084,12 @@ export async function getDashboardStats(startDate?: Date, endDate?: Date): Promi
     };
   });
 
-  const connectedTotal = store.logs.filter((l) => l.callOutcome === CallOutcome.CONNECTED).length;
-  const contactRatio = totalLogs > 0 ? Math.round((connectedTotal / totalLogs) * 100) : 0;
+  const connectedTotal = baseLogs.filter((l) => l.callOutcome === CallOutcome.CONNECTED).length;
+  const contactRatio = totalCalls > 0 ? Math.round((connectedTotal / totalCalls) * 100) : 0;
 
   return {
     totalLeads,
-    totalCalls: totalLogs,
+    totalCalls,
     contactRatio,
     pendingVisits: overallPendingVisits,
     droppedVisits: overallDroppedVisits,

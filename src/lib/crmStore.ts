@@ -352,80 +352,126 @@ function parseJsonWithDates(raw: string): CrmStoreData | null {
   }
 }
 
+export function mergeCrmStores(primary: CrmStoreData, incoming: CrmStoreData): CrmStoreData {
+  if (!incoming) return primary;
+  if (!primary) return incoming;
+
+  // 1. Agents: preserve all agents, unique by id
+  const agentMap = new Map<string, FallbackAgent>();
+  (primary.agents || []).forEach((a) => agentMap.set(a.id, a));
+  (incoming.agents || []).forEach((a) => {
+    const existing = agentMap.get(a.id);
+    agentMap.set(a.id, existing ? { ...existing, ...a } : a);
+  });
+
+  // 2. Leads: merge leads by phone (primary) or id (fallback)
+  const leadMap = new Map<string, FallbackLead>();
+  (primary.leads || []).forEach((l) => {
+    const key = (l.phone || l.id || '').trim();
+    if (key) leadMap.set(key, l);
+  });
+
+  (incoming.leads || []).forEach((l) => {
+    const key = (l.phone || l.id || '').trim();
+    if (!key) return;
+    const existing = leadMap.get(key);
+    if (!existing) {
+      leadMap.set(key, l);
+    } else {
+      // Pick whichever has more interactions or is more recently updated
+      const existingTime = new Date(existing.updatedAt || existing.createdAt).getTime();
+      const incomingTime = new Date(l.updatedAt || l.createdAt).getTime();
+      const existingInteractions = existing.totalInteractions || 1;
+      const incomingInteractions = l.totalInteractions || 1;
+
+      if (incomingTime >= existingTime || incomingInteractions >= existingInteractions) {
+        leadMap.set(key, { ...existing, ...l });
+      }
+    }
+  });
+
+  // 3. Logs: deduplicate logs by id
+  const logMap = new Map<string, FallbackLog>();
+  (primary.logs || []).forEach((lg) => logMap.set(lg.id, lg));
+  (incoming.logs || []).forEach((lg) => logMap.set(lg.id, lg));
+
+  return {
+    agents: Array.from(agentMap.values()),
+    leads: Array.from(leadMap.values()).sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    ),
+    logs: Array.from(logMap.values()).sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    ),
+  };
+}
+
 // Global runtime memory cache linked to disk
 const globalRef = global as unknown as {
   __CRM_PERSISTENT_STORE__?: CrmStoreData;
-  __CRM_STORE_MTIME__?: number;
 };
 
 export function getCrmStore(): CrmStoreData {
-  const primaryPath = PRIMARY_STORE_PATH;
-  const tmpPath = TMP_STORE_PATH;
-  const targetPath = fs.existsSync(primaryPath) ? primaryPath : fs.existsSync(tmpPath) ? tmpPath : getActiveFilePath();
+  // Start with whatever is already in memory or baseline seed data
+  let currentStore: CrmStoreData = globalRef.__CRM_PERSISTENT_STORE__ || getSeedData();
 
+  // 1. Read PRIMARY_STORE_PATH if exists (static bundle file)
   try {
-    if (fs.existsSync(targetPath)) {
-      const stat = fs.statSync(targetPath);
-      if (
-        globalRef.__CRM_PERSISTENT_STORE__ &&
-        globalRef.__CRM_STORE_MTIME__ === stat.mtimeMs &&
-        globalRef.__CRM_PERSISTENT_STORE__.leads.length > 0
-      ) {
-        return globalRef.__CRM_PERSISTENT_STORE__;
-      }
-
-      const content = fs.readFileSync(targetPath, 'utf-8');
+    if (fs.existsSync(PRIMARY_STORE_PATH)) {
+      const content = fs.readFileSync(PRIMARY_STORE_PATH, 'utf-8');
       const parsed = parseJsonWithDates(content);
       if (parsed && parsed.leads && parsed.leads.length > 0) {
-        globalRef.__CRM_PERSISTENT_STORE__ = parsed;
-        globalRef.__CRM_STORE_MTIME__ = stat.mtimeMs;
-        return parsed;
+        currentStore = mergeCrmStores(currentStore, parsed);
       }
     }
   } catch (err) {
-    console.error('Error reading crmStore from disk:', err);
+    console.warn('Error reading PRIMARY_STORE_PATH:', err);
   }
 
-  // If memory already has leads, return memory
-  if (globalRef.__CRM_PERSISTENT_STORE__ && globalRef.__CRM_PERSISTENT_STORE__.leads.length > 0) {
-    return globalRef.__CRM_PERSISTENT_STORE__;
+  // 2. Read TMP_STORE_PATH if exists (written by serverless writes)
+  try {
+    if (fs.existsSync(TMP_STORE_PATH)) {
+      const content = fs.readFileSync(TMP_STORE_PATH, 'utf-8');
+      const parsed = parseJsonWithDates(content);
+      if (parsed && parsed.leads && parsed.leads.length > 0) {
+        currentStore = mergeCrmStores(currentStore, parsed);
+      }
+    }
+  } catch (err) {
+    console.warn('Error reading TMP_STORE_PATH:', err);
   }
 
-  // Initialize seed and write to disk
-  const seed = getSeedData();
-  globalRef.__CRM_PERSISTENT_STORE__ = seed;
-  saveCrmStore(seed);
-  return seed;
+  // Update memory reference
+  globalRef.__CRM_PERSISTENT_STORE__ = currentStore;
+
+  return currentStore;
 }
 
 export function saveCrmStore(store: CrmStoreData): void {
-  globalRef.__CRM_PERSISTENT_STORE__ = store;
-  const serialized = JSON.stringify(store, null, 2);
+  // Merge incoming store with memory store to prevent losing any concurrent leads
+  const merged = globalRef.__CRM_PERSISTENT_STORE__
+    ? mergeCrmStores(globalRef.__CRM_PERSISTENT_STORE__, store)
+    : store;
 
-  // Attempt write to primary path first
+  globalRef.__CRM_PERSISTENT_STORE__ = merged;
+  const serialized = JSON.stringify(merged, null, 2);
+
+  // 1. Write to /tmp (always writable in Vercel serverless environment)
+  try {
+    fs.writeFileSync(TMP_STORE_PATH, serialized, 'utf-8');
+  } catch (tmpErr) {
+    console.warn('Error saving crmStore to /tmp:', tmpErr);
+  }
+
+  // 2. Write to primary store path (works in local dev / Docker)
   try {
     const dir = path.dirname(PRIMARY_STORE_PATH);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
     fs.writeFileSync(PRIMARY_STORE_PATH, serialized, 'utf-8');
-    try {
-      const stat = fs.statSync(PRIMARY_STORE_PATH);
-      globalRef.__CRM_STORE_MTIME__ = stat.mtimeMs;
-    } catch {}
-    return;
-  } catch (err) {
-    console.warn('Primary store write failed, falling back to /tmp:', err);
-  }
-
-  // Fallback to /tmp (serverless read-only container)
-  try {
-    fs.writeFileSync(TMP_STORE_PATH, serialized, 'utf-8');
-    try {
-      const stat = fs.statSync(TMP_STORE_PATH);
-      globalRef.__CRM_STORE_MTIME__ = stat.mtimeMs;
-    } catch {}
-  } catch (tmpErr) {
-    console.error('Error saving crmStore to /tmp:', tmpErr);
+  } catch {
+    // Expected on Vercel read-only filesystem, quiet
   }
 }
+

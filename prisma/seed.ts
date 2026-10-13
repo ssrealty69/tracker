@@ -164,14 +164,43 @@ async function main() {
     },
   ];
 
-  for (const lead of sampleLeads) {
-    await prisma.lead.upsert({
-      where: { phone: lead.phone },
-      update: lead,
-      create: lead,
-    });
+  // Seed baseline leads from crmStore.json if present
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const crmStorePath = path.join(__dirname, '../src/lib/crmStore.json');
+    if (fs.existsSync(crmStorePath)) {
+      const data = JSON.parse(fs.readFileSync(crmStorePath, 'utf-8'));
+      if (data && Array.isArray(data.leads)) {
+        for (const l of data.leads) {
+          const leadData = {
+            phone: l.phone,
+            name: l.name,
+            totalInteractions: l.totalInteractions || 1,
+            callOutcome: l.callOutcome || CallOutcome.CONNECTED,
+            notConnectedReason: l.notConnectedReason ?? null,
+            disposition: l.disposition ?? null,
+            requirement: l.requirement ? (Requirement as any)[l.requirement] || null : null,
+            budget: l.budget ? (Budget as any)[l.budget] || null : null,
+            visitDate: l.visitDate ? new Date(l.visitDate) : null,
+            visitStatus: l.visitStatus || VisitStatus.NONE,
+            latestRemark: l.latestRemark ?? null,
+            assignedAgentId: l.assignedAgentId && agentMap[l.assignedAgent?.name || ''] ? agentMap[l.assignedAgent.name] : (allAgents[0]?.id || null),
+          };
+
+          await prisma.lead.upsert({
+            where: { phone: l.phone },
+            update: leadData,
+            create: leadData,
+          });
+        }
+        console.log(`✅ Loaded ${data.leads.length} leads from crmStore.json into database`);
+      }
+    }
+  } catch (err) {
+    console.warn('Notice importing crmStore.json:', (err as any).message);
   }
-  console.log('✅ Sample leads seeded');
+
   console.log('🎉 Database seeding complete!');
 }
 
