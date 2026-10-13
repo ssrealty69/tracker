@@ -22,6 +22,7 @@ import { getVisitsForDate, markVisitDone, rescheduleVisit } from '@/lib/leadActi
 import {
   maskPhone,
   formatDate,
+  getISTDateString,
   REQUIREMENT_LABELS,
   BUDGET_LABELS,
   VISIT_STATUS_LABELS,
@@ -32,30 +33,41 @@ type Visit = Awaited<ReturnType<typeof getVisitsForDate>>[number];
 const KNOWN_EXECUTIVES = ['Ayaan', 'Bhavishya', 'Gulshan', 'Nihal', 'Nikhil', 'Vikas'];
 
 function getLocalDateString(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  return getISTDateString(date);
 }
 
 function addDays(dateStr: string, days: number): string {
-  const d = new Date(dateStr + 'T00:00:00');
-  d.setDate(d.getDate() + days);
-  return getLocalDateString(d);
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d + days));
+  return getISTDateString(dt);
 }
 
 function nextSundayStr(): string {
-  const d = new Date();
-  const day = d.getDay();
+  const todayStr = getISTDateString();
+  const [y, m, d] = todayStr.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  const day = dt.getUTCDay();
   const daysUntilSunday = day === 0 ? 7 : 7 - day;
-  d.setDate(d.getDate() + daysUntilSunday);
-  return getLocalDateString(d);
+  return addDays(todayStr, daysUntilSunday);
 }
 
 function friendlyDateLabel(dateStr: string): string {
-  const todayStr = getLocalDateString(new Date());
+  const todayStr = getISTDateString();
   const tomorrowStr = addDays(todayStr, 1);
   if (dateStr === todayStr) return "Today's Scheduled Visits";
   if (dateStr === tomorrowStr) return "Tomorrow's Scheduled Visits";
-  const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
+  try {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dateObj = new Date(Date.UTC(y, m - 1, d));
+    return new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Kolkata',
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+    }).format(dateObj);
+  } catch {
+    return dateStr;
+  }
 }
 
 interface Props {
@@ -340,14 +352,14 @@ export default function VisitsClient({ initialVisits, initialDate }: Props) {
       <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-base font-extrabold text-slate-900">{friendlyDateLabel(selectedDate)}</h2>
+            <h2 className="text-base font-extrabold text-slate-900" suppressHydrationWarning>{friendlyDateLabel(selectedDate)}</h2>
             {selectedExecutive !== 'ALL' && (
               <span className="text-[11px] bg-indigo-50 border border-indigo-200 text-indigo-700 px-2 py-0.5 rounded-md font-bold">
                 Filtered: {selectedExecutive}
               </span>
             )}
           </div>
-          <p className="text-xs text-slate-500 font-medium mt-0.5">
+          <p className="text-xs text-slate-500 font-medium mt-0.5" suppressHydrationWarning>
             {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-IN', {
               weekday: 'long',
               day: 'numeric',

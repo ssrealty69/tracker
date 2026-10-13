@@ -10,15 +10,36 @@ export function maskPhone(phone: string): string {
   return phone.slice(0, 5) + 'XXXXX';
 }
 
+export function getISTDateString(date: Date = new Date()): string {
+  try {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(date);
+    return parts;
+  } catch {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+}
+
 export function formatDate(date: Date | string | null | undefined): string {
   if (!date) return '—';
   try {
-    const d = new Date(date);
+    const d = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
     if (isNaN(d.getTime())) return '—';
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year = String(d.getFullYear()).slice(-2);
-    return `${day}/${month}/${year}`;
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Kolkata',
+      day: '2-digit',
+      month: '2-digit',
+      year: '2-digit',
+    }).formatToParts(d);
+    const get = (type: string) => parts.find((p) => p.type === type)?.value || '';
+    return `${get('day')}/${get('month')}/${get('year')}`;
   } catch {
     return '—';
   }
@@ -27,18 +48,27 @@ export function formatDate(date: Date | string | null | undefined): string {
 export function formatDateTime(date: Date | string | null | undefined): string {
   if (!date) return '—';
   try {
-    const d = new Date(date);
+    const d = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
     if (isNaN(d.getTime())) return '—';
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year = String(d.getFullYear()).slice(-2);
-    let hours = d.getHours();
-    const minutes = String(d.getMinutes()).padStart(2, '0');
-    const ampm = hours >= 12 ? 'pm' : 'am';
-    hours = hours % 12;
-    hours = hours ? hours : 12;
-    const strHours = String(hours).padStart(2, '0');
-    return `${day}/${month}/${year}, ${strHours}:${minutes} ${ampm}`;
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Kolkata',
+      day: '2-digit',
+      month: '2-digit',
+      year: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    }).formatToParts(d);
+
+    const get = (type: string) => parts.find((p) => p.type === type)?.value || '';
+    const day = get('day');
+    const month = get('month');
+    const year = get('year');
+    const hour = get('hour');
+    const minute = get('minute');
+    const dayPeriod = (get('dayPeriod') || '').toLowerCase();
+
+    return `${day}/${month}/${year}, ${hour}:${minute} ${dayPeriod}`;
   } catch {
     return '—';
   }

@@ -122,17 +122,18 @@ export default function DashboardClient({ initialStats }: Props) {
     }
   };
 
+  const nf = new Intl.NumberFormat('en-IN');
   const kpiCards = [
     {
       label: 'Unique Verified Leads',
-      value: stats.totalLeads.toLocaleString(),
+      value: nf.format(stats.totalLeads),
       icon: Users,
       color: 'from-indigo-600 to-indigo-700',
       badge: 'Deduplicated',
     },
     {
       label: 'Calls Logged (Dials)',
-      value: stats.totalCalls.toLocaleString(),
+      value: nf.format(stats.totalCalls),
       icon: Phone,
       color: 'from-blue-600 to-blue-700',
       badge: 'Interactions',
@@ -146,21 +147,21 @@ export default function DashboardClient({ initialStats }: Props) {
     },
     {
       label: 'Visits Scheduled (Upcoming)',
-      value: (stats.pendingVisits ?? 0).toLocaleString(),
+      value: nf.format(stats.pendingVisits ?? 0),
       icon: Calendar,
       color: 'from-emerald-600 to-emerald-700',
       badge: 'Today & Future',
     },
     {
       label: 'Dropped Scheduled Visits',
-      value: (stats.droppedVisits ?? 0).toLocaleString(),
+      value: nf.format(stats.droppedVisits ?? 0),
       icon: AlertTriangle,
       color: 'from-rose-600 to-rose-700',
       badge: 'Past / Lapsed',
     },
     {
       label: 'Site Visits Done',
-      value: stats.completedVisits.toLocaleString(),
+      value: nf.format(stats.completedVisits),
       icon: CheckCircle2,
       color: 'from-slate-700 to-slate-800',
       badge: 'Completed',
@@ -242,7 +243,7 @@ export default function DashboardClient({ initialStats }: Props) {
                   {card.badge}
                 </span>
               </div>
-              <p className="text-xl font-black text-slate-900 tracking-tight">{loading ? '—' : card.value}</p>
+              <p className="text-xl font-black text-slate-900 tracking-tight" suppressHydrationWarning>{loading ? '—' : card.value}</p>
               <p className="text-[11px] text-slate-500 mt-0.5 font-semibold leading-tight">{card.label}</p>
             </div>
           );
