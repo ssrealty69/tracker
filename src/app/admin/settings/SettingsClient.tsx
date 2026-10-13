@@ -59,11 +59,10 @@ export default function SettingsClient({ initialAgents, initialConfig }: Props) 
   // ─── AGENTS STATE ─────────────────────────────────────────────────────────
   const [agents, setAgents] = useState<Agent[]>(initialAgents);
   const [newAgentName, setNewAgentName] = useState('');
-  const [newAgentEmail, setNewAgentEmail] = useState('');
   const [addingAgent, setAddingAgent] = useState(false);
   const [editingAgentId, setEditingAgentId] = useState<string | null>(null);
   const [editAgentName, setEditAgentName] = useState('');
-  const [editAgentEmail, setEditAgentEmail] = useState('');
+
 
   // ─── FORM CONFIG STATE ───────────────────────────────────────────────────
   const [config, setConfig] = useState<FormConfig>(initialConfig);
@@ -89,11 +88,10 @@ export default function SettingsClient({ initialAgents, initialConfig }: Props) 
 
     setAddingAgent(true);
     try {
-      const res = await addAgent(trimmed, newAgentEmail);
+      const res = await addAgent(trimmed);
       if (res.success && res.agent) {
         setAgents((prev) => [...prev, res.agent as Agent]);
         setNewAgentName('');
-        setNewAgentEmail('');
         toast.success(`Executive "${trimmed}" added! Now live in Calling Form.`);
       } else {
         toast.error((res as { message?: string }).message || 'Failed to add executive');
@@ -116,23 +114,21 @@ export default function SettingsClient({ initialAgents, initialConfig }: Props) 
   const startEditAgent = (agent: Agent) => {
     setEditingAgentId(agent.id);
     setEditAgentName(agent.name);
-    setEditAgentEmail(agent.email || '');
   };
 
   const cancelEditAgent = () => {
     setEditingAgentId(null);
     setEditAgentName('');
-    setEditAgentEmail('');
   };
 
   const saveEditAgent = async (agentId: string) => {
     const trimmed = editAgentName.trim();
     if (!trimmed) return toast.error('Name cannot be empty');
 
-    const res = await updateAgent(agentId, trimmed, editAgentEmail);
+    const res = await updateAgent(agentId, trimmed);
     if (res.success) {
       setAgents((prev) =>
-        prev.map((a) => (a.id === agentId ? { ...a, name: trimmed, email: editAgentEmail || null } : a))
+        prev.map((a) => (a.id === agentId ? { ...a, name: trimmed } : a))
       );
       toast.success('Executive updated successfully!');
       cancelEditAgent();
@@ -426,8 +422,8 @@ export default function SettingsClient({ initialAgents, initialConfig }: Props) 
               <UserPlus size={16} className="text-indigo-600" />
               Naya Sales Executive Add Karein
             </h2>
-            <form onSubmit={handleAddAgent} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
+            <form onSubmit={handleAddAgent} className="flex flex-col sm:flex-row gap-3 items-end">
+              <div className="flex-1 w-full">
                 <label className="text-[11px] font-bold text-slate-600 block mb-1">
                   Executive Full Name <span className="text-rose-500">*</span>
                 </label>
@@ -436,32 +432,18 @@ export default function SettingsClient({ initialAgents, initialConfig }: Props) 
                   placeholder="e.g. Rahul Sharma"
                   value={newAgentName}
                   onChange={(e) => setNewAgentName(e.target.value)}
-                  className="form-input text-xs py-2"
+                  className="form-input text-xs py-2 w-full"
                   required
                 />
               </div>
-              <div>
-                <label className="text-[11px] font-bold text-slate-600 block mb-1">
-                  Email ID (Optional)
-                </label>
-                <input
-                  type="email"
-                  placeholder="e.g. rahul@ssrealty.org"
-                  value={newAgentEmail}
-                  onChange={(e) => setNewAgentEmail(e.target.value)}
-                  className="form-input text-xs py-2"
-                />
-              </div>
-              <div className="flex items-end">
-                <button
-                  type="submit"
-                  disabled={addingAgent}
-                  className="w-full flex items-center justify-center gap-1.5 py-2 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50"
-                >
-                  <Plus size={15} />
-                  <span>{addingAgent ? 'Adding...' : 'Add Executive (Live Now)'}</span>
-                </button>
-              </div>
+              <button
+                type="submit"
+                disabled={addingAgent}
+                className="w-full sm:w-auto flex items-center justify-center gap-1.5 py-2 px-5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50 whitespace-nowrap h-[38px]"
+              >
+                <Plus size={15} />
+                <span>{addingAgent ? 'Adding...' : 'Add Executive (Live Now)'}</span>
+              </button>
             </form>
           </div>
 
@@ -489,13 +471,6 @@ export default function SettingsClient({ initialAgents, initialConfig }: Props) 
                         onChange={(e) => setEditAgentName(e.target.value)}
                         className="form-input text-xs py-1.5 max-w-xs font-bold"
                         placeholder="Executive name"
-                      />
-                      <input
-                        type="email"
-                        value={editAgentEmail}
-                        onChange={(e) => setEditAgentEmail(e.target.value)}
-                        className="form-input text-xs py-1.5 max-w-xs"
-                        placeholder="Email"
                       />
                       <button
                         onClick={() => saveEditAgent(agent.id)}
@@ -526,9 +501,6 @@ export default function SettingsClient({ initialAgents, initialConfig }: Props) 
                             {agent.isActive ? 'Active' : 'Inactive'}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-400 font-medium">
-                          {agent.email || `${agent.name.toLowerCase().replace(/\s+/g, '')}@ssrealty.org`}
-                        </p>
                       </div>
                     </div>
                   )}
