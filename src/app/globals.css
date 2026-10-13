@@ -415,3 +415,31 @@ input[type="checkbox"] {
 input[type="date"], input[type="datetime-local"] {
   color-scheme: light;
 }
+
+/* ── Date Picker Full-Click Overlay ─────────────────────── */
+.date-picker-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 20;
+}
+
+.date-picker-overlay::-webkit-calendar-picker-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+}

@@ -811,14 +811,20 @@ export default function AgentFormPage() {
                         </div>
                       </div>
 
-                      {/* Native HTML5 date input placed over for browser native picker */}
+                      {/* Native HTML5 date input placed over with full-width webkit picker indicator */}
                       <input
                         ref={visitDateInputRef}
                         type="date"
                         min={todayStr}
                         value={visitDate}
                         onChange={(e) => handleCalendarDateChange(e.target.value)}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                        onClick={(e) => {
+                          try {
+                            (e.currentTarget as any).showPicker?.();
+                          } catch {}
+                        }}
+                        className="date-picker-overlay"
+                        aria-label="Select Site Visit Date"
                       />
                     </div>
 
@@ -923,7 +929,13 @@ export default function AgentFormPage() {
                       type="datetime-local"
                       value={followUpDate}
                       onChange={(e) => setFollowUpDate(e.target.value)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                      onClick={(e) => {
+                        try {
+                          (e.currentTarget as any).showPicker?.();
+                        } catch {}
+                      }}
+                      className="date-picker-overlay"
+                      aria-label="Pick Next Callback Date & Time"
                     />
                   </div>
                 </div>
