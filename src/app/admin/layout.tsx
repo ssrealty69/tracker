@@ -14,6 +14,8 @@ import {
   PhoneCall,
   UserCheck,
   SlidersHorizontal,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -28,13 +30,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex text-slate-900">
+    <div className="min-h-screen bg-slate-50 flex text-slate-900 relative">
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
@@ -43,20 +46,46 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         />
       )}
 
-      {/* Sidebar */}
+      {/* Floating Presentation Mode Toggle Button when collapsed */}
+      {collapsed && (
+        <button
+          type="button"
+          onClick={() => setCollapsed(false)}
+          title="Show Sidebar"
+          className="hidden lg:flex fixed top-4 left-2 z-50 items-center justify-center w-6 h-6 rounded-md bg-white border border-slate-200 text-slate-500 shadow-sm hover:bg-slate-100 hover:text-slate-800 transition-all cursor-pointer"
+        >
+          <ChevronRight size={13} />
+        </button>
+      )}
+
+      {/* Sidebar - Fixed Sticky on Scroll & Collapsible */}
       <aside
-        className={`fixed top-0 left-0 h-full w-64 z-40 flex flex-col bg-white border-r border-slate-200 shadow-xs transition-transform duration-300
-          ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:static lg:flex`}
+        className={`fixed top-0 left-0 h-screen z-40 flex flex-col bg-white border-r border-slate-200 shadow-xs transition-all duration-300 ease-in-out
+          ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} 
+          lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:shrink-0
+          ${collapsed ? 'lg:w-0 lg:overflow-hidden lg:border-none lg:opacity-0 lg:pointer-events-none' : 'lg:w-64 lg:opacity-100'}
+        `}
       >
-        {/* Logo */}
-        <div className="p-5 flex items-center gap-3 border-b border-slate-100">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-700 via-indigo-600 to-indigo-500 flex items-center justify-center text-white shadow-xs">
-            <Building2 size={20} className="text-white" />
+        {/* Logo & Collapse Button */}
+        <div className="p-4 sm:p-5 flex items-center justify-between gap-3 border-b border-slate-100 whitespace-nowrap">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-700 via-indigo-600 to-indigo-500 flex items-center justify-center text-white shadow-xs shrink-0">
+              <Building2 size={20} className="text-white" />
+            </div>
+            <div>
+              <p className="text-[15px] font-extrabold text-slate-900 leading-tight">SS Realty</p>
+              <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-wider">Admin Portal</p>
+            </div>
           </div>
-          <div>
-            <p className="text-[15px] font-extrabold text-slate-900 leading-tight">SS Realty</p>
-            <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-wider">Admin Portal</p>
-          </div>
+          {/* Arrow toggle to hide sidebar for presentation mode */}
+          <button
+            type="button"
+            onClick={() => setCollapsed(true)}
+            title="Hide Sidebar for Full-Screen Presentation Mode"
+            className="hidden lg:flex w-7 h-7 rounded-lg border border-slate-200 hover:bg-slate-100 items-center justify-center text-slate-500 hover:text-slate-900 transition-all cursor-pointer shadow-2xs shrink-0"
+          >
+            <ChevronLeft size={16} />
+          </button>
         </div>
 
         {/* Nav */}

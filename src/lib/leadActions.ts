@@ -836,27 +836,27 @@ export async function getDashboardStats(startDate?: Date, endDate?: Date): Promi
         (agent: Agent & { activityLogs: ActivityLog[]; leads: Lead[] }) => {
           const logs = agent.activityLogs;
           const totalDials = logs.length;
-          const connectedCalls = logs.filter(
-            (l: ActivityLog) => l.callOutcome === CallOutcome.CONNECTED
+          const agentLeads = agent.leads;
+          const totalLeads = agentLeads.length;
+
+          // Lead-level connected vs not connected (Strictly matches: Connected + Not Connected = Total Leads)
+          const connectedCalls = agentLeads.filter(
+            (l: Lead) => l.callOutcome === CallOutcome.CONNECTED
           ).length;
-          const notConnected = logs.filter(
-            (l: ActivityLog) => l.callOutcome === CallOutcome.NOT_CONNECTED
-          ).length;
+          const notConnected = Math.max(0, totalLeads - connectedCalls);
+
           const contactRate =
-            totalDials > 0 ? Math.round((connectedCalls / totalDials) * 100) : 0;
-          const interested = logs.filter(
-            (l: ActivityLog) => l.disposition === Disposition.INTERESTED_FOLLOW_UP
+            totalLeads > 0 ? Math.round((connectedCalls / totalLeads) * 100) : 0;
+          const interested = agentLeads.filter(
+            (l: Lead) => l.disposition === Disposition.INTERESTED_FOLLOW_UP
           ).length;
-          const notInterested = logs.filter(
-            (l: ActivityLog) =>
+          const notInterested = agentLeads.filter(
+            (l: Lead) =>
               l.disposition === Disposition.NOT_INTERESTED ||
               l.disposition === Disposition.BUDGET_MISMATCH ||
               l.disposition === Disposition.LOCATION_MISMATCH ||
               l.disposition === Disposition.JUNK_BROKER
           ).length;
-
-          const uniqueLeadIdsFromLogs = new Set(logs.map((l: ActivityLog) => l.leadId));
-          const totalLeads = Math.max(agent.leads.length, uniqueLeadIdsFromLogs.size);
 
           let visitsUpcoming = 0;
           let visitsDropped = 0;
@@ -992,21 +992,22 @@ export async function getDashboardStats(startDate?: Date, endDate?: Date): Promi
   const agentLeaderboard: AgentStatRow[] = store.agents.map((agent) => {
     const logs = baseLogs.filter((log) => log.agentId === agent.id);
     const totalDials = logs.length;
-    const connectedCalls = logs.filter((l) => l.callOutcome === CallOutcome.CONNECTED).length;
-    const notConnected = logs.filter((l) => l.callOutcome === CallOutcome.NOT_CONNECTED).length;
-    const contactRate = totalDials > 0 ? Math.round((connectedCalls / totalDials) * 100) : 0;
-    const interested = logs.filter((l) => l.disposition === Disposition.INTERESTED_FOLLOW_UP).length;
-    const notInterested = logs.filter(
+    const agentLeads = baseLeads.filter((l) => l.assignedAgentId === agent.id);
+    const agentTotalLeads = agentLeads.length;
+
+    const connectedCalls = agentLeads.filter((l) => l.callOutcome === CallOutcome.CONNECTED).length;
+    const notConnected = Math.max(0, agentTotalLeads - connectedCalls);
+
+    const contactRate =
+      agentTotalLeads > 0 ? Math.round((connectedCalls / agentTotalLeads) * 100) : 0;
+    const interested = agentLeads.filter((l) => l.disposition === Disposition.INTERESTED_FOLLOW_UP).length;
+    const notInterested = agentLeads.filter(
       (l) =>
         l.disposition === Disposition.NOT_INTERESTED ||
         l.disposition === Disposition.BUDGET_MISMATCH ||
         l.disposition === Disposition.LOCATION_MISMATCH ||
         l.disposition === Disposition.JUNK_BROKER
     ).length;
-
-    const agentLeads = baseLeads.filter((l) => l.assignedAgentId === agent.id);
-    const uniqueLeadIdsFromLogs = new Set(logs.map((l) => l.leadId));
-    const agentTotalLeads = Math.max(agentLeads.length, uniqueLeadIdsFromLogs.size);
 
     let visitsUpcoming = 0;
     let visitsDropped = 0;
