@@ -147,14 +147,12 @@ export default function DashboardClient({ initialStats }: Props) {
   };
 
   const nf = new Intl.NumberFormat('en-IN');
+  const overallVisitRatio =
+    stats.totalLeads > 0
+      ? Math.round(((stats.completedVisits || 0) / stats.totalLeads) * 100)
+      : 0;
+
   const kpiCards = [
-    {
-      label: 'Unique Verified Leads',
-      value: nf.format(stats.totalLeads),
-      icon: Users,
-      color: 'from-indigo-600 to-indigo-700',
-      badge: 'Deduplicated',
-    },
     {
       label: 'Calls Logged (Dials)',
       value: nf.format(stats.totalCalls),
@@ -163,11 +161,11 @@ export default function DashboardClient({ initialStats }: Props) {
       badge: 'Interactions',
     },
     {
-      label: 'Team Contact Ratio',
-      value: `${stats.contactRatio}%`,
-      icon: TrendingUp,
-      color: 'from-violet-600 to-violet-700',
-      badge: 'Pick-up %',
+      label: 'Unique Verified Leads',
+      value: nf.format(stats.totalLeads),
+      icon: Users,
+      color: 'from-indigo-600 to-indigo-700',
+      badge: 'Deduplicated',
     },
     {
       label: 'Visits Scheduled (Upcoming)',
@@ -189,6 +187,13 @@ export default function DashboardClient({ initialStats }: Props) {
       icon: CheckCircle2,
       color: 'from-slate-700 to-slate-800',
       badge: 'Completed',
+    },
+    {
+      label: 'Visit Ratio',
+      value: `${overallVisitRatio}%`,
+      icon: TrendingUp,
+      color: 'from-violet-600 to-violet-700',
+      badge: 'Done / Unique',
     },
   ];
 
