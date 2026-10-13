@@ -18,7 +18,7 @@ export const DEFAULT_FORM_CONFIG: FormConfig = {
     'Vasundhara',
     'Amaryllis',
     'Floria',
-    'General Enquiry',
+    'Other',
   ],
   configurations: [
     '2BHK',

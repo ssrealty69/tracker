@@ -119,7 +119,7 @@ export const DISPOSITION_LABELS: Record<string, string> = {
 
 export const NOT_CONNECTED_REASON_LABELS: Record<string, string> = {
   CALL_NOT_PICKED: 'Call Not Picked',
-  SWITCHED_OFF: 'Switched Off',
+  SWITCHED_OFF: 'Switched Off / Not Reachable',
   BUSY: 'Busy',
   WRONG_NUMBER: 'Wrong Number',
   DISCONNECTED: 'Disconnected',

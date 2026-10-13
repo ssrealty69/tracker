@@ -1171,7 +1171,7 @@ export async function getAllLeads(filters?: {
       });
       return dbLeads.map((l) => ({
         ...l,
-        projectName: (l as any).projectName || 'General Enquiry',
+        projectName: (l as any).projectName || 'Other',
         followUpDate: (l as any).followUpDate || null,
       })) as AdminLeadItem[];
     } catch {
@@ -1207,7 +1207,7 @@ export async function getAllLeads(filters?: {
       const agent = store.agents.find((a) => a.id === l.assignedAgentId);
       return {
         ...l,
-        projectName: l.projectName || 'General Enquiry',
+        projectName: l.projectName || 'Other',
         followUpDate: l.followUpDate || null,
         assignedAgent: agent ? { name: agent.name } : null,
       };

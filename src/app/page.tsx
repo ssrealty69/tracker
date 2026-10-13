@@ -41,12 +41,12 @@ const SS_REALTY_PROJECTS = [
   'Vasundhara',
   'Amaryllis',
   'Floria',
-  'General Enquiry',
+  'Other',
 ];
 
 const NOT_CONNECTED_REASONS = [
   { value: 'CALL_NOT_PICKED', label: 'Call Not Picked / Ringing' },
-  { value: 'SWITCHED_OFF', label: 'Switched Off' },
+  { value: 'SWITCHED_OFF', label: 'Switched Off / Not Reachable' },
   { value: 'BUSY', label: 'Busy / On Another Call' },
   { value: 'WRONG_NUMBER', label: 'Wrong Number' },
   { value: 'DISCONNECTED', label: 'Disconnected / Invalid Number' },
