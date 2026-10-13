@@ -803,9 +803,20 @@ export interface DashboardStatsResult {
 
 // ─── GET DASHBOARD STATS ───────────────────────────────────────────────────
 export async function getDashboardStats(startDate?: Date, endDate?: Date): Promise<DashboardStatsResult> {
-  const dateFilter =
+  const logDateFilter =
     startDate && endDate
       ? { createdAt: { gte: startDate, lte: endDate } }
+      : {};
+
+  const leadDateFilter =
+    startDate && endDate
+      ? {
+          OR: [
+            { createdAt: { gte: startDate, lte: endDate } },
+            { updatedAt: { gte: startDate, lte: endDate } },
+            { activityLogs: { some: { createdAt: { gte: startDate, lte: endDate } } } },
+          ],
+        }
       : {};
 
   const now = new Date();
@@ -815,16 +826,16 @@ export async function getDashboardStats(startDate?: Date, endDate?: Date): Promi
     try {
       const [totalLeads, totalLogs, completedVisits, agentStats] =
         await Promise.all([
-          prisma.lead.count({ where: dateFilter }),
-          prisma.activityLog.count({ where: dateFilter }),
+          prisma.lead.count({ where: leadDateFilter }),
+          prisma.activityLog.count({ where: logDateFilter }),
           prisma.lead.count({
-            where: { ...dateFilter, visitStatus: VisitStatus.VISIT_DONE },
+            where: { ...leadDateFilter, visitStatus: VisitStatus.VISIT_DONE },
           }),
           prisma.agent.findMany({
             where: { isActive: true },
             include: {
-              activityLogs: { where: dateFilter },
-              leads: { where: dateFilter },
+              activityLogs: { where: logDateFilter },
+              leads: { where: leadDateFilter },
             },
           }),
         ]);
@@ -945,7 +956,7 @@ export async function getDashboardStats(startDate?: Date, endDate?: Date): Promi
       );
 
       const connectedTotal = await prisma.activityLog.count({
-        where: { ...dateFilter, callOutcome: CallOutcome.CONNECTED },
+        where: { ...logDateFilter, callOutcome: CallOutcome.CONNECTED },
       });
       const contactRatio =
         totalLogs > 0 ? Math.round((connectedTotal / totalLogs) * 100) : 0;
@@ -972,13 +983,17 @@ export async function getDashboardStats(startDate?: Date, endDate?: Date): Promi
   if (startDate && endDate) {
     const startMs = startDate.getTime();
     const endMs = endDate.getTime();
-    baseLeads = baseLeads.filter((l) => {
-      const t = new Date(l.createdAt).getTime();
-      return t >= startMs && t <= endMs;
-    });
     baseLogs = baseLogs.filter((lg) => {
       const t = new Date(lg.createdAt).getTime();
       return t >= startMs && t <= endMs;
+    });
+    baseLeads = baseLeads.filter((l) => {
+      const c = new Date(l.createdAt).getTime();
+      const u = new Date(l.updatedAt).getTime();
+      const hasLog = store.logs.some(
+        (lg) => lg.leadId === l.id && new Date(lg.createdAt).getTime() >= startMs && new Date(lg.createdAt).getTime() <= endMs
+      );
+      return (c >= startMs && c <= endMs) || (u >= startMs && u <= endMs) || hasLog;
     });
   }
 

@@ -27,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={inter.variable} suppressHydrationWarning>
+    <html lang="en-IN" className={inter.variable} suppressHydrationWarning>
       <body className="antialiased bg-slate-50 text-slate-900 min-h-screen font-sans selection:bg-indigo-600 selection:text-white" suppressHydrationWarning>
         {children}
         <Toaster

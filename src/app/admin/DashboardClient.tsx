@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, Fragment } from 'react';
+import toast from 'react-hot-toast';
 import {
   Users,
   Phone,
@@ -30,30 +31,73 @@ const DATE_FILTERS = [
   { label: 'All Time', value: 'all' },
 ];
 
-function getDateRange(filter: string): { start?: Date; end?: Date } {
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+function getIstDateRange(filter: string): { start?: Date; end?: Date } {
+  const istFormatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  const parts = istFormatter.format(new Date()).split('-');
+  const y = Number(parts[0]);
+  const m = Number(parts[1]);
+  const d = Number(parts[2]);
+  const todayStr = parts.join('-');
+  const nowIstDate = new Date(Date.UTC(y, m - 1, d));
 
   switch (filter) {
     case 'today':
-      return { start: today, end: new Date(today.getTime() + 86400000 - 1) };
+      return {
+        start: new Date(`${todayStr}T00:00:00+05:30`),
+        end: new Date(`${todayStr}T23:59:59.999+05:30`),
+      };
     case 'yesterday': {
-      const y = new Date(today);
-      y.setDate(y.getDate() - 1);
-      return { start: y, end: new Date(y.getTime() + 86400000 - 1) };
+      const prev = new Date(nowIstDate);
+      prev.setUTCDate(prev.getUTCDate() - 1);
+      const py = prev.getUTCFullYear();
+      const pm = String(prev.getUTCMonth() + 1).padStart(2, '0');
+      const pd = String(prev.getUTCDate()).padStart(2, '0');
+      const yStr = `${py}-${pm}-${pd}`;
+      return {
+        start: new Date(`${yStr}T00:00:00+05:30`),
+        end: new Date(`${yStr}T23:59:59.999+05:30`),
+      };
     }
     case 'week': {
-      const w = new Date(today);
-      w.setDate(w.getDate() - w.getDay());
-      return { start: w, end: now };
+      const day = nowIstDate.getUTCDay();
+      const diffToMonday = day === 0 ? 6 : day - 1;
+      const monday = new Date(nowIstDate);
+      monday.setUTCDate(monday.getUTCDate() - diffToMonday);
+      const my = monday.getUTCFullYear();
+      const mm = String(monday.getUTCMonth() + 1).padStart(2, '0');
+      const md = String(monday.getUTCDate()).padStart(2, '0');
+      const mondayStr = `${my}-${mm}-${md}`;
+      return {
+        start: new Date(`${mondayStr}T00:00:00+05:30`),
+        end: new Date(`${todayStr}T23:59:59.999+05:30`),
+      };
     }
     case 'month': {
-      return { start: new Date(now.getFullYear(), now.getMonth(), 1), end: now };
+      const monthStartStr = `${parts[0]}-${parts[1]}-01`;
+      return {
+        start: new Date(`${monthStartStr}T00:00:00+05:30`),
+        end: new Date(`${todayStr}T23:59:59.999+05:30`),
+      };
     }
     default:
       return {};
   }
 }
+
+const formatDisplayDDMMYY = (isoDate: string) => {
+  if (!isoDate) return '';
+  const parts = isoDate.split('-');
+  if (parts.length === 3) {
+    const [y, m, d] = parts;
+    return `${d}/${m}/${y.slice(-2)}`;
+  }
+  return isoDate;
+};
 
 const formatToDDMMYY = (dateInput: string | Date | null | undefined) => {
   if (!dateInput) return '—';
@@ -102,27 +146,86 @@ export default function DashboardClient({ initialStats }: Props) {
   const [agentSubTab, setAgentSubTab] = useState<{ [agentId: string]: 'scheduled' | 'dropped' | 'done' | 'followup' | 'not_connected' | 'all' }>({});
 
   const applyFilter = async (filter: string, isSilent = false) => {
+    setActiveFilter(filter);
     if (!isSilent) setLoading(true);
     try {
-      const { start, end } = getDateRange(filter);
+      const { start, end } = getIstDateRange(filter);
       const newStats = await getDashboardStats(start, end);
       setStats(newStats);
+    } catch (err) {
+      console.error('Error fetching dashboard stats:', err);
     } finally {
       if (!isSilent) setLoading(false);
     }
   };
 
-  // Live Auto-Sync every 8 seconds & on tab focus
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        applyFilter(activeFilter, true);
-      }
-    }, 8000);
+  const handlePresetFilterClick = (filterValue: string) => {
+    setCustomStart('');
+    setCustomEnd('');
+    applyFilter(filterValue);
+  };
 
-    const handleFocus = () => {
-      applyFilter(activeFilter, true);
+  const applyCustomRange = async (isSilent = false) => {
+    // Condition 1: Only end date selected, but no start date -> do not apply filter!
+    if (!customStart && customEnd) {
+      if (!isSilent) toast.error('Pehle start date select karein');
+      return;
+    }
+
+    // Condition 2: Neither selected
+    if (!customStart && !customEnd) {
+      if (!isSilent) toast.error('Kripya date select karein');
+      return;
+    }
+
+    // Condition 3: Start date selected; if end date empty, filter for that specific single date!
+    let sStr = customStart;
+    let eStr = customEnd || customStart;
+
+    if (sStr > eStr) {
+      const temp = sStr;
+      sStr = eStr;
+      eStr = temp;
+    }
+
+    if (!isSilent) setLoading(true);
+    try {
+      const startDate = new Date(`${sStr}T00:00:00+05:30`);
+      const endDate = new Date(`${eStr}T23:59:59.999+05:30`);
+      const newStats = await getDashboardStats(startDate, endDate);
+      setStats(newStats);
+      setActiveFilter('custom');
+      if (!isSilent) {
+        if (sStr === eStr) {
+          toast.success(`Date: ${formatDisplayDDMMYY(sStr)} report loaded`);
+        } else {
+          toast.success(`Range: ${formatDisplayDDMMYY(sStr)} to ${formatDisplayDDMMYY(eStr)} loaded`);
+        }
+      }
+    } catch (err) {
+      console.error('Error applying custom date filter:', err);
+      if (!isSilent) toast.error('Failed to load stats for selected date');
+    } finally {
+      if (!isSilent) setLoading(false);
+    }
+  };
+
+  // Live Auto-Sync every 8 seconds & on tab focus (respects activeFilter)
+  useEffect(() => {
+    const syncCurrentStats = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        if (activeFilter === 'custom') {
+          if (customStart) {
+            applyCustomRange(true);
+          }
+        } else {
+          applyFilter(activeFilter, true);
+        }
+      }
     };
+
+    const interval = setInterval(syncCurrentStats, 8000);
+    const handleFocus = () => syncCurrentStats();
 
     window.addEventListener('focus', handleFocus);
     document.addEventListener('visibilitychange', handleFocus);
@@ -132,20 +235,7 @@ export default function DashboardClient({ initialStats }: Props) {
       window.removeEventListener('focus', handleFocus);
       document.removeEventListener('visibilitychange', handleFocus);
     };
-  }, [activeFilter]);
-
-
-  const applyCustomRange = async () => {
-    if (!customStart || !customEnd) return;
-    setLoading(true);
-    try {
-      const newStats = await getDashboardStats(new Date(customStart), new Date(customEnd + 'T23:59:59'));
-      setStats(newStats);
-      setActiveFilter('custom');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [activeFilter, customStart, customEnd]);
 
   const nf = new Intl.NumberFormat('en-IN');
   const overallVisitRatio =
@@ -247,7 +337,13 @@ export default function DashboardClient({ initialStats }: Props) {
             Auto-Sync Live
           </div>
           <button
-            onClick={() => applyFilter(activeFilter)}
+            onClick={() => {
+              if (activeFilter === 'custom') {
+                applyCustomRange();
+              } else {
+                applyFilter(activeFilter);
+              }
+            }}
             className="self-start sm:self-auto flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-all shadow-xs cursor-pointer"
           >
             <RefreshCcw size={14} className={loading ? 'animate-spin text-indigo-600' : ''} />
@@ -261,7 +357,7 @@ export default function DashboardClient({ initialStats }: Props) {
         {DATE_FILTERS.map((f) => (
           <button
             key={f.value}
-            onClick={() => applyFilter(f.value)}
+            onClick={() => handlePresetFilterClick(f.value)}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeFilter === f.value
                 ? 'bg-indigo-600 text-white shadow-xs'
@@ -271,23 +367,79 @@ export default function DashboardClient({ initialStats }: Props) {
             {f.label}
           </button>
         ))}
+
         <div className="flex items-center gap-2 ml-auto pt-2 sm:pt-0">
-          <input
-            type="date"
-            value={customStart}
-            onChange={(e) => setCustomStart(e.target.value)}
-            className="form-input py-1 px-2.5 text-xs w-32"
-          />
-          <span className="text-slate-400 text-xs">to</span>
-          <input
-            type="date"
-            value={customEnd}
-            onChange={(e) => setCustomEnd(e.target.value)}
-            className="form-input py-1 px-2.5 text-xs w-32"
-          />
+          {/* Start Date Picker (Formatted as dd/mm/yy) */}
+          <div className="relative inline-flex items-center group">
+            <div className="flex items-center gap-1.5 py-1.5 pl-2.5 pr-6 bg-slate-50 hover:bg-slate-100/90 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 transition-all shadow-2xs group-hover:border-indigo-300 pointer-events-none min-w-[110px]">
+              <Calendar size={13} className="text-indigo-600 shrink-0" />
+              <span className={customStart ? "text-slate-900 font-bold" : "text-slate-400 font-medium"}>
+                {customStart ? formatDisplayDDMMYY(customStart) : "dd/mm/yy"}
+              </span>
+            </div>
+            {customStart && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCustomStart('');
+                }}
+                className="absolute right-2 z-10 p-0.5 rounded text-slate-400 hover:text-rose-600 hover:bg-slate-200/60 transition-colors cursor-pointer"
+                title="Clear start date"
+              >
+                <X size={12} />
+              </button>
+            )}
+            <input
+              type="date"
+              lang="en-IN"
+              value={customStart}
+              onChange={(e) => setCustomStart(e.target.value)}
+              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+              title="Select Start Date (dd/mm/yy)"
+            />
+          </div>
+
+          <span className="text-slate-400 text-xs font-medium">to</span>
+
+          {/* End Date Picker (Formatted as dd/mm/yy) */}
+          <div className="relative inline-flex items-center group">
+            <div className="flex items-center gap-1.5 py-1.5 pl-2.5 pr-6 bg-slate-50 hover:bg-slate-100/90 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 transition-all shadow-2xs group-hover:border-indigo-300 pointer-events-none min-w-[110px]">
+              <Calendar size={13} className="text-indigo-600 shrink-0" />
+              <span className={customEnd ? "text-slate-900 font-bold" : "text-slate-400 font-medium"}>
+                {customEnd ? formatDisplayDDMMYY(customEnd) : "dd/mm/yy"}
+              </span>
+            </div>
+            {customEnd && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCustomEnd('');
+                }}
+                className="absolute right-2 z-10 p-0.5 rounded text-slate-400 hover:text-rose-600 hover:bg-slate-200/60 transition-colors cursor-pointer"
+                title="Clear end date"
+              >
+                <X size={12} />
+              </button>
+            )}
+            <input
+              type="date"
+              lang="en-IN"
+              value={customEnd}
+              onChange={(e) => setCustomEnd(e.target.value)}
+              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+              title="Select End Date (dd/mm/yy)"
+            />
+          </div>
+
           <button
-            onClick={applyCustomRange}
-            className="px-3 py-1 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-bold hover:bg-indigo-100 transition-all cursor-pointer"
+            onClick={() => applyCustomRange()}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              activeFilter === 'custom'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100'
+            }`}
           >
             Filter
           </button>
