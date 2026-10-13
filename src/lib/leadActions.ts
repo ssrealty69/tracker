@@ -353,6 +353,16 @@ export async function submitLead(data: LeadFormData): Promise<LeadFormResult> {
         let isNewLocal = false;
         let interactionCountLocal = 1;
 
+        const dbAgent = await tx.agent.findFirst({
+          where: {
+            OR: [
+              { id: data.agentId },
+              { name: { equals: data.agentId.replace(/^agent-/, ''), mode: 'insensitive' } },
+            ],
+          },
+        });
+        const finalAgentId = dbAgent ? dbAgent.id : null;
+
         if (existingLead) {
           interactionCountLocal = existingLead.totalInteractions + 1;
           lead = await tx.lead.update({
@@ -370,7 +380,7 @@ export async function submitLead(data: LeadFormData): Promise<LeadFormResult> {
                 finalVisitStatus !== VisitStatus.NONE ? finalVisitStatus : existingLead.visitStatus,
               previousVisitDate: previousVisitDate,
               latestRemark: data.remark || existingLead.latestRemark,
-              assignedAgentId: data.agentId,
+              assignedAgentId: finalAgentId || existingLead.assignedAgentId,
             },
           });
         } else {
@@ -389,7 +399,7 @@ export async function submitLead(data: LeadFormData): Promise<LeadFormResult> {
               visitStatus: finalVisitStatus,
               previousVisitDate: null,
               latestRemark: data.remark ?? null,
-              assignedAgentId: data.agentId,
+              assignedAgentId: finalAgentId,
             },
           });
         }
@@ -397,12 +407,12 @@ export async function submitLead(data: LeadFormData): Promise<LeadFormResult> {
         await tx.activityLog.create({
           data: {
             leadId: lead.id,
-            agentId: data.agentId,
+            agentId: finalAgentId,
             callOutcome: data.callOutcome,
             notConnectedReason: data.notConnectedReason ?? null,
             disposition: data.disposition ?? null,
-            requirement: (data.requirement as any) ?? null,
-            budget: (data.budget as any) ?? null,
+            requirement: prismaReq ?? null,
+            budget: prismaBudget ?? null,
             visitDate: visitDateObj,
             visitStatus: finalVisitStatus,
             remark: data.remark ?? null,
@@ -415,8 +425,8 @@ export async function submitLead(data: LeadFormData): Promise<LeadFormResult> {
 
       isNew = result.isNew;
       interactionCount = result.interactionCount;
-    } catch {
-      // quiet fallback
+    } catch (dbErr) {
+      console.error('Database submit transaction error:', dbErr);
     }
   }
 
