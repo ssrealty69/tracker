@@ -51,6 +51,219 @@
   ],
   "leads": [
     {
+      "id": "lead-1791876634150",
+      "phone": "3489028098",
+      "name": "asfndsgkn",
+      "leadSource": "CALLING_SHEET",
+      "totalInteractions": 1,
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "SITE_VISIT_SCHEDULED",
+      "projectName": "Nirvana",
+      "requirement": "3BHK",
+      "budget": "₹75 Lakh–₹1 Crore",
+      "followUpDate": null,
+      "visitDate": "2026-10-13T00:00:00.000Z",
+      "visitTimeSlot": "Afternoon (12:00 PM – 03:00 PM)",
+      "cabRequired": false,
+      "visitStatus": "VISIT_DONE",
+      "previousVisitDate": null,
+      "latestRemark": null,
+      "assignedAgentId": "agent-vikas",
+      "createdAt": "2026-10-13T07:30:34.150Z",
+      "updatedAt": "2026-10-13T07:30:34.150Z",
+      "assignedAgent": {
+        "id": "agent-vikas",
+        "name": "Vikas"
+      }
+    },
+    {
+      "id": "lead-1791876262705",
+      "phone": "4356038569",
+      "name": "SFGDFND",
+      "leadSource": "CALLING_SHEET",
+      "totalInteractions": 1,
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "SITE_VISIT_SCHEDULED",
+      "projectName": "Nirvana",
+      "requirement": "3BHK",
+      "budget": "₹75 Lakh–₹1 Crore",
+      "followUpDate": null,
+      "visitDate": "2026-10-13T00:00:00.000Z",
+      "visitTimeSlot": "Morning (10:00 AM – 12:00 PM)",
+      "cabRequired": false,
+      "visitStatus": "VISIT_DONE",
+      "previousVisitDate": null,
+      "latestRemark": null,
+      "assignedAgentId": "agent-vikas",
+      "createdAt": "2026-10-13T07:24:22.705Z",
+      "updatedAt": "2026-10-13T07:24:22.705Z",
+      "assignedAgent": {
+        "id": "agent-vikas",
+        "name": "Vikas"
+      }
+    },
+    {
+      "id": "lead-1791876218832",
+      "phone": "3245609565",
+      "name": "ADFLKSGN",
+      "leadSource": "CALLING_SHEET",
+      "totalInteractions": 1,
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "SITE_VISIT_SCHEDULED",
+      "projectName": "Nirvana",
+      "requirement": "3BHK",
+      "budget": "₹75 Lakh–₹1 Crore",
+      "followUpDate": null,
+      "visitDate": "2026-10-13T00:00:00.000Z",
+      "visitTimeSlot": "Morning (10:00 AM – 12:00 PM)",
+      "cabRequired": false,
+      "visitStatus": "SCHEDULED",
+      "previousVisitDate": null,
+      "latestRemark": null,
+      "assignedAgentId": "agent-vikas",
+      "createdAt": "2026-10-13T07:23:38.832Z",
+      "updatedAt": "2026-10-13T07:23:38.832Z",
+      "assignedAgent": {
+        "id": "agent-vikas",
+        "name": "Vikas"
+      }
+    },
+    {
+      "id": "lead-1791876161583",
+      "phone": "4960385489",
+      "name": "dskgfg",
+      "leadSource": "CALLING_SHEET",
+      "totalInteractions": 1,
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "SITE_VISIT_SCHEDULED",
+      "projectName": "Nirvana",
+      "requirement": "3BHK",
+      "budget": "₹75 Lakh–₹1 Crore",
+      "followUpDate": null,
+      "visitDate": "2026-10-13T00:00:00.000Z",
+      "visitTimeSlot": "Morning (10:00 AM – 12:00 PM)",
+      "cabRequired": false,
+      "visitStatus": "VISIT_DONE",
+      "previousVisitDate": null,
+      "latestRemark": null,
+      "assignedAgentId": "agent-nihal",
+      "createdAt": "2026-10-13T07:22:41.583Z",
+      "updatedAt": "2026-10-13T07:22:41.583Z",
+      "assignedAgent": {
+        "id": "agent-nihal",
+        "name": "Nihal"
+      }
+    },
+    {
+      "id": "lead-1791876095252",
+      "phone": "4839895882",
+      "name": "sndsjnfg",
+      "leadSource": "CALLING_SHEET",
+      "totalInteractions": 1,
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "NOT_INTERESTED",
+      "projectName": "Orchid",
+      "requirement": null,
+      "budget": null,
+      "followUpDate": null,
+      "visitDate": null,
+      "cabRequired": false,
+      "visitStatus": "NONE",
+      "previousVisitDate": null,
+      "latestRemark": "[Reason: Dropped Property Buying Plan]",
+      "assignedAgentId": "agent-nihal",
+      "createdAt": "2026-10-13T07:21:35.252Z",
+      "updatedAt": "2026-10-13T07:21:35.252Z",
+      "assignedAgent": {
+        "id": "agent-nihal",
+        "name": "Nihal"
+      }
+    },
+    {
+      "id": "lead-1791876039808",
+      "phone": "4936934559",
+      "name": "pawan",
+      "leadSource": "CALLING_SHEET",
+      "totalInteractions": 1,
+      "callOutcome": "NOT_CONNECTED",
+      "notConnectedReason": "BUSY",
+      "disposition": null,
+      "projectName": "Nirvana",
+      "requirement": null,
+      "budget": null,
+      "followUpDate": null,
+      "visitDate": null,
+      "cabRequired": false,
+      "visitStatus": "NONE",
+      "previousVisitDate": null,
+      "latestRemark": null,
+      "assignedAgentId": "agent-nihal",
+      "createdAt": "2026-10-13T07:20:39.808Z",
+      "updatedAt": "2026-10-13T07:20:39.808Z",
+      "assignedAgent": {
+        "id": "agent-nihal",
+        "name": "Nihal"
+      }
+    },
+    {
+      "id": "lead-1791875991332",
+      "phone": "1234567898",
+      "name": "asxcghj",
+      "leadSource": "CALLING_SHEET",
+      "totalInteractions": 1,
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "SITE_VISIT_SCHEDULED",
+      "projectName": "Nirvana",
+      "requirement": "3BHK",
+      "budget": "₹75 Lakh–₹1 Crore",
+      "followUpDate": null,
+      "visitDate": "2026-10-13T00:00:00.000Z",
+      "visitTimeSlot": "Morning (10:00 AM – 12:00 PM)",
+      "cabRequired": false,
+      "visitStatus": "SCHEDULED",
+      "previousVisitDate": null,
+      "latestRemark": null,
+      "assignedAgentId": "agent-nihal",
+      "createdAt": "2026-10-13T07:19:51.332Z",
+      "updatedAt": "2026-10-13T07:19:51.332Z",
+      "assignedAgent": {
+        "id": "agent-nihal",
+        "name": "Nihal"
+      }
+    },
+    {
+      "id": "lead-1791875939969",
+      "phone": "1234567890",
+      "name": "aSDF",
+      "leadSource": "CALLING_SHEET",
+      "totalInteractions": 1,
+      "callOutcome": "NOT_CONNECTED",
+      "notConnectedReason": "CALL_NOT_PICKED",
+      "disposition": null,
+      "projectName": "Nirvana",
+      "requirement": null,
+      "budget": null,
+      "followUpDate": null,
+      "visitDate": null,
+      "cabRequired": false,
+      "visitStatus": "NONE",
+      "previousVisitDate": null,
+      "latestRemark": null,
+      "assignedAgentId": "agent-nihal",
+      "createdAt": "2026-10-13T07:18:59.969Z",
+      "updatedAt": "2026-10-13T07:18:59.969Z",
+      "assignedAgent": {
+        "id": "agent-nihal",
+        "name": "Nihal"
+      }
+    },
+    {
       "id": "lead-1",
       "phone": "9876543210",
       "name": "Rajesh Sharma",
@@ -71,7 +284,8 @@
       "assignedAgent": {
         "id": "agent-nihal",
         "name": "Nihal"
-      }
+      },
+      "followUpDate": null
     },
     {
       "id": "lead-2",
@@ -118,7 +332,8 @@
       "assignedAgent": {
         "id": "agent-nikhil",
         "name": "Nikhil"
-      }
+      },
+      "followUpDate": null
     },
     {
       "id": "lead-4",
@@ -165,7 +380,8 @@
       "assignedAgent": {
         "id": "agent-ayaan",
         "name": "Ayaan"
-      }
+      },
+      "followUpDate": null
     },
     {
       "id": "lead-6",
@@ -188,10 +404,131 @@
       "assignedAgent": {
         "id": "agent-ayaan",
         "name": "Ayaan"
-      }
+      },
+      "followUpDate": null
     }
   ],
   "logs": [
+    {
+      "id": "log-1791876634150",
+      "leadId": "lead-1791876634150",
+      "agentId": "agent-vikas",
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "SITE_VISIT_SCHEDULED",
+      "requirement": "3BHK",
+      "budget": "₹75 Lakh–₹1 Crore",
+      "visitDate": "2026-10-13T00:00:00.000Z",
+      "visitStatus": "VISIT_DONE",
+      "remark": null,
+      "interactionNumber": 1,
+      "createdAt": "2026-10-13T07:30:34.150Z"
+    },
+    {
+      "id": "log-1791876262705",
+      "leadId": "lead-1791876262705",
+      "agentId": "agent-vikas",
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "SITE_VISIT_SCHEDULED",
+      "requirement": "3BHK",
+      "budget": "₹75 Lakh–₹1 Crore",
+      "visitDate": "2026-10-13T00:00:00.000Z",
+      "visitStatus": "VISIT_DONE",
+      "remark": null,
+      "interactionNumber": 1,
+      "createdAt": "2026-10-13T07:24:22.705Z"
+    },
+    {
+      "id": "log-1791876218832",
+      "leadId": "lead-1791876218832",
+      "agentId": "agent-vikas",
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "SITE_VISIT_SCHEDULED",
+      "requirement": "3BHK",
+      "budget": "₹75 Lakh–₹1 Crore",
+      "visitDate": "2026-10-13T00:00:00.000Z",
+      "visitStatus": "SCHEDULED",
+      "remark": null,
+      "interactionNumber": 1,
+      "createdAt": "2026-10-13T07:23:38.832Z"
+    },
+    {
+      "id": "log-1791876161583",
+      "leadId": "lead-1791876161583",
+      "agentId": "agent-nihal",
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "SITE_VISIT_SCHEDULED",
+      "requirement": "3BHK",
+      "budget": "₹75 Lakh–₹1 Crore",
+      "visitDate": "2026-10-13T00:00:00.000Z",
+      "visitStatus": "VISIT_DONE",
+      "remark": null,
+      "interactionNumber": 1,
+      "createdAt": "2026-10-13T07:22:41.583Z"
+    },
+    {
+      "id": "log-1791876095252",
+      "leadId": "lead-1791876095252",
+      "agentId": "agent-nihal",
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "NOT_INTERESTED",
+      "requirement": null,
+      "budget": null,
+      "visitDate": null,
+      "visitStatus": "NONE",
+      "remark": "[Reason: Dropped Property Buying Plan]",
+      "interactionNumber": 1,
+      "createdAt": "2026-10-13T07:21:35.252Z"
+    },
+    {
+      "id": "log-1791876039808",
+      "leadId": "lead-1791876039808",
+      "agentId": "agent-nihal",
+      "callOutcome": "NOT_CONNECTED",
+      "notConnectedReason": "BUSY",
+      "disposition": null,
+      "requirement": null,
+      "budget": null,
+      "visitDate": null,
+      "visitStatus": "NONE",
+      "remark": null,
+      "interactionNumber": 1,
+      "createdAt": "2026-10-13T07:20:39.808Z"
+    },
+    {
+      "id": "log-1791875991332",
+      "leadId": "lead-1791875991332",
+      "agentId": "agent-nihal",
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "SITE_VISIT_SCHEDULED",
+      "requirement": "3BHK",
+      "budget": "₹75 Lakh–₹1 Crore",
+      "visitDate": "2026-10-13T00:00:00.000Z",
+      "visitStatus": "SCHEDULED",
+      "remark": null,
+      "interactionNumber": 1,
+      "createdAt": "2026-10-13T07:19:51.332Z"
+    },
+    {
+      "id": "log-1791875939969",
+      "leadId": "lead-1791875939969",
+      "agentId": "agent-nihal",
+      "callOutcome": "NOT_CONNECTED",
+      "notConnectedReason": "CALL_NOT_PICKED",
+      "disposition": null,
+      "requirement": null,
+      "budget": null,
+      "visitDate": null,
+      "visitStatus": "NONE",
+      "remark": null,
+      "interactionNumber": 1,
+      "createdAt": "2026-10-13T07:18:59.969Z"
+    },
     {
       "id": "log-1",
       "leadId": "lead-1",
