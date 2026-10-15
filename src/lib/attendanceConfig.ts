@@ -47,3 +47,36 @@ export function calculateDistanceInMeters(
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return Math.round(R * c);
 }
+
+// Strictly format Indian Standard Time (Asia/Kolkata) on any serverless or local environment
+export function getIndianTimeStr(d: Date = new Date()): string {
+  return d.toLocaleTimeString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
+  });
+}
+
+export function getIndianFormattedDate(d: Date = new Date()): string {
+  return d.toLocaleDateString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+export function getIndianDateKey(d: Date = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(d);
+}
+
+export function getIndianHour(d: Date = new Date()): number {
+  const str = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Kolkata',
+    hour: 'numeric',
+    hourCycle: 'h23',
+  }).format(d);
+  return parseInt(str, 10);
+}

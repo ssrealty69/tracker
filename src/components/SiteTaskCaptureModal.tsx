@@ -172,14 +172,16 @@ export default function SiteTaskCaptureModal({
         ctx.font = `bold ${Math.max(10, Math.round(width * 0.02))}px sans-serif`;
         ctx.fillText('LIVE BACK CAMERA', width - badgeWidth + 14, 31);
 
-        // Timestamp & details
+        // Timestamp & details (Strictly Indian Standard Time - Asia/Kolkata)
         const now = new Date();
         const dateStr = now.toLocaleDateString('en-IN', {
+          timeZone: 'Asia/Kolkata',
           day: '2-digit',
           month: 'short',
           year: 'numeric',
         });
         const timeStr = now.toLocaleTimeString('en-IN', {
+          timeZone: 'Asia/Kolkata',
           hour: '2-digit',
           minute: '2-digit',
           second: '2-digit',
@@ -187,7 +189,7 @@ export default function SiteTaskCaptureModal({
         });
 
         const bannerTitle =
-          mode === 'MORNING' ? 'SS REALTY • MORNING TASK' : 'SS REALTY • EVENING PROOF';
+          mode === 'MORNING' ? 'SS REALTY • WORK PLAN' : 'SS REALTY • WORK PROOF';
 
         // Title line
         ctx.fillStyle = '#f8fafc';
@@ -203,11 +205,11 @@ export default function SiteTaskCaptureModal({
           height - barHeight + 38
         );
 
-        // GPS line
+        // Camera type info line (No GPS / No Location tracking)
         ctx.fillStyle = '#94a3b8';
         ctx.font = `monospace ${Math.max(9, Math.round(width * 0.016))}px`;
         ctx.fillText(
-          `GPS: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+          `Rear Live Camera • Real-time Stamped (${timeStr})`,
           14,
           height - 6
         );
@@ -258,6 +260,7 @@ export default function SiteTaskCaptureModal({
           caption: '',
           timestamp: now.toISOString(),
           timeStr: now.toLocaleTimeString('en-IN', {
+            timeZone: 'Asia/Kolkata',
             hour: '2-digit',
             minute: '2-digit',
             hour12: true,

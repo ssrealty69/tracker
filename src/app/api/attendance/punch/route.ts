@@ -3,6 +3,8 @@ import {
   AttendanceRecord,
   TARGET_SITE_CONFIG,
   calculateDistanceInMeters,
+  getIndianTimeStr,
+  getIndianFormattedDate,
 } from '@/lib/attendanceConfig';
 import {
   saveAttendanceRecord,
@@ -30,7 +32,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Distance calculation
+    // Distance calculation (Optional, never blocks punch)
     const userLat = typeof latitude === 'number' ? latitude : TARGET_SITE_CONFIG.latitude;
     const userLng = typeof longitude === 'number' ? longitude : TARGET_SITE_CONFIG.longitude;
 
@@ -41,38 +43,15 @@ export async function POST(req: NextRequest) {
       TARGET_SITE_CONFIG.longitude
     );
 
-    const isWithinRadius = distanceMeters <= TARGET_SITE_CONFIG.radiusMeters;
-
-    if (!isWithinRadius && !testOverride) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: `Aap abhi site se dur hai. Pahele site par jaiye (${distanceMeters}m door)!`,
-          distanceMeters,
-        },
-        { status: 403 }
-      );
-    }
-
-    // Authoritative Server Time
+    // Exact Indian Standard Time (IST - Asia/Kolkata)
     const now = new Date();
     const id = `att_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
-    // Save image to disk
+    // Save image to storage
     const photoUrl = await saveSelfieImage(photoBase64, id);
 
-    const formattedDate = now.toLocaleDateString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    });
-
-    const formattedTime = now.toLocaleTimeString('en-IN', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: true,
-    });
+    const formattedDate = getIndianFormattedDate(now);
+    const formattedTime = body.clientTimeStr || getIndianTimeStr(now);
 
     const record: AttendanceRecord = {
       id,
@@ -85,7 +64,7 @@ export async function POST(req: NextRequest) {
       latitude: userLat,
       longitude: userLng,
       distanceMeters,
-      isWithinRadius,
+      isWithinRadius: true,
       siteLatitude: TARGET_SITE_CONFIG.latitude,
       siteLongitude: TARGET_SITE_CONFIG.longitude,
       allowedRadiusMeters: TARGET_SITE_CONFIG.radiusMeters,
@@ -95,7 +74,7 @@ export async function POST(req: NextRequest) {
 
     await saveAttendanceRecord(record);
 
-    const punchLabel = record.punchType === 'PUNCH_IN' ? 'Punch In (Morning)' : 'Punch Out (Evening)';
+    const punchLabel = record.punchType === 'PUNCH_IN' ? 'Punch In' : 'Punch Out';
 
     return NextResponse.json({
       success: true,

@@ -1,29 +1,20 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Camera,
-  MapPin,
   Clock,
   CheckCircle2,
   AlertCircle,
   RotateCcw,
   Building2,
-  User,
   ShieldCheck,
-  Navigation,
-  Compass,
-  ArrowRight,
   Sparkles,
   ExternalLink,
-  Info,
-  ShieldAlert,
   SwitchCamera,
-  Smartphone,
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import Link from 'next/link';
-import { TARGET_SITE_CONFIG, calculateDistanceInMeters } from '@/lib/attendanceConfig';
 import SiteTaskCaptureModal from '@/components/SiteTaskCaptureModal';
 
 const DEFAULT_PROJECTS = [
@@ -54,17 +45,11 @@ export default function AttendancePage() {
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [customEmployee, setCustomEmployee] = useState('');
 
-  // Punch Mode: PUNCH_IN vs PUNCH_OUT
-  const [punchType, setPunchType] = useState<'PUNCH_IN' | 'PUNCH_OUT'>('PUNCH_IN');
-
-  // GPS States
-  const [gpsLoading, setGpsLoading] = useState(false);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [distanceMeters, setDistanceMeters] = useState<number | null>(null);
-  const [gpsMessage, setGpsMessage] = useState<string>('Location check in progress...');
-  const [testModeOverride, setTestModeOverride] = useState(false);
-  const [showDistanceAlert, setShowDistanceAlert] = useState(false);
-  const [isHttpMobile, setIsHttpMobile] = useState(false);
+  // Punch Mode: PUNCH_IN vs PUNCH_OUT (Auto-detects afternoon as PUNCH_OUT)
+  const [punchType, setPunchType] = useState<'PUNCH_IN' | 'PUNCH_OUT'>(() => {
+    const hr = new Date().getHours();
+    return hr >= 13 ? 'PUNCH_OUT' : 'PUNCH_IN';
+  });
 
   // Camera & Stream states
   const [cameraActive, setCameraActive] = useState(false);
@@ -76,7 +61,6 @@ export default function AttendancePage() {
     date: string;
     punchType: string;
     photoUrl: string;
-    distance: number;
     employeeName: string;
     projectName: string;
   } | null>(null);
@@ -91,10 +75,10 @@ export default function AttendancePage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Effective project & employee names
-  const effectiveProject = selectedProject === 'Other / Custom Site' ? (customProject || 'Custom Site') : selectedProject;
+  const effectiveProject = selectedProject === 'Other / Custom Site' ? (customProject || '') : selectedProject;
   const effectiveEmployee = selectedEmployee === 'Other / Enter Name' ? customEmployee : selectedEmployee;
 
-  // Real-time Clock
+  // Real-time Clock (Strictly Asia/Kolkata Indian Time)
   const [currentTimeStr, setCurrentTimeStr] = useState('');
 
   useEffect(() => {
@@ -103,6 +87,7 @@ export default function AttendancePage() {
       const now = new Date();
       setCurrentTimeStr(
         now.toLocaleTimeString('en-IN', {
+          timeZone: 'Asia/Kolkata',
           hour: '2-digit',
           minute: '2-digit',
           second: '2-digit',
@@ -114,77 +99,6 @@ export default function AttendancePage() {
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
   }, []);
-
-  // Check if testing on Local Mobile IP over HTTP
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const isHttp = window.location.protocol === 'http:';
-      const isNotLocalhost = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-      if (isHttp && isNotLocalhost) {
-        setIsHttpMobile(true);
-      }
-    }
-  }, []);
-
-  // Fetch Location with Fast 4s Timeout
-  const requestLocation = useCallback(() => {
-    setGpsLoading(true);
-
-    if (typeof window === 'undefined' || !('geolocation' in navigator)) {
-      setGpsMessage('GPS is browser mein uplabdh nahi hai.');
-      setGpsLoading(false);
-      return;
-    }
-
-    const timeoutId = setTimeout(() => {
-      setGpsLoading(false);
-      setGpsMessage('GPS check timeout. Test Override se punch kar sakte hain.');
-    }, 4500);
-
-    try {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          clearTimeout(timeoutId);
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
-          setUserLocation({ lat, lng });
-          const dist = calculateDistanceInMeters(
-            lat,
-            lng,
-            TARGET_SITE_CONFIG.latitude,
-            TARGET_SITE_CONFIG.longitude
-          );
-          setDistanceMeters(dist);
-          setGpsLoading(false);
-          if (dist <= TARGET_SITE_CONFIG.radiusMeters) {
-            setGpsMessage(`Site Verified: Aap site se ${dist}m door hain (Under 50m).`);
-          } else {
-            setGpsMessage(`Site se ${dist}m door hain (Allowed: 50m).`);
-          }
-        },
-        (err) => {
-          clearTimeout(timeoutId);
-          setGpsLoading(false);
-          if (err.code === 1) {
-            setGpsMessage('Location permission denied. Test Override use karein.');
-          } else {
-            setGpsMessage('GPS signal nahi mila. Test Override use karein.');
-          }
-        },
-        { enableHighAccuracy: true, timeout: 4000, maximumAge: 10000 }
-      );
-    } catch {
-      clearTimeout(timeoutId);
-      setGpsLoading(false);
-      setGpsMessage('Location error. Test Override use karein.');
-    }
-  }, []);
-
-  useEffect(() => {
-    if (mounted) {
-      requestLocation();
-    }
-  }, [mounted, requestLocation]);
 
   // Watermark Stamper Function & Smart Image Compressor
   const applyWatermarkToImage = (imageSrc: string): Promise<string> => {
@@ -224,11 +138,24 @@ export default function AttendancePage() {
 
         // Text details
         ctx.fillStyle = '#ffffff';
+        // Text details (Guaranteed Indian Standard Time)
+        ctx.fillStyle = '#ffffff';
         ctx.font = `bold ${Math.round(canvas.width * 0.035)}px sans-serif`;
         const now = new Date();
-        const dateStr = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-        const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-        const punchLabel = punchType === 'PUNCH_IN' ? 'PUNCH IN (MORNING)' : 'PUNCH OUT (EVENING)';
+        const dateStr = now.toLocaleDateString('en-IN', {
+          timeZone: 'Asia/Kolkata',
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        });
+        const timeStr = now.toLocaleTimeString('en-IN', {
+          timeZone: 'Asia/Kolkata',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true,
+        });
+        const punchLabel = punchType === 'PUNCH_IN' ? 'PUNCH IN (ENTRY)' : 'PUNCH OUT (EXIT)';
 
         ctx.fillText(`SS REALTY • ${punchLabel}`, 18, canvas.height - barHeight + 24);
 
@@ -248,7 +175,7 @@ export default function AttendancePage() {
     });
   };
 
-  // Open Camera Handler: Works on both HTTP (Direct Mobile Camera Input) and HTTPS (Live Viewfinder)
+  // Open Camera Handler: Direct front camera launch without location barriers
   const handleOpenFrontCamera = async () => {
     // 0. Project and Employee Selection Validation
     if (!effectiveProject) {
@@ -259,28 +186,6 @@ export default function AttendancePage() {
       toast.error('Kripya pehle 2. Apna Naam select karein!');
       return;
     }
-
-    // 1. Strict Geofencing Check: Employee MUST be within 50 meters of the site
-    const isAtSite = isWithinRadius || testModeOverride;
-    if (!isAtSite) {
-      setShowDistanceAlert(true);
-      const distInfo = distanceMeters !== null ? ` (Abhi aap ${distanceMeters}m door hain)` : '';
-      toast.error(`Aap abhi site se dur hai. Pahele site par jaiye${distInfo}!`, {
-        duration: 6000,
-        icon: '🚫',
-        style: {
-          borderRadius: '16px',
-          background: '#0f172a',
-          color: '#fda4af',
-          border: '1px solid #f43f5e',
-          fontWeight: 'bold',
-          fontSize: '13px',
-          padding: '12px 16px',
-        },
-      });
-      return;
-    }
-    setShowDistanceAlert(false);
 
     const isSecure = typeof window !== 'undefined' && (window.isSecureContext || window.location.hostname === 'localhost');
     const hasMediaDevices = typeof navigator !== 'undefined' && !!navigator.mediaDevices && !!navigator.mediaDevices.getUserMedia;
@@ -373,18 +278,17 @@ export default function AttendancePage() {
     };
   }, []);
 
-  const isWithinRadius = distanceMeters !== null && distanceMeters <= TARGET_SITE_CONFIG.radiusMeters;
-  const canPunch = (isWithinRadius || testModeOverride) && !!effectiveEmployee && !!effectiveProject;
+  const canPunch = !!effectiveEmployee && !!effectiveProject;
 
   // Submit Final Punch
   const handleSubmitPunch = async () => {
-    if (!effectiveEmployee) {
-      toast.error('Kripya apna Naam select ya enter karein.');
+    if (!effectiveProject) {
+      toast.error('Kripya Project select karein.');
       return;
     }
 
-    if (!effectiveProject) {
-      toast.error('Kripya Project select karein.');
+    if (!effectiveEmployee) {
+      toast.error('Kripya apna Naam select ya enter karein.');
       return;
     }
 
@@ -397,8 +301,14 @@ export default function AttendancePage() {
     const toastId = toast.loading('Attendance record ho rahi hai...');
 
     try {
-      const lat = userLocation ? userLocation.lat : TARGET_SITE_CONFIG.latitude;
-      const lng = userLocation ? userLocation.lng : TARGET_SITE_CONFIG.longitude;
+      const now = new Date();
+      const clientTimeStr = now.toLocaleTimeString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+      });
 
       const response = await fetch('/api/attendance/punch', {
         method: 'POST',
@@ -410,9 +320,7 @@ export default function AttendancePage() {
           projectName: effectiveProject,
           punchType,
           photoBase64: capturedImage,
-          latitude: lat,
-          longitude: lng,
-          testOverride: testModeOverride,
+          clientTimeStr,
         }),
       });
 
@@ -421,11 +329,10 @@ export default function AttendancePage() {
       if (response.ok && res.success && res.record) {
         toast.success(res.message, { id: toastId, duration: 5000 });
         setSuccessRecord({
-          time: res.record.formattedTime,
+          time: res.record.formattedTime || clientTimeStr,
           date: res.record.formattedDate,
           punchType: res.record.punchType,
           photoUrl: res.record.photoUrl,
-          distance: res.record.distanceMeters,
           employeeName: res.record.employeeName,
           projectName: res.record.projectName,
         });
@@ -449,7 +356,6 @@ export default function AttendancePage() {
     setSuccessRecord(null);
     setIsTaskSubmitted(false);
     stopCameraStream();
-    requestLocation();
   };
 
   // SSR Loading Fallback to eliminate browser extension hydration mismatch
@@ -497,7 +403,7 @@ export default function AttendancePage() {
                 <h1 className="text-base sm:text-lg font-bold text-white flex items-center gap-1.5">
                   SS Realty <span className="text-[10px] bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-400/20 font-semibold">Site Tracker</span>
                 </h1>
-                <p className="text-xs text-slate-400">Smart Face & GPS Geofenced Attendance</p>
+                <p className="text-xs text-slate-400">Smart Face Verified Attendance</p>
               </div>
             </div>
 
@@ -513,8 +419,8 @@ export default function AttendancePage() {
 
           {/* Admin link button */}
           <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-            <span className="flex items-center gap-1 text-[11px] text-slate-400">
-              <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" /> 50m Site Radius Geo-lock
+            <span className="flex items-center gap-1 text-[11px] text-emerald-400 font-medium">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Direct Face Punch Active
             </span>
             <Link
               href="/admin/attendance"
@@ -575,8 +481,8 @@ export default function AttendancePage() {
                   <p className="text-white font-bold">{successRecord.date}</p>
                 </div>
                 <div>
-                  <p className="text-slate-400 text-[10px] uppercase font-semibold">Site Distance</p>
-                  <p className="text-emerald-400 font-semibold">{successRecord.distance}m (Approved)</p>
+                  <p className="text-slate-400 text-[10px] uppercase font-semibold">Status</p>
+                  <p className="text-emerald-400 font-semibold">Verified & Approved</p>
                 </div>
               </div>
 
@@ -637,8 +543,8 @@ export default function AttendancePage() {
                   <p className="text-white font-bold">{successRecord.date}</p>
                 </div>
                 <div>
-                  <p className="text-slate-400 text-[10px] uppercase font-semibold">Site Distance</p>
-                  <p className="text-emerald-400 font-semibold">{successRecord.distance}m from site</p>
+                  <p className="text-slate-400 text-[10px] uppercase font-semibold">Verification</p>
+                  <p className="text-emerald-400 font-semibold">Photo Verified</p>
                 </div>
                 <div>
                   <p className="text-slate-400 text-[10px] uppercase font-semibold">Status</p>
@@ -695,85 +601,6 @@ export default function AttendancePage() {
         ) : (
           /* Normal Punch Form */
           <div className="space-y-4">
-            {/* GPS Geofencing Status Banner */}
-            <div
-              className={`rounded-2xl p-4 border transition-all duration-300 ${
-                isWithinRadius || testModeOverride
-                  ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-200'
-                  : 'bg-rose-950/40 border-rose-500/40 text-rose-200'
-              }`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-start gap-3">
-                  <div
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                      isWithinRadius || testModeOverride
-                        ? 'bg-emerald-500/20 text-emerald-300'
-                        : 'bg-rose-500/20 text-rose-300'
-                    }`}
-                  >
-                    {gpsLoading ? (
-                      <Compass className="w-5 h-5 animate-spin" />
-                    ) : isWithinRadius || testModeOverride ? (
-                      <MapPin className="w-5 h-5" />
-                    ) : (
-                      <ShieldAlert className="w-5 h-5" />
-                    )}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-sm text-white flex items-center gap-2">
-                      {isWithinRadius
-                        ? 'Site Location Verified (Under 50m)'
-                        : testModeOverride
-                        ? 'Test Mode Active (Punch Enabled)'
-                        : 'Location Warning: Site se door'}
-                    </h3>
-                    <p className="text-xs mt-0.5 leading-relaxed text-slate-300">
-                      {gpsMessage}
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={requestLocation}
-                  title="Refresh GPS"
-                  className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-medium flex items-center gap-1 shrink-0 border border-slate-700 cursor-pointer"
-                >
-                  <Navigation className="w-3 h-3" /> Refresh
-                </button>
-              </div>
-
-              {/* Developer / Testing Override Switch */}
-              <div className="mt-3 pt-2.5 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-300">
-                <span className="flex items-center gap-1 text-slate-400">
-                  <Info className="w-3.5 h-3.5" /> Target: 28.465355, 77.185921 (50m)
-                </span>
-                <label className={`flex items-center gap-2 cursor-pointer select-none px-3 py-1.5 rounded-lg border transition-all ${
-                  testModeOverride
-                    ? 'bg-amber-500/20 border-amber-400 text-amber-300 font-bold shadow-xs'
-                    : 'bg-slate-800/80 border-slate-700 text-slate-400 hover:text-white'
-                }`}>
-                  <input
-                    type="checkbox"
-                    checked={testModeOverride}
-                    onChange={(e) => setTestModeOverride(e.target.checked)}
-                    className="w-4 h-4 accent-amber-500 rounded cursor-pointer"
-                  />
-                  <span className="text-xs">
-                    Test Mode: {testModeOverride ? 'ON (Bypass 50m)' : 'OFF'}
-                  </span>
-                </label>
-              </div>
-
-              {testModeOverride && (
-                <p className="text-[11px] text-amber-300 mt-2 bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/30 font-medium flex items-center gap-1.5">
-                  <span>🧪</span>
-                  <span><strong>Testing Mode Chalu Hai:</strong> Aap bina site jaye bhi abhi camera se selfie leke test record kar sakte hain!</span>
-                </p>
-              )}
-            </div>
-
             {/* Form Card */}
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-6 shadow-xl space-y-4">
               {/* Step 1: Project Selection */}
@@ -975,7 +802,7 @@ export default function AttendancePage() {
                     </div>
                     <p className="text-sm font-semibold text-white mb-1">Live Selfie Camera Kholein</p>
                     <p className="text-xs text-slate-400 max-w-xs mx-auto mb-4">
-                      Direct front camera open hoga. Site location par khade hokar hi selfie li ja sakti hai.
+                      Direct front camera open hoga. Apni saaf selfie photo lein.
                     </p>
                     <button
                       type="button"
@@ -1025,8 +852,6 @@ export default function AttendancePage() {
                       ? 'Pehle 1. Site / Project select karein.'
                       : !effectiveEmployee
                       ? 'Pehle 2. Apna naam select karein.'
-                      : !isWithinRadius && !testModeOverride
-                      ? `Location lock: Site se ${distanceMeters ?? '...'}m door hain (Allowed: 50m).`
                       : !capturedImage
                       ? 'Camera se selfie photo lein.'
                       : 'Form details poori bharein.'}
@@ -1040,9 +865,6 @@ export default function AttendancePage() {
         {/* Footer info */}
         <footer className="mt-6 text-center text-xs text-slate-500 pb-4">
           <p>SS Realty Construction Management System &copy; 2026</p>
-          <p className="text-[11px] text-slate-600 mt-0.5">
-            Geofence Target: Lat 28.465355, Lng 77.185921 (50m Radius)
-          </p>
         </footer>
       </div>
 
@@ -1055,8 +877,6 @@ export default function AttendancePage() {
           employeeName={successRecord.employeeName}
           projectName={successRecord.projectName}
           formattedDate={successRecord.date}
-          latitude={userLocation?.lat}
-          longitude={userLocation?.lng}
           onSuccess={() => {
             setIsTaskModalOpen(false);
             setIsTaskSubmitted(true);

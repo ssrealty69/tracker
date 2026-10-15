@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { prisma } from '@/lib/prisma';
+import { getIndianTimeStr, getIndianFormattedDate } from '@/lib/attendanceConfig';
 
 export interface TaskPhoto {
   id: string;
@@ -167,12 +168,7 @@ export async function saveMorningTaskPlan(input: {
 }): Promise<SiteDailyTaskData> {
   const compositeKey = `${input.dateKey}_${input.employeeName}_${input.projectName}`;
   const now = new Date();
-  const timeStr = now.toLocaleTimeString('en-IN', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: true,
-  });
+  const timeStr = getIndianTimeStr(now);
 
   const existing = await getSiteTask(input.dateKey, input.employeeName, input.projectName);
   const id = existing?.id || `task_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
@@ -250,12 +246,7 @@ export async function saveEveningTaskReport(input: {
 }): Promise<SiteDailyTaskData> {
   const compositeKey = `${input.dateKey}_${input.employeeName}_${input.projectName}`;
   const now = new Date();
-  const timeStr = now.toLocaleTimeString('en-IN', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: true,
-  });
+  const timeStr = getIndianTimeStr(now);
 
   const existing = await getSiteTask(input.dateKey, input.employeeName, input.projectName);
   const id = existing?.id || `task_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
