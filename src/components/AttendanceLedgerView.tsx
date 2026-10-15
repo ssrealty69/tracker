@@ -316,7 +316,7 @@ export default function AttendanceLedgerView({
       isAbsent: boolean;
     }[];
     // Aggregated stats for the cell based on selectedStaff
-    primaryStatus: 'PRESENT' | 'ON_SITE' | 'ABSENT' | 'WEEKLY_OFF' | 'FUTURE';
+    primaryStatus: 'PRESENT' | 'ON_SITE' | 'ABSENT' | 'FUTURE';
     hoursFormatted: string;
     inTime?: string;
     outTime?: string;
@@ -353,7 +353,8 @@ export default function AttendanceLedgerView({
         const row = consolidatedMap.get(compositeKey);
         const isPresent = !!row && row.status === 'COMPLETED';
         const isOnSite = !!row && row.status === 'ON_SITE';
-        const isAbsent = !row && isPastOrToday && !isSunday;
+        // 7-Days working company policy: all days are working days!
+        const isAbsent = !row && isPastOrToday;
 
         return {
           staffName,
@@ -364,8 +365,8 @@ export default function AttendanceLedgerView({
         };
       });
 
-      // Compute cell aggregate
-      let primaryStatus: 'PRESENT' | 'ON_SITE' | 'ABSENT' | 'WEEKLY_OFF' | 'FUTURE' = 'FUTURE';
+      // Compute cell aggregate (7-Days working schedule)
+      let primaryStatus: 'PRESENT' | 'ON_SITE' | 'ABSENT' | 'FUTURE' = 'FUTURE';
       let hoursFormatted = '--';
       let inTime: string | undefined;
       let outTime: string | undefined;
@@ -374,9 +375,6 @@ export default function AttendanceLedgerView({
 
       if (isFuture) {
         primaryStatus = 'FUTURE';
-      } else if (isSunday) {
-        const hasPunchOnSunday = staffRecords.some((sr) => sr.isPresent || sr.isOnSite);
-        primaryStatus = hasPunchOnSunday ? 'PRESENT' : 'WEEKLY_OFF';
       } else {
         if (selectedStaff === 'All') {
           const presentCount = staffRecords.filter((s) => s.isPresent).length;
@@ -389,7 +387,7 @@ export default function AttendanceLedgerView({
             hoursFormatted = `${presentCount + onSiteCount}/${targetStaffList.length} Attended`;
           } else {
             primaryStatus = 'ABSENT';
-            hoursFormatted = 'All Absent';
+            hoursFormatted = 'All Absent (Gayab)';
           }
         } else {
           // Single Staff View
@@ -443,7 +441,7 @@ export default function AttendanceLedgerView({
     let totalMinutesWorked = 0;
 
     calendarDays.forEach((cell) => {
-      if (cell.isPastOrToday && !cell.isSunday) {
+      if (cell.isPastOrToday) {
         workingDaysCount++;
         if (selectedStaff === 'All') {
           const anyPresent = cell.staffRecords.some((s) => s.isPresent);
@@ -499,7 +497,7 @@ export default function AttendanceLedgerView({
       isSunday: boolean;
       employeeName: string;
       projectName: string;
-      status: 'PRESENT' | 'ON_SITE' | 'ABSENT' | 'WEEKLY_OFF';
+      status: 'PRESENT' | 'ON_SITE' | 'ABSENT';
       punchIn?: { time: string; photoUrl: string; distance: number };
       punchOut?: { time: string; photoUrl: string; distance: number };
       duration: string;
@@ -520,20 +518,6 @@ export default function AttendanceLedgerView({
       targetStaffList.forEach((staffName) => {
         const sr = cell.staffRecords.find((s) => s.staffName === staffName);
         if (cell.isFuture) return;
-
-        if (cell.isSunday && !sr?.isPresent && !sr?.isOnSite) {
-          list.push({
-            date: cell.formattedDate,
-            dayNum: cell.dayNum,
-            dayOfWeek,
-            isSunday: true,
-            employeeName: staffName,
-            projectName: 'Nivasa II (Site 1)',
-            status: 'WEEKLY_OFF',
-            duration: 'Weekly Holiday',
-          });
-          return;
-        }
 
         if (sr?.isPresent && sr.row) {
           list.push({
@@ -578,12 +562,12 @@ export default function AttendanceLedgerView({
               : undefined,
             duration: 'On Site (Out Pending)',
           });
-        } else if (cell.isPastOrToday && !cell.isSunday) {
+        } else if (cell.isPastOrToday) {
           list.push({
             date: cell.formattedDate,
             dayNum: cell.dayNum,
             dayOfWeek,
-            isSunday: false,
+            isSunday: cell.isSunday,
             employeeName: staffName,
             projectName: 'Nivasa II (Site 1)',
             status: 'ABSENT',
@@ -827,7 +811,7 @@ export default function AttendanceLedgerView({
                 <p className="text-2xl font-black text-slate-900 mt-1.5">
                   {monthlyMetrics.workingDaysCount}
                 </p>
-                <span className="text-[11px] text-slate-400">Excluding Sundays</span>
+                <span className="text-[11px] text-slate-400">7-Days Schedule (All Days)</span>
               </div>
 
               <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
@@ -910,16 +894,13 @@ export default function AttendanceLedgerView({
                   <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 font-semibold">
                     <span className="w-2 h-2 rounded-full bg-rose-500"></span> Absent (Gayab)
                   </span>
-                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 font-medium">
-                    Weekly Off
-                  </span>
                 </div>
               </div>
 
               {/* Day Header Row (Mon - Sun) */}
               <div className="grid grid-cols-7 border-b border-slate-200 text-center bg-slate-100/90 text-slate-600 font-bold text-xs uppercase tracking-wider py-2.5">
-                {WEEKDAY_NAMES.map((name, i) => (
-                  <div key={name} className={i === 6 ? 'text-rose-600' : ''}>
+                {WEEKDAY_NAMES.map((name) => (
+                  <div key={name}>
                     {name}
                   </div>
                 ))}
@@ -961,8 +942,6 @@ export default function AttendanceLedgerView({
                           className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                             cell.isToday
                               ? 'bg-indigo-600 text-white shadow-xs'
-                              : cell.isSunday
-                              ? 'text-rose-600'
                               : 'text-slate-900'
                           }`}
                         >
@@ -980,10 +959,6 @@ export default function AttendanceLedgerView({
                       <div className="space-y-1 my-auto">
                         {cell.isFuture ? (
                           <span className="text-[10px] text-slate-400 block">—</span>
-                        ) : cell.isSunday && cell.primaryStatus === 'WEEKLY_OFF' ? (
-                          <span className="inline-block text-[10px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
-                            Sunday Off
-                          </span>
                         ) : selectedStaff === 'All' ? (
                           /* Multi-staff summary inside cell */
                           <div className="space-y-1">
@@ -1207,8 +1182,6 @@ export default function AttendanceLedgerView({
                           className={`hover:bg-slate-50/80 transition-colors ${
                             row.status === 'ABSENT'
                               ? 'bg-rose-50/30'
-                              : row.status === 'WEEKLY_OFF'
-                              ? 'bg-slate-50/50'
                               : 'bg-white'
                           }`}
                         >
@@ -1216,7 +1189,7 @@ export default function AttendanceLedgerView({
                           <td className="py-3 px-4 whitespace-nowrap">
                             <div className="font-bold text-slate-900">{row.date}</div>
                             <span className="text-[11px] font-medium text-slate-400">
-                              {row.dayOfWeek} {row.isSunday && '(Weekly Off)'}
+                              {row.dayOfWeek}
                             </span>
                           </td>
 
@@ -1238,14 +1211,10 @@ export default function AttendanceLedgerView({
                                 <Clock className="w-3.5 h-3.5 text-amber-600" />
                                 On Site
                               </span>
-                            ) : row.status === 'ABSENT' ? (
+                            ) : (
                               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
                                 <UserX className="w-3.5 h-3.5 text-rose-600" />
                                 Absent (Gayab)
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
-                                Weekly Off
                               </span>
                             )}
                           </td>

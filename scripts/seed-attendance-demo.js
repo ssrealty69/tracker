@@ -142,17 +142,17 @@ for (let day = 15; day >= 1; day--) {
   const dateObj = new Date(2026, 9, day); // Month 9 is October (0-indexed)
   const isSunday = dateObj.getDay() === 0; // 0 = Sunday
 
-  if (isSunday) {
-    // Sunday is weekly off, no punch records
-    continue;
-  }
-
   employees.forEach((emp, empIdx) => {
-    // Specific absence scenarios for realistic calendar testing:
+    // 7-Days working company policy: Sundays are regular working days
+    // Realistic absence scenarios for testing:
+    // Day 4 (Sunday): Harshit absent
+    if (day === 4 && emp.name === 'Harshit') return;
     // Day 8: Naveen Tanwar absent
     if (day === 8 && emp.name === 'Naveen Tanwar') return;
     // Day 10: Harshit absent
     if (day === 10 && emp.name === 'Harshit') return;
+    // Day 11 (Sunday): Naveen Tanwar absent
+    if (day === 11 && emp.name === 'Naveen Tanwar') return;
     // Day 2: Harshit absent
     if (day === 2 && emp.name === 'Harshit') return;
 
