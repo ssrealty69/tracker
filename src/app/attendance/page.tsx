@@ -48,10 +48,10 @@ export default function AttendancePage() {
   // Mount state to eliminate browser extension hydration mismatches
   const [mounted, setMounted] = useState(false);
 
-  // Selection states
-  const [selectedProject, setSelectedProject] = useState(DEFAULT_PROJECTS[0]);
+  // Selection states - initialized empty so user must explicitly choose
+  const [selectedProject, setSelectedProject] = useState('');
   const [customProject, setCustomProject] = useState('');
-  const [selectedEmployee, setSelectedEmployee] = useState(DEFAULT_STAFF[0]);
+  const [selectedEmployee, setSelectedEmployee] = useState('');
   const [customEmployee, setCustomEmployee] = useState('');
 
   // Punch Mode: PUNCH_IN vs PUNCH_OUT
@@ -250,6 +250,16 @@ export default function AttendancePage() {
 
   // Open Camera Handler: Works on both HTTP (Direct Mobile Camera Input) and HTTPS (Live Viewfinder)
   const handleOpenFrontCamera = async () => {
+    // 0. Project and Employee Selection Validation
+    if (!effectiveProject) {
+      toast.error('Kripya pehle 1. Project / Site select karein!');
+      return;
+    }
+    if (!effectiveEmployee) {
+      toast.error('Kripya pehle 2. Apna Naam select karein!');
+      return;
+    }
+
     // 1. Strict Geofencing Check: Employee MUST be within 50 meters of the site
     const isAtSite = isWithinRadius || testModeOverride;
     if (!isAtSite) {
@@ -431,6 +441,10 @@ export default function AttendancePage() {
   };
 
   const resetFormForNext = () => {
+    setSelectedProject('');
+    setCustomProject('');
+    setSelectedEmployee('');
+    setCustomEmployee('');
     setCapturedImage(null);
     setSuccessRecord(null);
     setIsTaskSubmitted(false);
@@ -566,24 +580,24 @@ export default function AttendancePage() {
                 </div>
               </div>
 
-              {/* ACTION BUTTONS: GO TO HOME & NEXT PUNCH */}
+              {/* ACTION BUTTONS: RETURN TO ATTENDANCE PUNCH & VIEW LEDGER */}
               <div className="space-y-3 pt-2">
-                <Link
-                  href="/"
-                  className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:brightness-110 active:scale-[0.99] transition-all font-black text-sm sm:text-base text-white shadow-xl shadow-emerald-500/30 flex items-center justify-center gap-2.5 cursor-pointer border border-emerald-400/40"
-                >
-                  <span>🏠 Go to Home (होम पेज पर जाएं)</span>
-                  <ArrowRight className="w-5 h-5" />
-                </Link>
-
                 <button
                   type="button"
                   onClick={resetFormForNext}
+                  className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:brightness-110 active:scale-[0.99] transition-all font-black text-sm sm:text-base text-white shadow-xl shadow-emerald-500/30 flex items-center justify-center gap-2.5 cursor-pointer border border-emerald-400/40"
+                >
+                  <RotateCcw className="w-5 h-5" />
+                  <span>🏠 Go to Home (पंच पेज पर वापस आएं)</span>
+                </button>
+
+                <Link
+                  href="/site-report"
                   className="w-full py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer border border-slate-700"
                 >
-                  <RotateCcw className="w-4 h-4" />
-                  <span>New Attendance Punch (अगले कर्मचारी की हाजिरी)</span>
-                </button>
+                  <ExternalLink className="w-4 h-4 text-indigo-400" />
+                  <span>📋 View Attendance Ledger (हाजिरी रिकॉर्ड देखें)</span>
+                </Link>
               </div>
             </div>
           ) : (
@@ -771,8 +785,13 @@ export default function AttendancePage() {
                   suppressHydrationWarning
                   value={selectedProject}
                   onChange={(e) => setSelectedProject(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                  className={`w-full bg-slate-950 border rounded-xl px-4 py-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer transition-colors ${
+                    selectedProject ? 'text-white border-slate-700' : 'text-slate-400 border-indigo-500/50'
+                  }`}
                 >
+                  <option value="" disabled className="text-slate-500 bg-slate-950">
+                    -- Project / Site Select Karein --
+                  </option>
                   {DEFAULT_PROJECTS.map((proj) => (
                     <option key={proj} value={proj} className="bg-slate-950 text-white">
                       {proj}
@@ -800,8 +819,13 @@ export default function AttendancePage() {
                   suppressHydrationWarning
                   value={selectedEmployee}
                   onChange={(e) => setSelectedEmployee(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                  className={`w-full bg-slate-950 border rounded-xl px-4 py-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer transition-colors ${
+                    selectedEmployee ? 'text-white border-slate-700' : 'text-slate-400 border-indigo-500/50'
+                  }`}
                 >
+                  <option value="" disabled className="text-slate-500 bg-slate-950">
+                    -- Staff / Apna Naam Select Karein --
+                  </option>
                   {DEFAULT_STAFF.map((staff) => (
                     <option key={staff} value={staff} className="bg-slate-950 text-white">
                       {staff}
@@ -997,8 +1021,10 @@ export default function AttendancePage() {
                 {!canPunch && (
                   <p className="text-center text-xs text-amber-300/80 mt-2 flex items-center justify-center gap-1">
                     <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                    {!effectiveEmployee
-                      ? 'Pehle apna naam chunein.'
+                    {!effectiveProject
+                      ? 'Pehle 1. Site / Project select karein.'
+                      : !effectiveEmployee
+                      ? 'Pehle 2. Apna naam select karein.'
                       : !isWithinRadius && !testModeOverride
                       ? `Location lock: Site se ${distanceMeters ?? '...'}m door hain (Allowed: 50m).`
                       : !capturedImage
