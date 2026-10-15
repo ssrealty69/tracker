@@ -417,17 +417,14 @@ export default function AttendancePage() {
             </div>
           </div>
 
-          {/* Admin link button */}
-          <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-            <span className="flex items-center gap-1 text-[11px] text-emerald-400 font-medium">
+          {/* Status strip */}
+          <div className="mt-3 pt-2.5 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+            <span className="flex items-center gap-1.5 text-[11px] text-emerald-400 font-medium">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Direct Face Punch Active
             </span>
-            <Link
-              href="/admin/attendance"
-              className="text-indigo-400 hover:text-indigo-300 font-semibold flex items-center gap-1 hover:underline text-[11px]"
-            >
-              Admin Punch Ledger <ExternalLink className="w-3 h-3" />
-            </Link>
+            <span className="text-[11px] text-slate-500 font-medium">
+              SS Realty Site System
+            </span>
           </div>
         </header>
 

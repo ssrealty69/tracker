@@ -107,7 +107,7 @@ export default function AttendanceLedgerView({
   const [loading, setLoading] = useState(true);
 
   // View Mode: 'daily' (Single date live register) vs 'monthly_calendar' (Staff calendar & month timesheet)
-  const [viewMode, setViewMode] = useState<'monthly_calendar' | 'daily'>('monthly_calendar');
+  const [viewMode, setViewMode] = useState<'daily' | 'monthly_calendar'>('daily');
 
   // Daily Mode States
   const [dailyDateFilter, setDailyDateFilter] = useState<string>(''); // empty means today
@@ -712,17 +712,6 @@ export default function AttendanceLedgerView({
         <div className="bg-white p-2 sm:p-2.5 rounded-2xl border border-slate-200 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl w-full sm:w-auto">
             <button
-              onClick={() => setViewMode('monthly_calendar')}
-              className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                viewMode === 'monthly_calendar'
-                  ? 'bg-white text-indigo-700 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <CalendarIcon className="w-4 h-4 text-indigo-600" />
-              <span>📅 Monthly Staff Calendar &amp; Timesheet</span>
-            </button>
-            <button
               onClick={() => setViewMode('daily')}
               className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
                 viewMode === 'daily'
@@ -733,11 +722,22 @@ export default function AttendanceLedgerView({
               <Clock className="w-4 h-4 text-emerald-600" />
               <span>📋 Daily Register (Single Day Live)</span>
             </button>
+            <button
+              onClick={() => setViewMode('monthly_calendar')}
+              className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                viewMode === 'monthly_calendar'
+                  ? 'bg-white text-indigo-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <CalendarIcon className="w-4 h-4 text-indigo-600" />
+              <span>📅 Monthly Staff Calendar &amp; Timesheet</span>
+            </button>
           </div>
 
           <div className="text-xs font-medium text-slate-500 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>Real-time Geofence Tracking</span>
+            <span>Live Attendance Tracking</span>
           </div>
         </div>
 
