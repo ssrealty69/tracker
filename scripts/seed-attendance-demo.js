@@ -77,140 +77,151 @@ function createSvgSelfie(name, role, punchType, timeStr, dateStr, distance) {
   </svg>`;
 }
 
-const today = new Date();
-const formattedToday = today.toLocaleDateString('en-IN', {
-  day: '2-digit',
-  month: 'short',
-  year: 'numeric',
-});
-
-const demoRecords = [
+const employees = [
   {
-    id: 'demo_att_01',
-    employeeName: 'Ravi Tanwar',
+    name: 'Ravi Tanwar',
     role: 'Site Supervisor',
-    projectName: 'Nivasa II (Site 1)',
-    punchType: 'PUNCH_IN',
-    timestamp: new Date(Date.now() - 8 * 3600000).toISOString(),
-    formattedDate: formattedToday,
-    formattedTime: '08:52:14 AM',
-    latitude: 28.465360,
-    longitude: 77.185925,
-    distanceMeters: 12,
-    isWithinRadius: true,
-    siteLatitude: 28.465355,
-    siteLongitude: 77.185921,
-    allowedRadiusMeters: 50,
-    photoFile: 'demo_selfie_ravi_in.svg',
+    inSvg: 'demo_selfie_ravi_in.svg',
+    outSvg: 'demo_selfie_ravi_out.svg',
+    inHour: 8,
+    inMin: 50,
+    outHour: 17,
+    outMin: 48,
   },
   {
-    id: 'demo_att_02',
-    employeeName: 'Ravi Tanwar',
-    role: 'Site Supervisor',
-    projectName: 'Nivasa II (Site 1)',
-    punchType: 'PUNCH_OUT',
-    timestamp: new Date(Date.now() - 30 * 60000).toISOString(),
-    formattedDate: formattedToday,
-    formattedTime: '05:48:32 PM',
-    latitude: 28.465350,
-    longitude: 77.185918,
-    distanceMeters: 15,
-    isWithinRadius: true,
-    siteLatitude: 28.465355,
-    siteLongitude: 77.185921,
-    allowedRadiusMeters: 50,
-    photoFile: 'demo_selfie_ravi_out.svg',
-  },
-  {
-    id: 'demo_att_03',
-    employeeName: 'Naveen Tanwar',
+    name: 'Naveen Tanwar',
     role: 'Site Operations',
-    projectName: 'Nivasa II (Site 1)',
-    punchType: 'PUNCH_IN',
-    timestamp: new Date(Date.now() - 7.5 * 3600000).toISOString(),
-    formattedDate: formattedToday,
-    formattedTime: '09:05:40 AM',
-    latitude: 28.465358,
-    longitude: 77.185922,
-    distanceMeters: 8,
-    isWithinRadius: true,
-    siteLatitude: 28.465355,
-    siteLongitude: 77.185921,
-    allowedRadiusMeters: 50,
-    photoFile: 'demo_selfie_naveen_in.svg',
+    inSvg: 'demo_selfie_naveen_in.svg',
+    outSvg: 'demo_selfie_naveen_out.svg',
+    inHour: 9,
+    inMin: 5,
+    outHour: 18,
+    outMin: 12,
   },
   {
-    id: 'demo_att_04',
-    employeeName: 'Naveen Tanwar',
-    role: 'Site Operations',
-    projectName: 'Nivasa II (Site 1)',
-    punchType: 'PUNCH_OUT',
-    timestamp: new Date(Date.now() - 15 * 60000).toISOString(),
-    formattedDate: formattedToday,
-    formattedTime: '06:12:10 PM',
-    latitude: 28.465345,
-    longitude: 77.185930,
-    distanceMeters: 22,
-    isWithinRadius: true,
-    siteLatitude: 28.465355,
-    siteLongitude: 77.185921,
-    allowedRadiusMeters: 50,
-    photoFile: 'demo_selfie_naveen_out.svg',
-  },
-  {
-    id: 'demo_att_05',
-    employeeName: 'Harshit',
+    name: 'Harshit',
     role: 'Civil Project Lead',
-    projectName: 'Nivasa II (Site 1)',
-    punchType: 'PUNCH_IN',
-    timestamp: new Date(Date.now() - 7 * 3600000).toISOString(),
-    formattedDate: formattedToday,
-    formattedTime: '09:18:22 AM',
-    latitude: 28.465365,
-    longitude: 77.185915,
-    distanceMeters: 18,
-    isWithinRadius: true,
-    siteLatitude: 28.465355,
-    siteLongitude: 77.185921,
-    allowedRadiusMeters: 50,
-    photoFile: 'demo_selfie_harshit_in.svg',
+    inSvg: 'demo_selfie_harshit_in.svg',
+    outSvg: 'demo_selfie_harshit_out.svg',
+    inHour: 9,
+    inMin: 18,
+    outHour: 18,
+    outMin: 5,
   },
 ];
 
-// Write SVG files to public/uploads/attendance
-demoRecords.forEach((d) => {
-  const svg = createSvgSelfie(
-    d.employeeName,
-    d.role,
-    d.punchType,
-    d.formattedTime,
-    d.formattedDate,
-    `${d.distanceMeters}m`
+// Ensure SVG files exist for all staff
+employees.forEach((emp) => {
+  const inSvgContent = createSvgSelfie(
+    emp.name,
+    emp.role,
+    'PUNCH_IN',
+    `${String(emp.inHour).padStart(2, '0')}:${String(emp.inMin).padStart(2, '0')} AM`,
+    '15 Oct 2026',
+    '12m'
   );
-  fs.writeFileSync(path.join(uploadsDir, d.photoFile), svg, 'utf-8');
+  fs.writeFileSync(path.join(uploadsDir, emp.inSvg), inSvgContent, 'utf-8');
+
+  const outSvgContent = createSvgSelfie(
+    emp.name,
+    emp.role,
+    'PUNCH_OUT',
+    `${String(emp.outHour - 12).padStart(2, '0')}:${String(emp.outMin).padStart(2, '0')} PM`,
+    '15 Oct 2026',
+    '18m'
+  );
+  fs.writeFileSync(path.join(uploadsDir, emp.outSvg), outSvgContent, 'utf-8');
 });
 
-// Format records for attendanceStore.json
-const storeRecords = demoRecords.map((d) => ({
-  id: d.id,
-  employeeName: d.employeeName,
-  projectName: d.projectName,
-  punchType: d.punchType,
-  timestamp: d.timestamp,
-  formattedDate: d.formattedDate,
-  formattedTime: d.formattedTime,
-  latitude: d.latitude,
-  longitude: d.longitude,
-  distanceMeters: d.distanceMeters,
-  isWithinRadius: d.isWithinRadius,
-  siteLatitude: d.siteLatitude,
-  siteLongitude: d.siteLongitude,
-  allowedRadiusMeters: d.allowedRadiusMeters,
-  photoUrl: `/uploads/attendance/${d.photoFile}`,
-  createdAt: d.timestamp,
-}));
+const storeRecords = [];
+
+// Generate records for Oct 1 to Oct 15, 2026
+for (let day = 15; day >= 1; day--) {
+  const dayStr = String(day).padStart(2, '0');
+  const formattedDate = `${dayStr} Oct 2026`;
+  const dateObj = new Date(2026, 9, day); // Month 9 is October (0-indexed)
+  const isSunday = dateObj.getDay() === 0; // 0 = Sunday
+
+  if (isSunday) {
+    // Sunday is weekly off, no punch records
+    continue;
+  }
+
+  employees.forEach((emp, empIdx) => {
+    // Specific absence scenarios for realistic calendar testing:
+    // Day 8: Naveen Tanwar absent
+    if (day === 8 && emp.name === 'Naveen Tanwar') return;
+    // Day 10: Harshit absent
+    if (day === 10 && emp.name === 'Harshit') return;
+    // Day 2: Harshit absent
+    if (day === 2 && emp.name === 'Harshit') return;
+
+    // Jitter minutes slightly per day
+    const minJitter = (day * 3) % 15;
+    const morningTime = new Date(2026, 9, day, emp.inHour, emp.inMin + minJitter, 15);
+    const morningTimeStr = morningTime.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    });
+
+    const punchInId = `att_in_d${day}_e${empIdx}`;
+    storeRecords.push({
+      id: punchInId,
+      employeeName: emp.name,
+      projectName: 'Nivasa II (Site 1)',
+      punchType: 'PUNCH_IN',
+      timestamp: morningTime.toISOString(),
+      formattedDate: formattedDate,
+      formattedTime: morningTimeStr,
+      latitude: 28.465360 + (day % 3) * 0.000005,
+      longitude: 77.185925 - (day % 3) * 0.000004,
+      distanceMeters: 8 + ((day * 2) % 18),
+      isWithinRadius: true,
+      siteLatitude: 28.465355,
+      siteLongitude: 77.185921,
+      allowedRadiusMeters: 50,
+      photoUrl: `/uploads/attendance/${emp.inSvg}`,
+      createdAt: morningTime.toISOString(),
+    });
+
+    // Evening Punch Out (for today day 15: Harshit is still on site, so no punch out yet!)
+    if (day === 15 && emp.name === 'Harshit') {
+      return; // On site in progress!
+    }
+
+    const eveningTime = new Date(2026, 9, day, emp.outHour, emp.outMin - minJitter, 40);
+    const eveningTimeStr = eveningTime.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    });
+
+    const punchOutId = `att_out_d${day}_e${empIdx}`;
+    storeRecords.push({
+      id: punchOutId,
+      employeeName: emp.name,
+      projectName: 'Nivasa II (Site 1)',
+      punchType: 'PUNCH_OUT',
+      timestamp: eveningTime.toISOString(),
+      formattedDate: formattedDate,
+      formattedTime: eveningTimeStr,
+      latitude: 28.465350 - (day % 2) * 0.000003,
+      longitude: 77.185918 + (day % 2) * 0.000005,
+      distanceMeters: 12 + ((day * 3) % 20),
+      isWithinRadius: true,
+      siteLatitude: 28.465355,
+      siteLongitude: 77.185921,
+      allowedRadiusMeters: 50,
+      photoUrl: `/uploads/attendance/${emp.outSvg}`,
+      createdAt: eveningTime.toISOString(),
+    });
+  });
+}
 
 const storeFile = path.join(process.cwd(), 'src', 'lib', 'attendanceStore.json');
 fs.writeFileSync(storeFile, JSON.stringify(storeRecords, null, 2), 'utf-8');
 
-console.log(`Successfully generated ${storeRecords.length} demo attendance records with SVG biometric selfies!`);
+console.log(`Successfully generated ${storeRecords.length} multi-day attendance records for October 2026!`);
