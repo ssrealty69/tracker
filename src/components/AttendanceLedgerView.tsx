@@ -23,6 +23,8 @@ import {
   UserX,
   X,
   Sparkles,
+  Filter,
+  User,
 } from 'lucide-react';
 import Link from 'next/link';
 import type { AttendanceRecord } from '@/lib/attendanceConfig';
@@ -105,6 +107,7 @@ export default function AttendanceLedgerView({
   const [selectedMonth, setSelectedMonth] = useState<number>(now.getMonth()); // 0-indexed (9 = Oct)
   const [selectedStaff, setSelectedStaff] = useState<string>('All'); // 'All' | 'Ravi Tanwar' | 'Naveen Tanwar' | 'Harshit'
   const [selectedDayDetail, setSelectedDayDetail] = useState<number | null>(null);
+  const [tableStatusFilter, setTableStatusFilter] = useState<string>('ALL');
 
   // Photo Zoom Modal State
   const [activePhotoModal, setActivePhotoModal] = useState<PhotoModalState | null>(null);
@@ -592,6 +595,13 @@ export default function AttendanceLedgerView({
 
     return list;
   }, [calendarDays, selectedDayDetail, selectedStaff, selectedYear, selectedMonth]);
+
+  const displayedMonthlyRows = useMemo(() => {
+    return monthlyTableRows.filter((r) => {
+      if (tableStatusFilter === 'ALL') return true;
+      return r.status === tableStatusFilter;
+    });
+  }, [monthlyTableRows, tableStatusFilter]);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 selection:bg-indigo-500 selection:text-white font-sans pb-16">
@@ -1098,7 +1108,7 @@ export default function AttendanceLedgerView({
 
             {/* ─── DAY-BY-DAY MONTHLY TIMESHEET REGISTER TABLE ─── */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-              <div className="p-4 sm:p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="p-4 sm:p-5 border-b border-slate-200 flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-slate-50/70">
                 <div>
                   <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
                     <span>
@@ -1120,17 +1130,60 @@ export default function AttendanceLedgerView({
                   </p>
                 </div>
 
-                <div className="text-xs text-slate-500 font-semibold">
-                  Total Entries: <span className="text-slate-900 font-bold">{monthlyTableRows.length}</span>
+                {/* ── Filter Toolbar: Employee Dropdown + Status Filter + Counter ── */}
+                <div className="flex flex-wrap items-center gap-2.5">
+                  {/* 1. Employee Dropdown Filter */}
+                  <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-300 shadow-2xs">
+                    <Users className="w-4 h-4 text-indigo-600 shrink-0" />
+                    <span className="text-xs font-bold text-slate-600 whitespace-nowrap">Employee:</span>
+                    <select
+                      id="timesheet-staff-dropdown"
+                      value={selectedStaff}
+                      onChange={(e) => {
+                        setSelectedStaff(e.target.value);
+                        setSelectedDayDetail(null);
+                      }}
+                      className="bg-transparent text-xs font-black text-slate-900 focus:outline-none cursor-pointer pr-1"
+                    >
+                      <option value="All">All Employees (3)</option>
+                      {KNOWN_STAFF.map((staff) => (
+                        <option key={staff} value={staff}>
+                          {staff}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* 2. Status Dropdown Filter */}
+                  <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-300 shadow-2xs">
+                    <Filter className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                    <span className="text-xs font-bold text-slate-600 whitespace-nowrap">Status:</span>
+                    <select
+                      id="timesheet-status-dropdown"
+                      value={tableStatusFilter}
+                      onChange={(e) => setTableStatusFilter(e.target.value)}
+                      className="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer pr-1"
+                    >
+                      <option value="ALL">All Status</option>
+                      <option value="PRESENT">Present (Completed)</option>
+                      <option value="ABSENT">Absent (Gayab)</option>
+                      <option value="ON_SITE">On Site (In Progress)</option>
+                    </select>
+                  </div>
+
+                  {/* 3. Total Count Pill */}
+                  <div className="px-3 py-1.5 rounded-xl bg-indigo-50 border border-indigo-200 text-xs font-bold text-indigo-800 shadow-2xs whitespace-nowrap">
+                    Total Entries: <span className="font-black text-indigo-950">{displayedMonthlyRows.length}</span>
+                  </div>
                 </div>
               </div>
 
-              {monthlyTableRows.length === 0 ? (
+              {displayedMonthlyRows.length === 0 ? (
                 <div className="p-12 text-center text-slate-400">
                   <CalendarIcon className="w-10 h-10 mx-auto mb-2 text-slate-300" />
-                  <p className="text-sm font-bold text-slate-700">No attendance data for this period</p>
+                  <p className="text-sm font-bold text-slate-700">No attendance data matching filter</p>
                   <p className="text-xs text-slate-400 mt-1">
-                    Try selecting a different month or staff member above.
+                    Try selecting a different employee, status, or month above.
                   </p>
                 </div>
               ) : (
@@ -1148,7 +1201,7 @@ export default function AttendanceLedgerView({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-slate-700">
-                      {monthlyTableRows.map((row, idx) => (
+                      {displayedMonthlyRows.map((row, idx) => (
                         <tr
                           key={`${row.date}_${row.employeeName}_${idx}`}
                           className={`hover:bg-slate-50/80 transition-colors ${
