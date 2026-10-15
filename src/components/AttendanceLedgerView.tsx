@@ -1282,48 +1282,8 @@ export default function AttendanceLedgerView({
                   </p>
                 </div>
 
-                {/* ── Filter Toolbar: Employee Dropdown + Status Filter + Counter ── */}
-                <div className="flex flex-wrap items-center gap-2.5">
-                  {/* 1. Employee Dropdown Filter */}
-                  <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-300 shadow-2xs">
-                    <Users className="w-4 h-4 text-indigo-600 shrink-0" />
-                    <span className="text-xs font-bold text-slate-600 whitespace-nowrap">Employee:</span>
-                    <select
-                      id="timesheet-staff-dropdown"
-                      value={selectedStaff}
-                      onChange={(e) => {
-                        setSelectedStaff(e.target.value);
-                        setSelectedDayDetail(null);
-                      }}
-                      className="bg-transparent text-xs font-black text-slate-900 focus:outline-none cursor-pointer pr-1"
-                    >
-                      <option value="All">All Employees (3)</option>
-                      {KNOWN_STAFF.map((staff) => (
-                        <option key={staff} value={staff}>
-                          {staff}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* 2. Status Dropdown Filter */}
-                  <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-300 shadow-2xs">
-                    <Filter className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                    <span className="text-xs font-bold text-slate-600 whitespace-nowrap">Status:</span>
-                    <select
-                      id="timesheet-status-dropdown"
-                      value={tableStatusFilter}
-                      onChange={(e) => setTableStatusFilter(e.target.value)}
-                      className="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer pr-1"
-                    >
-                      <option value="ALL">All Status</option>
-                      <option value="PRESENT">Present (Completed)</option>
-                      <option value="ABSENT">Absent</option>
-                      <option value="ON_SITE">On Site (In Progress)</option>
-                    </select>
-                  </div>
-
-                  {/* 3. Total Count Pill */}
+                {/* ── Total Count Pill ── */}
+                <div className="flex items-center gap-2.5">
                   <div className="px-3 py-1.5 rounded-xl bg-indigo-50 border border-indigo-200 text-xs font-bold text-indigo-800 shadow-2xs whitespace-nowrap">
                     Total Entries: <span className="font-black text-indigo-950">{displayedMonthlyRows.length}</span>
                   </div>
