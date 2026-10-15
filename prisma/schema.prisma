@@ -137,3 +137,32 @@ model AttendanceRecord {
   @@index([employeeName])
 }
 
+model SiteDailyTask {
+  id                 String    @id
+  dateKey            String
+  formattedDate      String
+  employeeName       String
+  projectName        String
+
+  // Morning Task Plan
+  morningSubmittedAt DateTime?
+  morningTimeStr     String?
+  tasks              String?   @db.Text
+  morningPhotos      String?   @db.Text
+
+  // Evening Work Completion Proof
+  eveningSubmittedAt DateTime?
+  eveningTimeStr     String?
+  completionStatus   String?
+  completionNotes    String?   @db.Text
+  eveningPhotos      String?   @db.Text
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@unique([dateKey, employeeName, projectName])
+  @@index([dateKey])
+  @@index([employeeName])
+}
+
+

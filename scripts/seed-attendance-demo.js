@@ -225,3 +225,281 @@ const storeFile = path.join(process.cwd(), 'src', 'lib', 'attendanceStore.json')
 fs.writeFileSync(storeFile, JSON.stringify(storeRecords, null, 2), 'utf-8');
 
 console.log(`Successfully generated ${storeRecords.length} multi-day attendance records for October 2026!`);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SEED SITE DAILY TASKS (SUBAH KA PLAN VS SHAAM KA PROOF)
+// ─────────────────────────────────────────────────────────────────────────────
+function createSvgTaskPhoto(taskTitle, stage, employeeName, dateStr, timeStr) {
+  const isMorning = stage.toLowerCase().includes('morning') || stage.toLowerCase().includes('subah');
+  const stageBadge = isMorning ? 'SUBAH KA TASK (MORNING PLAN)' : 'SHAAM KA PROOF (COMPLETED)';
+  const badgeColor = isMorning ? '#38bdf8' : '#10b981';
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="420" viewBox="0 0 600 420">
+    <defs>
+      <linearGradient id="taskBgGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#1e293b"/>
+        <stop offset="60%" stop-color="#334155"/>
+        <stop offset="100%" stop-color="#0f172a"/>
+      </linearGradient>
+    </defs>
+    <rect width="600" height="420" fill="url(#taskBgGrad)"/>
+    
+    <!-- Site Room Framing & Construction Graphic -->
+    <rect x="25" y="25" width="550" height="300" rx="12" fill="#090d16" stroke="#475569" stroke-width="2"/>
+    <path d="M45 310 L180 130 L310 310 M310 310 L440 160 L555 310" stroke="#38bdf8" stroke-width="2.5" fill="none" opacity="0.4"/>
+    <line x1="45" y1="310" x2="555" y2="310" stroke="#64748b" stroke-width="3"/>
+    
+    <!-- Room Structural Elements -->
+    <rect x="65" y="170" width="120" height="140" fill="#1e293b" opacity="0.85"/>
+    <rect x="225" y="195" width="140" height="115" fill="#334155" opacity="0.85"/>
+    <rect x="405" y="150" width="120" height="160" fill="#1e293b" opacity="0.85"/>
+
+    <!-- Stage Tag -->
+    <rect x="40" y="40" width="260" height="32" rx="8" fill="rgba(15,23,42,0.9)" stroke="${badgeColor}" stroke-width="1.5"/>
+    <circle cx="56" cy="56" r="5" fill="${badgeColor}"/>
+    <text x="68" y="60" fill="#ffffff" font-size="11" font-family="system-ui, sans-serif" font-weight="bold">${stageBadge}</text>
+
+    <!-- Camera Source Badge (Strict Live Back Camera) -->
+    <rect x="385" y="40" width="175" height="32" rx="8" fill="rgba(15,23,42,0.9)" stroke="#10b981" stroke-width="1.5"/>
+    <circle cx="401" cy="56" r="5" fill="#10b981"/>
+    <text x="413" y="60" fill="#ffffff" font-size="11" font-family="system-ui, sans-serif" font-weight="bold">BACK CAMERA LIVE</text>
+
+    <!-- Task Title Banner -->
+    <text x="45" y="125" fill="#f8fafc" font-size="20" font-family="system-ui, sans-serif" font-weight="900">${taskTitle}</text>
+    <text x="45" y="148" fill="#94a3b8" font-size="12" font-family="system-ui, sans-serif">Site Location: Nivasa II (Site 1) • Room / Block Work Area</text>
+
+    <!-- Watermark Stamp at Bottom -->
+    <rect x="0" y="345" width="600" height="75" fill="rgba(15, 23, 42, 0.95)"/>
+    <text x="20" y="372" fill="#ffffff" font-size="14" font-family="system-ui, sans-serif" font-weight="bold">SS REALTY • SITE WORK PHOTO PROOF (WEBP)</text>
+    <text x="20" y="392" fill="#cbd5e1" font-size="12" font-family="system-ui, sans-serif">${employeeName} | ${dateStr} ${timeStr} | Geofence Verified: 28.465355, 77.185921</text>
+    <text x="20" y="408" fill="#94a3b8" font-size="10" font-family="monospace">Camera: Rear Environment (Live Capture) • Compression: WebP 84%</text>
+  </svg>`;
+
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+const siteTasks = [
+  // 15 Oct 2026 (Today)
+  {
+    id: 'task_demo_15_ravi',
+    dateKey: '2026-10-15',
+    formattedDate: '15 Oct 2026',
+    employeeName: 'Ravi Tanwar',
+    projectName: 'Nivasa II (Site 1)',
+    morningSubmittedAt: '2026-10-15T09:05:00.000Z',
+    morningTimeStr: '09:05:00 AM',
+    tasks: ['Plastering (प्लास्टर)', 'POP Work (पीओपी)', 'Site Cleaning (साइट सफाई)'],
+    tasksDescription: 'Living room plastering finish & ceiling POP work. Malba cleanup in driveway.',
+    morningPhotos: [
+      {
+        id: 'mp_15_r1',
+        url: createSvgTaskPhoto('POP Ceiling Pre-inspection', 'Subah Plan', 'Ravi Tanwar', '15 Oct 2026', '09:05 AM'),
+        caption: 'Hall ceiling before POP work begins',
+        timestamp: '2026-10-15T09:05:00.000Z',
+        timeStr: '09:05 AM',
+        cameraFacing: 'environment',
+      },
+      {
+        id: 'mp_15_r2',
+        url: createSvgTaskPhoto('Wall Plastering Inspection', 'Subah Plan', 'Ravi Tanwar', '15 Oct 2026', '09:08 AM'),
+        caption: 'North wall surface check for plastering',
+        timestamp: '2026-10-15T09:08:00.000Z',
+        timeStr: '09:08 AM',
+        cameraFacing: 'environment',
+      },
+    ],
+    eveningSubmittedAt: '2026-10-15T17:45:00.000Z',
+    eveningTimeStr: '05:45:00 PM',
+    completionStatus: 'COMPLETED',
+    completionNotes: 'Hall ceiling POP completed smoothly. Driveway clean kar diya hai.',
+    eveningPhotos: [
+      {
+        id: 'ep_15_r1',
+        url: createSvgTaskPhoto('POP Ceiling Finished Proof', 'Shaam Proof', 'Ravi Tanwar', '15 Oct 2026', '05:45 PM'),
+        caption: 'Ceiling POP finishing done 100%',
+        timestamp: '2026-10-15T17:45:00.000Z',
+        timeStr: '05:45 PM',
+        cameraFacing: 'environment',
+      },
+      {
+        id: 'ep_15_r2',
+        url: createSvgTaskPhoto('Wall Plaster Complete Proof', 'Shaam Proof', 'Ravi Tanwar', '15 Oct 2026', '05:48 PM'),
+        caption: 'North wall smooth plastering complete',
+        timestamp: '2026-10-15T17:48:00.000Z',
+        timeStr: '05:48 PM',
+        cameraFacing: 'environment',
+      },
+    ],
+  },
+  {
+    id: 'task_demo_15_naveen',
+    dateKey: '2026-10-15',
+    formattedDate: '15 Oct 2026',
+    employeeName: 'Naveen Tanwar',
+    projectName: 'Nivasa II (Site 1)',
+    morningSubmittedAt: '2026-10-15T09:12:00.000Z',
+    morningTimeStr: '09:12:00 AM',
+    tasks: ['Water Tank (पानी टंकी निर्माण)', 'Brickwork (ईंट चिनाई)'],
+    tasksDescription: 'OHT water tank base RCC & parapet wall brickwork.',
+    morningPhotos: [
+      {
+        id: 'mp_15_n1',
+        url: createSvgTaskPhoto('Water Tank Base Inspection', 'Subah Plan', 'Naveen Tanwar', '15 Oct 2026', '09:12 AM'),
+        caption: 'Rooftop water tank concrete slab area',
+        timestamp: '2026-10-15T09:12:00.000Z',
+        timeStr: '09:12 AM',
+        cameraFacing: 'environment',
+      },
+    ],
+    eveningSubmittedAt: '2026-10-15T18:10:00.000Z',
+    eveningTimeStr: '06:10:00 PM',
+    completionStatus: 'PARTIAL',
+    completionNotes: 'Water tank base concrete set ho gaya. Parapet brickwork 70% hua, kal pura karenge.',
+    eveningPhotos: [
+      {
+        id: 'ep_15_n1',
+        url: createSvgTaskPhoto('Tank Concrete Base Ready', 'Shaam Proof', 'Naveen Tanwar', '15 Oct 2026', '06:10 PM'),
+        caption: 'Water tank concrete casted',
+        timestamp: '2026-10-15T18:10:00.000Z',
+        timeStr: '06:10 PM',
+        cameraFacing: 'environment',
+      },
+    ],
+  },
+  {
+    id: 'task_demo_15_harshit',
+    dateKey: '2026-10-15',
+    formattedDate: '15 Oct 2026',
+    employeeName: 'Harshit',
+    projectName: 'Nivasa II (Site 1)',
+    morningSubmittedAt: '2026-10-15T09:25:00.000Z',
+    morningTimeStr: '09:25:00 AM',
+    tasks: ['Tile Fixing (टाइल वर्क)', 'POP Work (पीओपी)'],
+    tasksDescription: 'Bathroom wall tile fixing & 2nd floor bedroom false ceiling POP.',
+    morningPhotos: [
+      {
+        id: 'mp_15_h1',
+        url: createSvgTaskPhoto('Bathroom Tile Area Pre-Work', 'Subah Plan', 'Harshit', '15 Oct 2026', '09:25 AM'),
+        caption: 'Bathroom floor leveling & waterproofing ready',
+        timestamp: '2026-10-15T09:25:00.000Z',
+        timeStr: '09:25 AM',
+        cameraFacing: 'environment',
+      },
+    ],
+    completionStatus: 'IN_PROGRESS',
+    completionNotes: 'Work in progress currently on site.',
+    eveningPhotos: [],
+  },
+
+  // 14 Oct 2026
+  {
+    id: 'task_demo_14_ravi',
+    dateKey: '2026-10-14',
+    formattedDate: '14 Oct 2026',
+    employeeName: 'Ravi Tanwar',
+    projectName: 'Nivasa II (Site 1)',
+    morningSubmittedAt: '2026-10-14T08:55:00.000Z',
+    morningTimeStr: '08:55:00 AM',
+    tasks: ['Brickwork (ईंट चिनाई)', 'Plastering (प्लास्टर)'],
+    tasksDescription: 'First floor boundary wall brick masonry and plaster rough coat.',
+    morningPhotos: [
+      {
+        id: 'mp_14_r1',
+        url: createSvgTaskPhoto('1st Floor Wall Lineout', 'Subah Plan', 'Ravi Tanwar', '14 Oct 2026', '08:55 AM'),
+        caption: 'Wall lineout marking',
+        timestamp: '2026-10-14T08:55:00.000Z',
+        timeStr: '08:55 AM',
+        cameraFacing: 'environment',
+      },
+    ],
+    eveningSubmittedAt: '2026-10-14T17:50:00.000Z',
+    eveningTimeStr: '05:50:00 PM',
+    completionStatus: 'COMPLETED',
+    completionNotes: 'Boundary brickwork done, curing water applied.',
+    eveningPhotos: [
+      {
+        id: 'ep_14_r1',
+        url: createSvgTaskPhoto('Brickwork Completed', 'Shaam Proof', 'Ravi Tanwar', '14 Oct 2026', '05:50 PM'),
+        caption: 'Full 10ft wall completed',
+        timestamp: '2026-10-14T17:50:00.000Z',
+        timeStr: '05:50 PM',
+        cameraFacing: 'environment',
+      },
+    ],
+  },
+  {
+    id: 'task_demo_14_naveen',
+    dateKey: '2026-10-14',
+    formattedDate: '14 Oct 2026',
+    employeeName: 'Naveen Tanwar',
+    projectName: 'Nivasa II (Site 1)',
+    morningSubmittedAt: '2026-10-14T09:05:00.000Z',
+    morningTimeStr: '09:05:00 AM',
+    tasks: ['Site Cleaning (साइट सफाई)', 'Water Tank (पानी टंकी निर्माण)'],
+    tasksDescription: 'Shuttering for underground tank and ground floor debri removal.',
+    morningPhotos: [
+      {
+        id: 'mp_14_n1',
+        url: createSvgTaskPhoto('Underground Tank Excavation', 'Subah Plan', 'Naveen Tanwar', '14 Oct 2026', '09:05 AM'),
+        caption: 'Tank pit excavated',
+        timestamp: '2026-10-14T09:05:00.000Z',
+        timeStr: '09:05 AM',
+        cameraFacing: 'environment',
+      },
+    ],
+    eveningSubmittedAt: '2026-10-14T18:05:00.000Z',
+    eveningTimeStr: '06:05:00 PM',
+    completionStatus: 'COMPLETED',
+    completionNotes: 'Shuttering fix ho gayi, steel binding complete.',
+    eveningPhotos: [
+      {
+        id: 'ep_14_n1',
+        url: createSvgTaskPhoto('Tank Steel Binding Ready', 'Shaam Proof', 'Naveen Tanwar', '14 Oct 2026', '06:05 PM'),
+        caption: 'Rebar reinforcement inspected',
+        timestamp: '2026-10-14T18:05:00.000Z',
+        timeStr: '06:05 PM',
+        cameraFacing: 'environment',
+      },
+    ],
+  },
+  {
+    id: 'task_demo_14_harshit',
+    dateKey: '2026-10-14',
+    formattedDate: '14 Oct 2026',
+    employeeName: 'Harshit',
+    projectName: 'Nivasa II (Site 1)',
+    morningSubmittedAt: '2026-10-14T09:20:00.000Z',
+    morningTimeStr: '09:20:00 AM',
+    tasks: ['Tile Fixing (टाइल वर्क)'],
+    tasksDescription: 'Kitchen backsplash vitrified tiles installation.',
+    morningPhotos: [
+      {
+        id: 'mp_14_h1',
+        url: createSvgTaskPhoto('Kitchen Wall Surface', 'Subah Plan', 'Harshit', '14 Oct 2026', '09:20 AM'),
+        caption: 'Adhesive layer preparation',
+        timestamp: '2026-10-14T09:20:00.000Z',
+        timeStr: '09:20 AM',
+        cameraFacing: 'environment',
+      },
+    ],
+    eveningSubmittedAt: '2026-10-14T18:00:00.000Z',
+    eveningTimeStr: '06:00:00 PM',
+    completionStatus: 'COMPLETED',
+    completionNotes: 'Kitchen tiles completely laid and grouting done.',
+    eveningPhotos: [
+      {
+        id: 'ep_14_h1',
+        url: createSvgTaskPhoto('Kitchen Tiles Finished', 'Shaam Proof', 'Harshit', '14 Oct 2026', '06:00 PM'),
+        caption: 'Tiles aligned and cleaned',
+        timestamp: '2026-10-14T18:00:00.000Z',
+        timeStr: '06:00 PM',
+        cameraFacing: 'environment',
+      },
+    ],
+  },
+];
+
+const tasksStoreFile = path.join(process.cwd(), 'src', 'lib', 'siteTasksStore.json');
+fs.writeFileSync(tasksStoreFile, JSON.stringify(siteTasks, null, 2), 'utf-8');
+
+console.log(`Successfully generated ${siteTasks.length} site daily task records with WebP/SVG photo proof!`);

@@ -24,6 +24,7 @@ import {
 import toast, { Toaster } from 'react-hot-toast';
 import Link from 'next/link';
 import { TARGET_SITE_CONFIG, calculateDistanceInMeters } from '@/lib/attendanceConfig';
+import SiteTaskCaptureModal from '@/components/SiteTaskCaptureModal';
 
 const DEFAULT_PROJECTS = [
   'Nivasa II (Site 1)',
@@ -79,6 +80,10 @@ export default function AttendancePage() {
     employeeName: string;
     projectName: string;
   } | null>(null);
+
+  // Daily Site Task Documentation Modal States
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [taskModalMode, setTaskModalMode] = useState<'MORNING' | 'EVENING'>('MORNING');
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -413,6 +418,7 @@ export default function AttendancePage() {
           employeeName: res.record.employeeName,
           projectName: res.record.projectName,
         });
+        setTaskModalMode(res.record.punchType === 'PUNCH_IN' ? 'MORNING' : 'EVENING');
       } else {
         toast.error(res.message || 'Punch record nahi ho saka.', { id: toastId, duration: 6000 });
       }
@@ -547,6 +553,51 @@ export default function AttendancePage() {
                 <p className="text-slate-400 text-[10px] uppercase font-semibold">Status</p>
                 <p className="text-emerald-400 font-semibold">Approved</p>
               </div>
+            </div>
+
+            {/* ─── STEP 2: TODAY'S SITE WORK PLAN & BACK-CAMERA PROOF ─── */}
+            <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-indigo-950/80 via-slate-900 to-slate-950 border-2 border-indigo-500/50 shadow-xl text-left">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-lg bg-indigo-500/30 text-indigo-300 flex items-center justify-center font-black text-xs border border-indigo-400/30">
+                    2
+                  </span>
+                  <h3 className="font-extrabold text-sm sm:text-base text-white">
+                    {successRecord.punchType === 'PUNCH_IN'
+                      ? "Today's Site Tasks & Photos (आज का काम)"
+                      : 'Evening Work Completion Proof (शाम का काम)'}
+                  </h3>
+                </div>
+                <span className="text-[10px] font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/30">
+                  Step 2
+                </span>
+              </div>
+
+              <p className="text-xs text-slate-300 mb-3.5 leading-relaxed">
+                {successRecord.punchType === 'PUNCH_IN'
+                  ? 'Punch In ke baad site par aaj kya-kya kaam hoga (Plaster, POP, Tank, Safai etc.) select karein aur live back camera se photos lein.'
+                  : 'Punch Out ke baad subah liye gaye tasks ka proof (Live back camera photos) upload karein ki shaam tak kitna kaam hua.'}
+              </p>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setTaskModalMode(successRecord.punchType === 'PUNCH_IN' ? 'MORNING' : 'EVENING');
+                  setIsTaskModalOpen(true);
+                }}
+                className={`w-full py-3.5 px-4 rounded-xl font-black text-xs sm:text-sm text-white shadow-xl flex items-center justify-center gap-2.5 cursor-pointer transition-all active:scale-[0.99] ${
+                  successRecord.punchType === 'PUNCH_IN'
+                    ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:brightness-110 shadow-orange-500/30 border border-amber-400/40'
+                    : 'bg-gradient-to-r from-indigo-600 via-emerald-600 to-teal-600 hover:brightness-110 shadow-emerald-600/30 border border-emerald-400/40'
+                }`}
+              >
+                <Camera className="w-5 h-5 animate-pulse" />
+                <span>
+                  {successRecord.punchType === 'PUNCH_IN'
+                    ? '📸 Add Today’s Tasks & Back-Camera Photos'
+                    : '📸 Upload Evening Completion Proof Photos'}
+                </span>
+              </button>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
@@ -906,6 +957,27 @@ export default function AttendancePage() {
           </p>
         </footer>
       </div>
+
+      {/* Daily Site Tasks Live Back-Camera Capture Modal */}
+      {successRecord && (
+        <SiteTaskCaptureModal
+          isOpen={isTaskModalOpen}
+          onClose={() => setIsTaskModalOpen(false)}
+          mode={taskModalMode}
+          employeeName={successRecord.employeeName}
+          projectName={successRecord.projectName}
+          formattedDate={successRecord.date}
+          latitude={userLocation?.lat}
+          longitude={userLocation?.lng}
+          onSuccess={() => {
+            toast.success(
+              taskModalMode === 'MORNING'
+                ? 'Subah ka task plan aur photos save ho gaye!'
+                : 'Shaam ka kaam proof aur photos save ho gaye!'
+            );
+          }}
+        />
+      )}
     </div>
   );
 }

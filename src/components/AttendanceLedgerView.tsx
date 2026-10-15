@@ -25,10 +25,13 @@ import {
   Sparkles,
   Filter,
   User,
+  Layers,
 } from 'lucide-react';
 import Link from 'next/link';
 import type { AttendanceRecord } from '@/lib/attendanceConfig';
 import { TARGET_SITE_CONFIG } from '@/lib/attendanceConfig';
+import SiteTaskViewerModal from '@/components/SiteTaskViewerModal';
+import type { SiteDailyTaskData } from '@/lib/siteTaskStore';
 
 export const KNOWN_STAFF = ['Ravi Tanwar', 'Naveen Tanwar', 'Harshit'];
 
@@ -122,16 +125,35 @@ export default function AttendanceLedgerView({
   // Photo Zoom Modal State
   const [activePhotoModal, setActivePhotoModal] = useState<PhotoModalState | null>(null);
 
+  // Site Tasks State & Inspector Modal
+  const [siteTasks, setSiteTasks] = useState<SiteDailyTaskData[]>([]);
+  const [selectedTaskModal, setSelectedTaskModal] = useState<{
+    isOpen: boolean;
+    taskData: SiteDailyTaskData | null;
+    employeeName: string;
+    formattedDate: string;
+    projectName: string;
+  } | null>(null);
+
   const fetchRecords = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/attendance/list', { cache: 'no-store' });
-      if (res.ok) {
-        const data: AttendanceRecord[] = await res.json();
+      const [attRes, tasksRes] = await Promise.all([
+        fetch('/api/attendance/list', { cache: 'no-store' }),
+        fetch('/api/attendance/tasks', { cache: 'no-store' }),
+      ]);
+      if (attRes.ok) {
+        const data: AttendanceRecord[] = await attRes.json();
         setRecords(data);
       }
+      if (tasksRes.ok) {
+        const taskJson = await tasksRes.json();
+        if (taskJson.success && Array.isArray(taskJson.tasks)) {
+          setSiteTasks(taskJson.tasks);
+        }
+      }
     } catch (err) {
-      console.error('Error loading attendance logs:', err);
+      console.error('Error loading attendance logs or tasks:', err);
     } finally {
       setLoading(false);
     }
@@ -172,6 +194,21 @@ export default function AttendanceLedgerView({
       }
     }
     return dateStr;
+  };
+
+  // Map site tasks by composite keys: `${dateKey}_${employeeName}` and `${formattedDate}_${employeeName}`
+  const siteTasksMap = useMemo(() => {
+    const map = new Map<string, SiteDailyTaskData>();
+    siteTasks.forEach((t) => {
+      map.set(`${t.dateKey}_${t.employeeName}`, t);
+      map.set(`${t.formattedDate}_${t.employeeName}`, t);
+    });
+    return map;
+  }, [siteTasks]);
+
+  const getTaskFor = (dateStr: string, empName: string): SiteDailyTaskData | undefined => {
+    const dKey = parseDateToKey(dateStr);
+    return siteTasksMap.get(`${dKey}_${empName}`) || siteTasksMap.get(`${dateStr}_${empName}`);
   };
 
   // Build Consolidated Daily Rows: 1 Row per (dateKey + employeeName)
@@ -1183,6 +1220,37 @@ export default function AttendanceLedgerView({
                             <span className="text-[10px] text-slate-400 ml-auto font-mono">Zoom</span>
                           </div>
                         )}
+
+                        {/* Task Proof Mini-Badge (Single Staff View) */}
+                        {selectedStaff !== 'All' && !cell.isFuture && (() => {
+                          const t = getTaskFor(cell.formattedDate, selectedStaff);
+                          if (!t) return null;
+                          return (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedTaskModal({
+                                  isOpen: true,
+                                  taskData: t,
+                                  employeeName: selectedStaff,
+                                  formattedDate: cell.formattedDate,
+                                  projectName: 'Nivasa II (Site 1)',
+                                });
+                              }}
+                              title="View Morning vs Evening Site Task Photos"
+                              className="mt-1 w-full flex items-center justify-between px-1.5 py-0.5 rounded bg-indigo-50/90 hover:bg-indigo-100 border border-indigo-200 text-[9.5px] font-bold text-indigo-800 transition-colors cursor-pointer"
+                            >
+                              <span className="flex items-center gap-1">
+                                <Layers className="w-2.5 h-2.5 text-indigo-600" />
+                                <span>Task Proof</span>
+                              </span>
+                              <span className="font-mono text-[9px] text-indigo-700">
+                                🌅{t.morningPhotos?.length || 0} | 🌇{t.eveningPhotos?.length || 0}
+                              </span>
+                            </button>
+                          );
+                        })()}
                       </div>
                     );
                   })}
@@ -1280,6 +1348,7 @@ export default function AttendanceLedgerView({
                         <th className="py-3.5 px-4 whitespace-nowrap">Status</th>
                         <th className="py-3.5 px-4 min-w-[210px]">🟢 Morning Punch In (Selfie &amp; Time)</th>
                         <th className="py-3.5 px-4 min-w-[210px]">🔴 Evening Punch Out (Selfie &amp; Time)</th>
+                        <th className="py-3.5 px-4 min-w-[220px]">📋 Site Tasks Proof (Subah vs Shaam)</th>
                         <th className="py-3.5 px-4 whitespace-nowrap">Shift Duration</th>
                         <th className="py-3.5 px-4 whitespace-nowrap">Project / Site</th>
                       </tr>
@@ -1417,6 +1486,87 @@ export default function AttendanceLedgerView({
                             ) : (
                               <span className="text-slate-400 font-mono text-[11px]">—</span>
                             )}
+                          </td>
+
+                          {/* Site Tasks Proof (Subah vs Shaam) */}
+                          <td className="py-3 px-4">
+                            {(() => {
+                              const task = getTaskFor(row.date, row.employeeName);
+                              if (!task) {
+                                return (
+                                  <span className="text-slate-400 font-mono text-[11px]">
+                                    {row.status === 'ABSENT' ? '—' : 'No task logged'}
+                                  </span>
+                                );
+                              }
+                              const morningCount = task.morningPhotos?.length || 0;
+                              const eveningCount = task.eveningPhotos?.length || 0;
+                              const isCompleted = task.completionStatus === 'COMPLETED';
+                              const isPartial = task.completionStatus === 'PARTIAL';
+
+                              return (
+                                <div className="space-y-1.5 min-w-[190px]">
+                                  {/* Task chips */}
+                                  {task.tasks && task.tasks.length > 0 && (
+                                    <div className="flex flex-wrap gap-1">
+                                      {task.tasks.slice(0, 2).map((tName, i) => (
+                                        <span
+                                          key={i}
+                                          className="inline-block px-1.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded text-[10px] font-semibold truncate max-w-[140px]"
+                                          title={tName}
+                                        >
+                                          {tName.split('(')[0].trim()}
+                                        </span>
+                                      ))}
+                                      {task.tasks.length > 2 && (
+                                        <span className="px-1 py-0.5 bg-slate-100 text-slate-600 rounded text-[9.5px] font-bold">
+                                          +{task.tasks.length - 2}
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {/* Status + Photo Counts */}
+                                  <div className="flex items-center gap-1.5">
+                                    {isCompleted ? (
+                                      <span className="inline-flex items-center gap-1 text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                        <CheckCircle2 className="w-2.5 h-2.5" /> 100% Done
+                                      </span>
+                                    ) : isPartial ? (
+                                      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
+                                        Partial Done
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-200">
+                                        <Clock className="w-2.5 h-2.5" /> In Progress
+                                      </span>
+                                    )}
+
+                                    <span className="text-[10px] font-mono font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
+                                      🌅{morningCount} | 🌇{eveningCount}
+                                    </span>
+                                  </div>
+
+                                  {/* View Details Button */}
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setSelectedTaskModal({
+                                        isOpen: true,
+                                        taskData: task,
+                                        employeeName: row.employeeName,
+                                        formattedDate: row.date,
+                                        projectName: row.projectName,
+                                      })
+                                    }
+                                    className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer"
+                                  >
+                                    <Eye className="w-3 h-3 text-indigo-600" />
+                                    <span>View Site Task Photos ({morningCount + eveningCount})</span>
+                                  </button>
+                                </div>
+                              );
+                            })()}
                           </td>
 
                           {/* Shift Duration */}
@@ -1603,6 +1753,7 @@ export default function AttendanceLedgerView({
                         <th className="py-3.5 px-4">Project / Site</th>
                         <th className="py-3.5 px-4 min-w-[200px]">🟢 Morning Punch In (Selfie &amp; Time)</th>
                         <th className="py-3.5 px-4 min-w-[200px]">🔴 Evening Punch Out (Selfie &amp; Time)</th>
+                        <th className="py-3.5 px-4 min-w-[220px]">📋 Site Tasks Proof (Subah vs Shaam)</th>
                         <th className="py-3.5 px-4">Shift Duration</th>
                         <th className="py-3.5 px-4">Status</th>
                       </tr>
@@ -1710,6 +1861,82 @@ export default function AttendanceLedgerView({
                                 Out Pending (On Site)
                               </span>
                             )}
+                          </td>
+
+                          {/* Site Tasks Proof (Subah vs Shaam) */}
+                          <td className="py-3.5 px-4">
+                            {(() => {
+                              const task = getTaskFor(row.date, row.employeeName);
+                              if (!task) {
+                                return (
+                                  <span className="text-slate-400 font-mono text-xs">No task logged</span>
+                                );
+                              }
+                              const morningCount = task.morningPhotos?.length || 0;
+                              const eveningCount = task.eveningPhotos?.length || 0;
+                              const isCompleted = task.completionStatus === 'COMPLETED';
+                              const isPartial = task.completionStatus === 'PARTIAL';
+
+                              return (
+                                <div className="space-y-1.5 min-w-[190px]">
+                                  {task.tasks && task.tasks.length > 0 && (
+                                    <div className="flex flex-wrap gap-1">
+                                      {task.tasks.slice(0, 2).map((tName, i) => (
+                                        <span
+                                          key={i}
+                                          className="inline-block px-1.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded text-[10px] font-semibold truncate max-w-[140px]"
+                                          title={tName}
+                                        >
+                                          {tName.split('(')[0].trim()}
+                                        </span>
+                                      ))}
+                                      {task.tasks.length > 2 && (
+                                        <span className="px-1 py-0.5 bg-slate-100 text-slate-600 rounded text-[9.5px] font-bold">
+                                          +{task.tasks.length - 2}
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  <div className="flex items-center gap-1.5">
+                                    {isCompleted ? (
+                                      <span className="inline-flex items-center gap-1 text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                        <CheckCircle2 className="w-2.5 h-2.5" /> 100% Done
+                                      </span>
+                                    ) : isPartial ? (
+                                      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
+                                        Partial Done
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-200">
+                                        <Clock className="w-2.5 h-2.5" /> In Progress
+                                      </span>
+                                    )}
+
+                                    <span className="text-[10px] font-mono font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
+                                      🌅{morningCount} | 🌇{eveningCount}
+                                    </span>
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setSelectedTaskModal({
+                                        isOpen: true,
+                                        taskData: task,
+                                        employeeName: row.employeeName,
+                                        formattedDate: row.date,
+                                        projectName: row.projectName,
+                                      })
+                                    }
+                                    className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer"
+                                  >
+                                    <Eye className="w-3 h-3 text-indigo-600" />
+                                    <span>View Site Task Photos ({morningCount + eveningCount})</span>
+                                  </button>
+                                </div>
+                              );
+                            })()}
                           </td>
 
                           {/* Shift Duration */}
@@ -1826,6 +2053,18 @@ export default function AttendanceLedgerView({
             </div>
           </div>
         </div>
+      )}
+
+      {/* ─── SITE TASK DETAILS & PHOTO PROOF MODAL (SUBAH VS SHAAM) ─── */}
+      {selectedTaskModal && (
+        <SiteTaskViewerModal
+          isOpen={selectedTaskModal.isOpen}
+          onClose={() => setSelectedTaskModal(null)}
+          taskData={selectedTaskModal.taskData}
+          employeeName={selectedTaskModal.employeeName}
+          formattedDate={selectedTaskModal.formattedDate}
+          projectName={selectedTaskModal.projectName}
+        />
       )}
     </div>
   );
