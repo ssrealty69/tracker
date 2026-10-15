@@ -4,10 +4,8 @@ import { useState, useEffect, useMemo } from 'react';
 import {
   Calendar as CalendarIcon,
   Clock,
-  MapPin,
   CheckCircle2,
   Search,
-  ExternalLink,
   ShieldCheck,
   Building2,
   Users,
@@ -29,7 +27,6 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import type { AttendanceRecord } from '@/lib/attendanceConfig';
-import { TARGET_SITE_CONFIG } from '@/lib/attendanceConfig';
 import SiteTaskViewerModal from '@/components/SiteTaskViewerModal';
 import type { SiteDailyTaskData } from '@/lib/siteTaskStore';
 
@@ -695,33 +692,6 @@ export default function AttendanceLedgerView({
 
       {/* Main Content Area */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
-        {/* Site Location & Geofence Verification Bar */}
-        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-start gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
-              <MapPin className="w-5 h-5 text-indigo-600" />
-            </div>
-            <div>
-              <h2 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-                Site Coordinates: 28.465355, 77.185921
-                <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold px-2 py-0.5 rounded-full">
-                  50m Geofence Active
-                </span>
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Every punch requires live GPS verification &amp; selfie. Monthly timesheet tracks daily attendance, hours logged, and absent days.
-              </p>
-            </div>
-          </div>
-          <a
-            href={TARGET_SITE_CONFIG.googleMapsUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold border border-slate-200 transition-all self-start md:self-auto shadow-2xs"
-          >
-            Open in Google Maps <ExternalLink className="w-3.5 h-3.5" />
-          </a>
-        </div>
 
         {/* ─── PRIMARY VIEW MODE SWITCHER ─── */}
         <div className="bg-white p-2 sm:p-2.5 rounded-2xl border border-slate-200 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
