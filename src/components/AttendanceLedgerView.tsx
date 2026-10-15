@@ -1503,31 +1503,15 @@ export default function AttendanceLedgerView({
                               const eveningCount = task.eveningPhotos?.length || 0;
                               const isCompleted = task.completionStatus === 'COMPLETED';
                               const isPartial = task.completionStatus === 'PARTIAL';
+                              const allTaskPhotos = [
+                                ...(task.morningPhotos || []).map((p) => ({ ...p, stage: 'morning' as const })),
+                                ...(task.eveningPhotos || []).map((p) => ({ ...p, stage: 'evening' as const })),
+                              ];
 
                               return (
-                                <div className="space-y-1.5 min-w-[190px]">
-                                  {/* Task chips */}
-                                  {task.tasks && task.tasks.length > 0 && (
-                                    <div className="flex flex-wrap gap-1">
-                                      {task.tasks.slice(0, 2).map((tName, i) => (
-                                        <span
-                                          key={i}
-                                          className="inline-block px-1.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded text-[10px] font-semibold truncate max-w-[140px]"
-                                          title={tName}
-                                        >
-                                          {tName.split('(')[0].trim()}
-                                        </span>
-                                      ))}
-                                      {task.tasks.length > 2 && (
-                                        <span className="px-1 py-0.5 bg-slate-100 text-slate-600 rounded text-[9.5px] font-bold">
-                                          +{task.tasks.length - 2}
-                                        </span>
-                                      )}
-                                    </div>
-                                  )}
-
+                                <div className="space-y-1.5 min-w-[210px] max-w-[340px]">
                                   {/* Status + Photo Counts */}
-                                  <div className="flex items-center gap-1.5">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
                                     {isCompleted ? (
                                       <span className="inline-flex items-center gap-1 text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
                                         <CheckCircle2 className="w-2.5 h-2.5" /> 100% Done
@@ -1543,11 +1527,59 @@ export default function AttendanceLedgerView({
                                     )}
 
                                     <span className="text-[10px] font-mono font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
-                                      🌅{morningCount} | 🌇{eveningCount}
+                                      🌅{morningCount} Subah &bull; 🌇{eveningCount} Shaam
                                     </span>
                                   </div>
 
-                                  {/* View Details Button */}
+                                  {/* Slideable Photo Strip (Slide kar kar ke dekhein) */}
+                                  {allTaskPhotos.length > 0 && (
+                                    <div className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-thin">
+                                      {allTaskPhotos.map((photo, pIdx) => (
+                                        <button
+                                          key={photo.id || pIdx}
+                                          type="button"
+                                          onClick={() =>
+                                            setActivePhotoModal({
+                                              url: photo.url,
+                                              title: `${photo.stage === 'morning' ? '🌅 Subah Ka Kaam' : '🌇 Shaam Ka Kaam'} - ${row.date}`,
+                                              type: photo.stage === 'morning' ? 'PUNCH_IN' : 'PUNCH_OUT',
+                                              time: photo.timeStr,
+                                              date: row.date,
+                                              employeeName: `${row.employeeName}${photo.caption ? ` (${photo.caption})` : ''}`,
+                                            })
+                                          }
+                                          className="group relative w-14 h-14 rounded-xl overflow-hidden border-2 bg-slate-900 shadow-2xs shrink-0 cursor-pointer transition-all hover:scale-105 hover:ring-2 hover:ring-indigo-400"
+                                          style={{
+                                            borderColor: photo.stage === 'morning' ? '#f59e0b' : '#10b981',
+                                          }}
+                                          title={`${photo.stage === 'morning' ? 'Subah' : 'Shaam'}: ${photo.caption || 'Site Work'} (${photo.timeStr}) - Click to Zoom`}
+                                        >
+                                          <img
+                                            src={photo.url}
+                                            alt={photo.caption || 'Site Work Proof'}
+                                            className="w-full h-full object-cover"
+                                          />
+                                          <div
+                                            className={`absolute top-0.5 left-0.5 px-1 py-0.2 rounded text-[7.5px] font-black text-white ${
+                                              photo.stage === 'morning' ? 'bg-amber-600/90' : 'bg-emerald-600/90'
+                                            }`}
+                                          >
+                                            {photo.stage === 'morning' ? '🌅' : '🌇'}
+                                          </div>
+                                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
+                                            <Eye className="w-4 h-4" />
+                                          </div>
+                                          {photo.caption && (
+                                            <div className="absolute bottom-0 inset-x-0 bg-black/75 px-1 py-0.5 text-[7.5px] text-white truncate font-medium">
+                                              {photo.caption}
+                                            </div>
+                                          )}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+
+                                  {/* View Full Report Details Button */}
                                   <button
                                     type="button"
                                     onClick={() =>
@@ -1559,10 +1591,10 @@ export default function AttendanceLedgerView({
                                         projectName: row.projectName,
                                       })
                                     }
-                                    className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer"
+                                    className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer pt-0.5"
                                   >
                                     <Eye className="w-3 h-3 text-indigo-600" />
-                                    <span>View Site Task Photos ({morningCount + eveningCount})</span>
+                                    <span>Full Report ({morningCount + eveningCount} Photos) &rarr;</span>
                                   </button>
                                 </div>
                               );
@@ -1876,29 +1908,15 @@ export default function AttendanceLedgerView({
                               const eveningCount = task.eveningPhotos?.length || 0;
                               const isCompleted = task.completionStatus === 'COMPLETED';
                               const isPartial = task.completionStatus === 'PARTIAL';
+                              const allTaskPhotos = [
+                                ...(task.morningPhotos || []).map((p) => ({ ...p, stage: 'morning' as const })),
+                                ...(task.eveningPhotos || []).map((p) => ({ ...p, stage: 'evening' as const })),
+                              ];
 
                               return (
-                                <div className="space-y-1.5 min-w-[190px]">
-                                  {task.tasks && task.tasks.length > 0 && (
-                                    <div className="flex flex-wrap gap-1">
-                                      {task.tasks.slice(0, 2).map((tName, i) => (
-                                        <span
-                                          key={i}
-                                          className="inline-block px-1.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded text-[10px] font-semibold truncate max-w-[140px]"
-                                          title={tName}
-                                        >
-                                          {tName.split('(')[0].trim()}
-                                        </span>
-                                      ))}
-                                      {task.tasks.length > 2 && (
-                                        <span className="px-1 py-0.5 bg-slate-100 text-slate-600 rounded text-[9.5px] font-bold">
-                                          +{task.tasks.length - 2}
-                                        </span>
-                                      )}
-                                    </div>
-                                  )}
-
-                                  <div className="flex items-center gap-1.5">
+                                <div className="space-y-1.5 min-w-[210px] max-w-[340px]">
+                                  {/* Status + Photo Counts */}
+                                  <div className="flex items-center gap-1.5 flex-wrap">
                                     {isCompleted ? (
                                       <span className="inline-flex items-center gap-1 text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
                                         <CheckCircle2 className="w-2.5 h-2.5" /> 100% Done
@@ -1914,9 +1932,57 @@ export default function AttendanceLedgerView({
                                     )}
 
                                     <span className="text-[10px] font-mono font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
-                                      🌅{morningCount} | 🌇{eveningCount}
+                                      🌅{morningCount} Subah &bull; 🌇{eveningCount} Shaam
                                     </span>
                                   </div>
+
+                                  {/* Slideable Photo Strip */}
+                                  {allTaskPhotos.length > 0 && (
+                                    <div className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-thin">
+                                      {allTaskPhotos.map((photo, pIdx) => (
+                                        <button
+                                          key={photo.id || pIdx}
+                                          type="button"
+                                          onClick={() =>
+                                            setActivePhotoModal({
+                                              url: photo.url,
+                                              title: `${photo.stage === 'morning' ? '🌅 Subah Ka Kaam' : '🌇 Shaam Ka Kaam'} - ${row.date}`,
+                                              type: photo.stage === 'morning' ? 'PUNCH_IN' : 'PUNCH_OUT',
+                                              time: photo.timeStr,
+                                              date: row.date,
+                                              employeeName: `${row.employeeName}${photo.caption ? ` (${photo.caption})` : ''}`,
+                                            })
+                                          }
+                                          className="group relative w-14 h-14 rounded-xl overflow-hidden border-2 bg-slate-900 shadow-2xs shrink-0 cursor-pointer transition-all hover:scale-105 hover:ring-2 hover:ring-indigo-400"
+                                          style={{
+                                            borderColor: photo.stage === 'morning' ? '#f59e0b' : '#10b981',
+                                          }}
+                                          title={`${photo.stage === 'morning' ? 'Subah' : 'Shaam'}: ${photo.caption || 'Site Work'} (${photo.timeStr}) - Click to Zoom`}
+                                        >
+                                          <img
+                                            src={photo.url}
+                                            alt={photo.caption || 'Site Work Proof'}
+                                            className="w-full h-full object-cover"
+                                          />
+                                          <div
+                                            className={`absolute top-0.5 left-0.5 px-1 py-0.2 rounded text-[7.5px] font-black text-white ${
+                                              photo.stage === 'morning' ? 'bg-amber-600/90' : 'bg-emerald-600/90'
+                                            }`}
+                                          >
+                                            {photo.stage === 'morning' ? '🌅' : '🌇'}
+                                          </div>
+                                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
+                                            <Eye className="w-4 h-4" />
+                                          </div>
+                                          {photo.caption && (
+                                            <div className="absolute bottom-0 inset-x-0 bg-black/75 px-1 py-0.5 text-[7.5px] text-white truncate font-medium">
+                                              {photo.caption}
+                                            </div>
+                                          )}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
 
                                   <button
                                     type="button"
@@ -1929,10 +1995,10 @@ export default function AttendanceLedgerView({
                                         projectName: row.projectName,
                                       })
                                     }
-                                    className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer"
+                                    className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer pt-0.5"
                                   >
                                     <Eye className="w-3 h-3 text-indigo-600" />
-                                    <span>View Site Task Photos ({morningCount + eveningCount})</span>
+                                    <span>Full Report ({morningCount + eveningCount} Photos) &rarr;</span>
                                   </button>
                                 </div>
                               );

@@ -86,18 +86,25 @@ export default function SiteTaskCaptureModal({
           // ignore non-json
         }
         if (data.success && data.task) {
+          // Filter out dummy SVG demo photos so real worker testing never sees demo photos
+          const isRealPhoto = (p: TaskPhoto) => {
+            if (!p || !p.url) return false;
+            const urlStr = String(p.url);
+            const idStr = String(p.id || '');
+            if (idStr.includes('demo') || idStr.startsWith('mp_') || idStr.startsWith('ep_')) return false;
+            if (urlStr.includes('<svg') || urlStr.startsWith('data:image/svg')) return false;
+            return true;
+          };
+
+          const realMorning = (data.task.morningPhotos || []).filter(isRealPhoto);
+          const realEvening = (data.task.eveningPhotos || []).filter(isRealPhoto);
           setExistingData(data.task);
           if (mode === 'MORNING') {
-            if (data.task.tasksDescription) {
-              setTaskDescription(data.task.tasksDescription);
-            } else if (data.task.tasks && data.task.tasks.length > 0) {
-              setTaskDescription(data.task.tasks.join(', '));
-            }
-            if (data.task.morningPhotos) setMorningPhotos(data.task.morningPhotos);
+            if (realMorning.length > 0) setMorningPhotos(realMorning);
           } else {
             if (data.task.completionStatus) setCompletionStatus(data.task.completionStatus);
             if (data.task.completionNotes) setCompletionNotes(data.task.completionNotes);
-            if (data.task.eveningPhotos) setEveningPhotos(data.task.eveningPhotos);
+            if (realEvening.length > 0) setEveningPhotos(realEvening);
           }
         }
       } catch (err) {
@@ -248,7 +255,7 @@ export default function SiteTaskCaptureModal({
         const newPhoto: TaskPhoto = {
           id: `photo_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
           url: compressed,
-          caption: mode === 'MORNING' ? 'Site Work' : 'Completed Work',
+          caption: '',
           timestamp: now.toISOString(),
           timeStr: now.toLocaleTimeString('en-IN', {
             hour: '2-digit',
@@ -277,6 +284,19 @@ export default function SiteTaskCaptureModal({
     e.target.value = '';
   };
 
+  // Update caption per photo
+  const handleUpdateCaption = (photoId: string, caption: string) => {
+    if (mode === 'MORNING') {
+      setMorningPhotos((prev) =>
+        prev.map((p) => (p.id === photoId ? { ...p, caption } : p))
+      );
+    } else {
+      setEveningPhotos((prev) =>
+        prev.map((p) => (p.id === photoId ? { ...p, caption } : p))
+      );
+    }
+  };
+
   // Delete photo
   const handleDeletePhoto = (photoId: string) => {
     if (mode === 'MORNING') {
@@ -295,10 +315,11 @@ export default function SiteTaskCaptureModal({
       return;
     }
 
-    if (mode === 'MORNING' && !taskDescription.trim()) {
-      toast.error('Kripya aaj ka kaam zaroor likhein (e.g. POP, Plaster, Tank etc.)');
-      return;
-    }
+    const captions = activePhotos
+      .map((p) => p.caption.trim())
+      .filter((c) => c && c !== 'Site Work' && c !== 'Completed Work');
+    const finalDescription =
+      captions.length > 0 ? captions.join(', ') : 'Live Site Work Proof';
 
     setSubmitting(true);
     const toastId = toast.loading(
@@ -316,8 +337,8 @@ export default function SiteTaskCaptureModal({
               formattedDate: effectiveFormattedDate,
               employeeName,
               projectName,
-              tasks: taskDescription.trim() ? [taskDescription.trim()] : [],
-              tasksDescription: taskDescription.trim(),
+              tasks: captions.length > 0 ? captions : ['Site Work'],
+              tasksDescription: finalDescription,
               morningPhotos,
             }
           : {
@@ -327,7 +348,7 @@ export default function SiteTaskCaptureModal({
               employeeName,
               projectName,
               completionStatus,
-              completionNotes: completionNotes.trim(),
+              completionNotes: completionNotes.trim() || finalDescription,
               eveningPhotos,
             };
 
@@ -450,16 +471,28 @@ export default function SiteTaskCaptureModal({
                       </div>
                     </div>
 
-                    <div className="p-1.5 bg-slate-900 flex items-center justify-between">
-                      <span className="text-[10px] text-slate-400 truncate pl-1">Photo #{index + 1}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleDeletePhoto(photo.id)}
-                        className="text-rose-400 hover:text-rose-300 p-1 hover:bg-rose-500/10 rounded transition-colors"
-                        title="Delete photo"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                    <div className="p-2.5 bg-slate-900 border-t border-slate-800 space-y-1.5">
+                      <div className="flex items-center justify-between text-[10px] text-slate-400 font-bold">
+                        <span className="text-amber-400 flex items-center gap-1 font-mono">
+                          Photo #{index + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePhoto(photo.id)}
+                          className="text-rose-400 hover:text-rose-300 p-1 hover:bg-rose-500/20 rounded transition-colors shrink-0 cursor-pointer flex items-center gap-1"
+                          title="Delete photo"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span className="text-[10px]">Delete</span>
+                        </button>
+                      </div>
+                      <input
+                        type="text"
+                        value={photo.caption}
+                        onChange={(e) => handleUpdateCaption(photo.id, e.target.value)}
+                        placeholder={mode === 'MORNING' ? 'Kaam likhein (jaise POP, Plaster, Tank)...' : 'Kaam ka vivran...'}
+                        className="w-full bg-slate-950 border border-slate-700/80 focus:border-amber-500 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder:text-slate-500 focus:outline-none"
+                      />
                     </div>
                   </div>
                 ))}
@@ -483,23 +516,9 @@ export default function SiteTaskCaptureModal({
           </div>
 
           {/* ═══════════════════════════════════════════════════════════════════ */}
-          {/* SECTION 2: WORK DESCRIPTION (PHOTO KE NICHE KYA KAAM HOGA)           */}
+          {/* SECTION 2: EVENING COMPLETION REVIEW (ONLY IN EVENING MODE)        */}
           {/* ═══════════════════════════════════════════════════════════════════ */}
-          {mode === 'MORNING' ? (
-            <div className="space-y-1.5 pt-2 border-t border-slate-800">
-              <label className="block text-xs font-bold text-slate-200 uppercase tracking-wider">
-                2. Aaj Site Par Kya-Kya Kaam Hoga?
-              </label>
-              <textarea
-                rows={3}
-                value={taskDescription}
-                onChange={(e) => setTaskDescription(e.target.value)}
-                placeholder="Jaise: POP ka kaam hoga, plastering hogi, tank banega, safai hogi..."
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-              />
-            </div>
-          ) : (
-            /* EVENING MODE */
+          {mode === 'EVENING' && (
             <div className="space-y-4 pt-2 border-t border-slate-800">
               {/* Morning Plan Summary if available */}
               {(existingData?.tasksDescription || (existingData?.tasks && existingData.tasks.length > 0)) && (

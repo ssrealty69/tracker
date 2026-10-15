@@ -84,6 +84,7 @@ export default function AttendancePage() {
   // Daily Site Task Documentation Modal States
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [taskModalMode, setTaskModalMode] = useState<'MORNING' | 'EVENING'>('MORNING');
+  const [isTaskSubmitted, setIsTaskSubmitted] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -432,6 +433,7 @@ export default function AttendancePage() {
   const resetFormForNext = () => {
     setCapturedImage(null);
     setSuccessRecord(null);
+    setIsTaskSubmitted(false);
     stopCameraStream();
     requestLocation();
   };
@@ -511,95 +513,171 @@ export default function AttendancePage() {
 
         {/* Success View Screen */}
         {successRecord ? (
-          <div className="bg-slate-900 border border-emerald-500/40 rounded-3xl p-6 shadow-2xl text-center">
-            <div className="w-16 h-16 rounded-full bg-emerald-500/20 border-2 border-emerald-400 text-emerald-400 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-500/20">
-              <CheckCircle2 className="w-10 h-10 animate-bounce" />
-            </div>
-
-            <span className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 mb-2">
-              {successRecord.punchType === 'PUNCH_IN' ? '🟢 Morning Punch In Successful' : '🔴 Evening Punch Out Successful'}
-            </span>
-
-            <h2 className="text-2xl font-black text-white">{successRecord.employeeName}</h2>
-            <p className="text-sm text-slate-300 font-medium">{successRecord.projectName}</p>
-
-            {/* Photo preview */}
-            <div className="my-5 relative max-w-xs mx-auto rounded-2xl overflow-hidden border-2 border-emerald-400/40 shadow-xl bg-black">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={successRecord.photoUrl}
-                alt="Punch Verification"
-                className="w-full h-auto object-cover"
-              />
-              <div className="absolute top-2 right-2 px-2 py-1 bg-black/70 backdrop-blur-md rounded-md text-[10px] text-emerald-400 font-mono font-bold flex items-center gap-1 border border-emerald-500/30">
-                <ShieldCheck className="w-3 h-3" /> VERIFIED
+          isTaskSubmitted ? (
+            /* ─── FINAL CELEBRATORY SCREEN WITH "GO TO HOME" BUTTON ─── */
+            <div className="bg-slate-900 border border-emerald-500/50 rounded-3xl p-6 sm:p-8 shadow-2xl text-center space-y-6 animate-in fade-in zoom-in-95 duration-300">
+              <div className="w-20 h-20 rounded-full bg-emerald-500/20 border-2 border-emerald-400 text-emerald-400 flex items-center justify-center mx-auto shadow-xl shadow-emerald-500/30">
+                <CheckCircle2 className="w-12 h-12 animate-pulse text-emerald-400" />
               </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-3 text-left bg-black/40 rounded-xl p-3 border border-slate-800 mb-6 text-xs">
               <div>
-                <p className="text-slate-400 text-[10px] uppercase font-semibold">Recorded Time</p>
-                <p className="text-white font-mono font-bold text-sm">{successRecord.time}</p>
+                <span className="inline-block px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 mb-2">
+                  🎉 Record Saved Successfully
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-black text-white">
+                  हाजिरी और आज का काम दर्ज हो गया!
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-300 mt-1 font-medium">
+                  {successRecord.employeeName} &bull; {successRecord.projectName}
+                </p>
               </div>
-              <div>
-                <p className="text-slate-400 text-[10px] uppercase font-semibold">Recorded Date</p>
-                <p className="text-white font-bold">{successRecord.date}</p>
-              </div>
-              <div>
-                <p className="text-slate-400 text-[10px] uppercase font-semibold">Site Distance</p>
-                <p className="text-emerald-400 font-semibold">{successRecord.distance}m from site</p>
-              </div>
-              <div>
-                <p className="text-slate-400 text-[10px] uppercase font-semibold">Status</p>
-                <p className="text-emerald-400 font-semibold">Approved</p>
-              </div>
-            </div>
 
-            {/* ─── STEP 2: TODAY'S SITE WORK PLAN & BACK-CAMERA PROOF ─── */}
-            <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-indigo-950/80 via-slate-900 to-slate-950 border-2 border-indigo-500/50 shadow-xl text-left">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-lg bg-indigo-500/30 text-indigo-300 flex items-center justify-center font-black text-xs border border-indigo-400/30">
-                    2
-                  </span>
-                  <h3 className="font-extrabold text-sm sm:text-base text-white">
-                    {successRecord.punchType === 'PUNCH_IN'
-                      ? "Today's Site Tasks & Photos (आज का काम)"
-                      : 'Evening Work Completion Proof (शाम का काम)'}
-                  </h3>
+              {/* Photo & Punch Details */}
+              <div className="relative max-w-xs mx-auto rounded-2xl overflow-hidden border-2 border-emerald-400/50 shadow-xl bg-black">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={successRecord.photoUrl}
+                  alt="Punch Verification"
+                  className="w-full h-auto object-cover max-h-56"
+                />
+                <div className="absolute top-2 right-2 px-2 py-0.5 bg-black/75 backdrop-blur-md rounded-md text-[10px] text-emerald-400 font-mono font-bold flex items-center gap-1 border border-emerald-500/30">
+                  <ShieldCheck className="w-3 h-3" /> VERIFIED
                 </div>
-                <span className="text-[10px] font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/30">
-                  Step 2
-                </span>
               </div>
 
-              <p className="text-xs text-slate-300 mb-3.5 leading-relaxed">
-                {successRecord.punchType === 'PUNCH_IN'
-                  ? 'Aaj aap site par kya kya kaam karwayenge?'
-                  : 'Shaam tak site par kitna kaam hua?'}
-              </p>
+              <div className="grid grid-cols-2 gap-3 text-left bg-black/40 rounded-xl p-3.5 border border-slate-800 text-xs">
+                <div>
+                  <p className="text-slate-400 text-[10px] uppercase font-semibold">Punch Type</p>
+                  <p className="text-emerald-400 font-bold">
+                    {successRecord.punchType === 'PUNCH_IN' ? '🟢 Morning Punch In' : '🔴 Evening Punch Out'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-slate-400 text-[10px] uppercase font-semibold">Recorded Time</p>
+                  <p className="text-white font-mono font-bold">{successRecord.time}</p>
+                </div>
+                <div>
+                  <p className="text-slate-400 text-[10px] uppercase font-semibold">Recorded Date</p>
+                  <p className="text-white font-bold">{successRecord.date}</p>
+                </div>
+                <div>
+                  <p className="text-slate-400 text-[10px] uppercase font-semibold">Site Distance</p>
+                  <p className="text-emerald-400 font-semibold">{successRecord.distance}m (Approved)</p>
+                </div>
+              </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setTaskModalMode(successRecord.punchType === 'PUNCH_IN' ? 'MORNING' : 'EVENING');
-                  setIsTaskModalOpen(true);
-                }}
-                className={`w-full py-3.5 px-4 rounded-xl font-black text-xs sm:text-sm text-white shadow-xl flex items-center justify-center gap-2.5 cursor-pointer transition-all active:scale-[0.99] ${
-                  successRecord.punchType === 'PUNCH_IN'
-                    ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:brightness-110 shadow-orange-500/30 border border-amber-400/40'
-                    : 'bg-gradient-to-r from-indigo-600 via-emerald-600 to-teal-600 hover:brightness-110 shadow-emerald-600/30 border border-emerald-400/40'
-                }`}
-              >
-                <Camera className="w-5 h-5 animate-pulse" />
-                <span>
-                  {successRecord.punchType === 'PUNCH_IN'
-                    ? "📸 Add Today's Task"
-                    : '📸 Upload Evening Proof'}
-                </span>
-              </button>
+              {/* ACTION BUTTONS: GO TO HOME & NEXT PUNCH */}
+              <div className="space-y-3 pt-2">
+                <Link
+                  href="/"
+                  className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:brightness-110 active:scale-[0.99] transition-all font-black text-sm sm:text-base text-white shadow-xl shadow-emerald-500/30 flex items-center justify-center gap-2.5 cursor-pointer border border-emerald-400/40"
+                >
+                  <span>🏠 Go to Home (होम पेज पर जाएं)</span>
+                  <ArrowRight className="w-5 h-5" />
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={resetFormForNext}
+                  className="w-full py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer border border-slate-700"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  <span>New Attendance Punch (अगले कर्मचारी की हाजिरी)</span>
+                </button>
+              </div>
             </div>
-          </div>
+          ) : (
+            /* ─── INTERMEDIATE STEP 2: TODAY'S SITE WORK PLAN ─── */
+            <div className="bg-slate-900 border border-emerald-500/40 rounded-3xl p-6 shadow-2xl text-center">
+              <div className="w-16 h-16 rounded-full bg-emerald-500/20 border-2 border-emerald-400 text-emerald-400 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-500/20">
+                <CheckCircle2 className="w-10 h-10 animate-bounce" />
+              </div>
+
+              <span className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 mb-2">
+                {successRecord.punchType === 'PUNCH_IN' ? '🟢 Morning Punch In Successful' : '🔴 Evening Punch Out Successful'}
+              </span>
+
+              <h2 className="text-2xl font-black text-white">{successRecord.employeeName}</h2>
+              <p className="text-sm text-slate-300 font-medium">{successRecord.projectName}</p>
+
+              {/* Photo preview */}
+              <div className="my-5 relative max-w-xs mx-auto rounded-2xl overflow-hidden border-2 border-emerald-400/40 shadow-xl bg-black">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={successRecord.photoUrl}
+                  alt="Punch Verification"
+                  className="w-full h-auto object-cover"
+                />
+                <div className="absolute top-2 right-2 px-2 py-1 bg-black/70 backdrop-blur-md rounded-md text-[10px] text-emerald-400 font-mono font-bold flex items-center gap-1 border border-emerald-500/30">
+                  <ShieldCheck className="w-3 h-3" /> VERIFIED
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-left bg-black/40 rounded-xl p-3 border border-slate-800 mb-6 text-xs">
+                <div>
+                  <p className="text-slate-400 text-[10px] uppercase font-semibold">Recorded Time</p>
+                  <p className="text-white font-mono font-bold text-sm">{successRecord.time}</p>
+                </div>
+                <div>
+                  <p className="text-slate-400 text-[10px] uppercase font-semibold">Recorded Date</p>
+                  <p className="text-white font-bold">{successRecord.date}</p>
+                </div>
+                <div>
+                  <p className="text-slate-400 text-[10px] uppercase font-semibold">Site Distance</p>
+                  <p className="text-emerald-400 font-semibold">{successRecord.distance}m from site</p>
+                </div>
+                <div>
+                  <p className="text-slate-400 text-[10px] uppercase font-semibold">Status</p>
+                  <p className="text-emerald-400 font-semibold">Approved</p>
+                </div>
+              </div>
+
+              {/* STEP 2: TODAY'S SITE WORK PLAN & BACK-CAMERA PROOF */}
+              <div className="mb-2 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-indigo-950/80 via-slate-900 to-slate-950 border-2 border-indigo-500/50 shadow-xl text-left">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-lg bg-indigo-500/30 text-indigo-300 flex items-center justify-center font-black text-xs border border-indigo-400/30">
+                      2
+                    </span>
+                    <h3 className="font-extrabold text-sm sm:text-base text-white">
+                      {successRecord.punchType === 'PUNCH_IN'
+                        ? "Today's Site Tasks & Photos (आज का काम)"
+                        : 'Evening Work Completion Proof (शाम का काम)'}
+                    </h3>
+                  </div>
+                  <span className="text-[10px] font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/30">
+                    Step 2
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-300 mb-3.5 leading-relaxed">
+                  {successRecord.punchType === 'PUNCH_IN'
+                    ? 'Aaj aap site par kya kya kaam karwayenge?'
+                    : 'Shaam tak site par kitna kaam hua?'}
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTaskModalMode(successRecord.punchType === 'PUNCH_IN' ? 'MORNING' : 'EVENING');
+                    setIsTaskModalOpen(true);
+                  }}
+                  className={`w-full py-3.5 px-4 rounded-xl font-black text-xs sm:text-sm text-white shadow-xl flex items-center justify-center gap-2.5 cursor-pointer transition-all active:scale-[0.99] ${
+                    successRecord.punchType === 'PUNCH_IN'
+                      ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:brightness-110 shadow-orange-500/30 border border-amber-400/40'
+                      : 'bg-gradient-to-r from-indigo-600 via-emerald-600 to-teal-600 hover:brightness-110 shadow-emerald-600/30 border border-emerald-400/40'
+                  }`}
+                >
+                  <Camera className="w-5 h-5 animate-pulse" />
+                  <span>
+                    {successRecord.punchType === 'PUNCH_IN'
+                      ? "📸 Add Today's Task"
+                      : '📸 Upload Evening Proof'}
+                  </span>
+                </button>
+              </div>
+            </div>
+          )
         ) : (
           /* Normal Punch Form */
           <div className="space-y-4">
@@ -954,10 +1032,12 @@ export default function AttendancePage() {
           latitude={userLocation?.lat}
           longitude={userLocation?.lng}
           onSuccess={() => {
+            setIsTaskModalOpen(false);
+            setIsTaskSubmitted(true);
             toast.success(
               taskModalMode === 'MORNING'
-                ? 'Subah ka task plan aur photos save ho gaye!'
-                : 'Shaam ka kaam proof aur photos save ho gaye!'
+                ? 'Subah ka task plan aur photos safalta-purvak save ho gaye!'
+                : 'Shaam ka kaam proof aur photos safalta-purvak save ho gaye!'
             );
           }}
         />
