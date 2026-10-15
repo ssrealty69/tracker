@@ -83,6 +83,16 @@ const MONTH_NAMES = [
 
 const WEEKDAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+const getStaffAvatar = (staffName: string) => {
+  if (staffName.startsWith('Ravi')) {
+    return { bg: 'bg-sky-100', text: 'text-sky-800', border: 'border-sky-200' };
+  }
+  if (staffName.startsWith('Naveen')) {
+    return { bg: 'bg-violet-100', text: 'text-violet-800', border: 'border-violet-200' };
+  }
+  return { bg: 'bg-amber-100', text: 'text-amber-800', border: 'border-amber-200' };
+};
+
 export default function AttendanceLedgerView({
   isAdmin = false,
   customHeader = null,
@@ -897,187 +907,286 @@ export default function AttendanceLedgerView({
                 </div>
               </div>
 
-              {/* Day Header Row (Mon - Sun) */}
-              <div className="grid grid-cols-7 border-b border-slate-200 text-center bg-slate-100/90 text-slate-600 font-bold text-xs uppercase tracking-wider py-2.5">
-                {WEEKDAY_NAMES.map((name) => (
-                  <div key={name}>
-                    {name}
-                  </div>
-                ))}
-              </div>
-
-              {/* Calendar Days Matrix */}
-              <div className="grid grid-cols-7 gap-px bg-slate-200">
-                {/* Empty Offset Cells */}
-                {Array.from({ length: monthInfo.firstDayOffset }).map((_, i) => (
-                  <div key={`empty-${i}`} className="bg-slate-50 min-h-[95px] p-2 opacity-40"></div>
-                ))}
-
-                {/* Day Cells */}
-                {calendarDays.map((cell) => {
-                  const isSelected = selectedDayDetail === cell.dayNum;
-                  return (
+              <div className="p-3 sm:p-4 bg-slate-100/60">
+                {/* Day Header Row (Mon - Sun) */}
+                <div className="grid grid-cols-7 gap-1.5 sm:gap-2.5 mb-2.5 text-center">
+                  {WEEKDAY_NAMES.map((name) => (
                     <div
-                      key={cell.dayNum}
-                      onClick={() =>
-                        setSelectedDayDetail(isSelected ? null : cell.dayNum)
-                      }
-                      className={`min-h-[115px] p-2.5 transition-all cursor-pointer relative flex flex-col justify-between ${
-                        isSelected
-                          ? 'ring-2 ring-indigo-600 bg-indigo-50/80 z-10'
-                          : cell.isFuture
-                          ? 'bg-slate-50/60 opacity-60'
-                          : cell.primaryStatus === 'PRESENT'
-                          ? 'bg-emerald-50/30 hover:bg-emerald-50/70'
-                          : cell.primaryStatus === 'ON_SITE'
-                          ? 'bg-amber-50/40 hover:bg-amber-50/80'
-                          : cell.primaryStatus === 'ABSENT'
-                          ? 'bg-rose-50/40 hover:bg-rose-50/80'
-                          : 'bg-white hover:bg-slate-50'
-                      }`}
+                      key={name}
+                      className="py-2 rounded-xl bg-white/90 border border-slate-200/70 text-[11px] sm:text-xs font-black tracking-wider uppercase text-slate-600 shadow-2xs"
                     >
-                      {/* Top Bar: Day Number + Status Badge */}
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span
-                          className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                            cell.isToday
-                              ? 'bg-indigo-600 text-white shadow-xs'
-                              : 'text-slate-900'
-                          }`}
-                        >
-                          {cell.dayNum}
-                        </span>
+                      {name}
+                    </div>
+                  ))}
+                </div>
 
-                        {cell.isToday && (
-                          <span className="text-[9px] uppercase font-bold px-1.5 py-0.2 rounded bg-indigo-100 text-indigo-700">
-                            Today
-                          </span>
-                        )}
-                      </div>
+                {/* Calendar Days Matrix */}
+                <div className="grid grid-cols-7 gap-1.5 sm:gap-2.5">
+                  {/* Empty Offset Cells */}
+                  {Array.from({ length: monthInfo.firstDayOffset }).map((_, i) => (
+                    <div
+                      key={`empty-${i}`}
+                      className="min-h-[120px] sm:min-h-[135px] rounded-xl border border-dashed border-slate-200/60 bg-slate-50/40 opacity-40 flex items-center justify-center"
+                    >
+                      <span className="text-slate-300 text-xs font-mono">&mdash;</span>
+                    </div>
+                  ))}
 
-                      {/* Content inside cell */}
-                      <div className="space-y-1 my-auto">
-                        {cell.isFuture ? (
-                          <span className="text-[10px] text-slate-400 block">—</span>
-                        ) : selectedStaff === 'All' ? (
-                          /* Multi-staff summary inside cell */
-                          <div className="space-y-1">
-                            {cell.staffRecords.map((sr) => (
-                              <div
-                                key={sr.staffName}
-                                className="flex items-center justify-between text-[10px] leading-tight"
-                              >
-                                <span className="font-semibold truncate max-w-[55px] text-slate-700">
-                                  {sr.staffName.split(' ')[0]}
-                                </span>
-                                {sr.isPresent ? (
-                                  <span className="text-[9.5px] font-bold text-emerald-700 bg-emerald-100 px-1 rounded">
-                                    P
-                                  </span>
-                                ) : sr.isOnSite ? (
-                                  <span className="text-[9.5px] font-bold text-amber-700 bg-amber-100 px-1 rounded">
-                                    In
-                                  </span>
-                                ) : (
-                                  <span className="text-[9.5px] font-bold text-rose-700 bg-rose-100 px-1 rounded">
-                                    A
-                                  </span>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          /* Single Staff Detail with Timings & Selfie Preview */
-                          <div>
-                            {cell.primaryStatus === 'PRESENT' ? (
-                              <div className="space-y-1">
-                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-800 bg-emerald-100/90 px-1.5 py-0.5 rounded border border-emerald-200">
-                                  <CheckCircle2 className="w-2.5 h-2.5" /> {cell.hoursFormatted}
-                                </span>
-                                <div className="text-[9.5px] text-slate-600 font-mono flex flex-col">
-                                  <span>In: {cell.inTime?.replace(/:\d\d\s/, ' ')}</span>
-                                  <span>Out: {cell.outTime?.replace(/:\d\d\s/, ' ')}</span>
-                                </div>
-                              </div>
-                            ) : cell.primaryStatus === 'ON_SITE' ? (
-                              <div className="space-y-1">
-                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-100/90 px-1.5 py-0.5 rounded border border-amber-200">
-                                  <Clock className="w-2.5 h-2.5" /> On Site
-                                </span>
-                                <span className="text-[9.5px] text-slate-600 font-mono block">
-                                  In: {cell.inTime?.replace(/:\d\d\s/, ' ')}
-                                </span>
-                              </div>
-                            ) : (
-                              <div className="space-y-0.5">
-                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700 bg-rose-100/90 px-1.5 py-0.5 rounded border border-rose-200">
-                                  <UserX className="w-2.5 h-2.5" /> Absent
-                                </span>
-                                <span className="text-[9px] text-rose-600 block">Gayab / No Punch</span>
-                              </div>
+                  {/* Day Cells */}
+                  {calendarDays.map((cell) => {
+                    const isSelected = selectedDayDetail === cell.dayNum;
+                    const presentCount = cell.staffRecords.filter((s) => s.isPresent).length;
+                    const onSiteCount = cell.staffRecords.filter((s) => s.isOnSite).length;
+                    const absentCount = cell.staffRecords.filter((s) => s.isAbsent).length;
+                    const hasAbsence = cell.isPastOrToday && absentCount > 0;
+                    const allPresent = cell.isPastOrToday && presentCount === cell.staffRecords.length;
+
+                    return (
+                      <div
+                        key={cell.dayNum}
+                        onClick={() =>
+                          setSelectedDayDetail(isSelected ? null : cell.dayNum)
+                        }
+                        className={`min-h-[120px] sm:min-h-[135px] p-2 sm:p-2.5 rounded-xl border transition-all cursor-pointer relative flex flex-col justify-between group ${
+                          isSelected
+                            ? 'ring-2 ring-indigo-600 border-indigo-600 bg-indigo-50/80 shadow-md z-10'
+                            : cell.isFuture
+                            ? 'bg-slate-50/40 border-slate-200/60 opacity-50 hover:opacity-75'
+                            : cell.isToday
+                            ? 'bg-white border-indigo-400 ring-2 ring-indigo-200/80 shadow-xs hover:shadow-md'
+                            : hasAbsence
+                            ? 'bg-white border-rose-200/90 hover:border-rose-300 hover:shadow-md'
+                            : 'bg-white border-slate-200/80 hover:border-indigo-300 hover:shadow-md'
+                        }`}
+                      >
+                        {/* Top Bar: Day Number + Status Badge */}
+                        <div className="flex items-center justify-between gap-1 pb-1.5 border-b border-slate-100">
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className={`w-6 h-6 sm:w-6.5 sm:h-6.5 rounded-lg flex items-center justify-center text-xs font-black ${
+                                cell.isToday
+                                  ? 'bg-indigo-600 text-white shadow-xs'
+                                  : isSelected
+                                  ? 'bg-indigo-600 text-white'
+                                  : 'bg-slate-100 text-slate-800 group-hover:bg-indigo-50 group-hover:text-indigo-600'
+                              }`}
+                            >
+                              {cell.dayNum}
+                            </span>
+
+                            {cell.isToday && (
+                              <span className="hidden sm:inline-block text-[9px] uppercase font-black px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700">
+                                Today
+                              </span>
                             )}
                           </div>
-                        )}
-                      </div>
 
-                      {/* Bottom Selfie Preview Badges (Single Staff View) */}
-                      {selectedStaff !== 'All' && (cell.inPhoto || cell.outPhoto) && (
-                        <div className="flex items-center gap-1.5 pt-1 border-t border-slate-200/50 mt-1">
-                          {cell.inPhoto && (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setActivePhotoModal({
-                                  url: cell.inPhoto!,
-                                  title: `Morning Punch In - ${cell.formattedDate}`,
-                                  type: 'PUNCH_IN',
-                                  time: cell.inTime || '',
-                                  date: cell.formattedDate,
-                                  employeeName: selectedStaff,
-                                });
-                              }}
-                              title="View Morning Punch In Selfie"
-                              className="relative w-5 h-5 rounded-md overflow-hidden border border-emerald-400 shadow-2xs hover:scale-110 transition-transform"
-                            >
-                              <img
-                                src={cell.inPhoto}
-                                alt="Morning Punch In"
-                                className="w-full h-full object-cover"
-                              />
-                              <span className="absolute bottom-0 right-0 w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                            </button>
-                          )}
-                          {cell.outPhoto && (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setActivePhotoModal({
-                                  url: cell.outPhoto!,
-                                  title: `Evening Punch Out - ${cell.formattedDate}`,
-                                  type: 'PUNCH_OUT',
-                                  time: cell.outTime || '',
-                                  date: cell.formattedDate,
-                                  employeeName: selectedStaff,
-                                });
-                              }}
-                              title="View Evening Punch Out Selfie"
-                              className="relative w-5 h-5 rounded-md overflow-hidden border border-rose-400 shadow-2xs hover:scale-110 transition-transform"
-                            >
-                              <img
-                                src={cell.outPhoto}
-                                alt="Evening Punch Out"
-                                className="w-full h-full object-cover"
-                              />
-                              <span className="absolute bottom-0 right-0 w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-                            </button>
+                          {/* Day Attendance Status Pill */}
+                          {!cell.isFuture && (
+                            selectedStaff === 'All' ? (
+                              allPresent ? (
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9.5px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/70 shrink-0">
+                                  <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" />
+                                  <span className="hidden md:inline">All</span> 3/3
+                                </span>
+                              ) : hasAbsence ? (
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9.5px] font-black bg-rose-50 text-rose-700 border border-rose-200 shrink-0">
+                                  <UserX className="w-2.5 h-2.5 text-rose-600" />
+                                  <span>{absentCount} Gayab</span>
+                                </span>
+                              ) : onSiteCount > 0 ? (
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9.5px] font-bold bg-amber-50 text-amber-800 border border-amber-200 shrink-0">
+                                  <Clock className="w-2.5 h-2.5 text-amber-600" />
+                                  <span>On Site</span>
+                                </span>
+                              ) : null
+                            ) : (
+                              /* Single staff status */
+                              <span
+                                className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9.5px] font-bold shrink-0 ${
+                                  cell.primaryStatus === 'PRESENT'
+                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                    : cell.primaryStatus === 'ON_SITE'
+                                    ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                                    : 'bg-rose-50 text-rose-700 border border-rose-200 font-black'
+                                }`}
+                              >
+                                {cell.primaryStatus === 'PRESENT'
+                                  ? 'Present'
+                                  : cell.primaryStatus === 'ON_SITE'
+                                  ? 'On Site'
+                                  : 'Gayab'}
+                              </span>
+                            )
                           )}
                         </div>
-                      )}
-                    </div>
-                  );
-                })}
+
+                        {/* Content inside cell */}
+                        <div className="py-1.5 my-auto">
+                          {cell.isFuture ? (
+                            <div className="text-center py-2">
+                              <span className="text-[11px] font-mono text-slate-300">&mdash;</span>
+                            </div>
+                          ) : selectedStaff === 'All' ? (
+                            /* Multi-staff summary inside cell with avatar and badge */
+                            <div className="space-y-1">
+                              {cell.staffRecords.map((sr) => {
+                                const firstName = sr.staffName.split(' ')[0];
+                                const initial = firstName.charAt(0);
+                                const avatar = getStaffAvatar(sr.staffName);
+
+                                return (
+                                  <div
+                                    key={sr.staffName}
+                                    className={`flex items-center justify-between px-1.5 py-1 rounded-lg transition-colors border ${
+                                      sr.isPresent
+                                        ? 'bg-slate-50/80 hover:bg-emerald-50/60 border-slate-100 text-slate-800'
+                                        : sr.isOnSite
+                                        ? 'bg-amber-50/60 hover:bg-amber-50 border-amber-100 text-amber-950'
+                                        : 'bg-rose-50/60 hover:bg-rose-50 border-rose-100 text-rose-950'
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-1.5 min-w-0">
+                                      <span
+                                        className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black shrink-0 ${avatar.bg} ${avatar.text}`}
+                                      >
+                                        {initial}
+                                      </span>
+                                      <span className="font-bold text-[10.5px] sm:text-[11px] truncate text-slate-800">
+                                        {firstName}
+                                      </span>
+                                    </div>
+
+                                    {/* Status Chip */}
+                                    {sr.isPresent ? (
+                                      <span className="text-[9px] font-black text-emerald-700 bg-white/90 border border-emerald-200 px-1 py-0.2 rounded shadow-2xs shrink-0">
+                                        P
+                                      </span>
+                                    ) : sr.isOnSite ? (
+                                      <span className="text-[9px] font-black text-amber-800 bg-white/90 border border-amber-200 px-1 py-0.2 rounded shadow-2xs shrink-0">
+                                        In
+                                      </span>
+                                    ) : (
+                                      <span className="text-[9px] font-black text-rose-700 bg-white/90 border border-rose-200 px-1 py-0.2 rounded shadow-2xs shrink-0">
+                                        A
+                                      </span>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            /* Single Staff Detail with Timings & Total */
+                            <div>
+                              {cell.primaryStatus === 'PRESENT' ? (
+                                <div className="space-y-1">
+                                  <div className="flex items-center justify-between text-[11px] font-mono">
+                                    <span className="text-slate-500 font-semibold">Total:</span>
+                                    <span className="font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                                      {cell.hoursFormatted}
+                                    </span>
+                                  </div>
+                                  <div className="text-[10px] text-slate-600 font-mono space-y-0.5 bg-slate-50/80 p-1.5 rounded-lg border border-slate-100">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-slate-400">In:</span>
+                                      <span className="font-bold text-slate-800">
+                                        {cell.inTime?.replace(/:\d\d\s/, ' ')}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-slate-400">Out:</span>
+                                      <span className="font-bold text-slate-800">
+                                        {cell.outTime?.replace(/:\d\d\s/, ' ')}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : cell.primaryStatus === 'ON_SITE' ? (
+                                <div className="space-y-1 bg-amber-50/50 p-1.5 rounded-lg border border-amber-100">
+                                  <span className="inline-flex items-center gap-1 text-[10.5px] font-bold text-amber-800">
+                                    <Clock className="w-3 h-3 text-amber-600" /> In Progress
+                                  </span>
+                                  <div className="text-[10px] font-mono text-slate-700">
+                                    In:{' '}
+                                    <span className="font-bold">
+                                      {cell.inTime?.replace(/:\d\d\s/, ' ')}
+                                    </span>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="text-center py-2 bg-rose-50/50 rounded-lg border border-rose-100">
+                                  <span className="text-[11px] font-extrabold text-rose-700 block">
+                                    Absent (Gayab)
+                                  </span>
+                                  <span className="text-[9.5px] text-rose-500 block">
+                                    No Punch Logged
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Bottom Selfie Preview Badges (Single Staff View) */}
+                        {selectedStaff !== 'All' && (cell.inPhoto || cell.outPhoto) && (
+                          <div className="flex items-center gap-1.5 pt-1.5 border-t border-slate-100 mt-1">
+                            {cell.inPhoto && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActivePhotoModal({
+                                    url: cell.inPhoto!,
+                                    title: `Morning Punch In - ${cell.formattedDate}`,
+                                    type: 'PUNCH_IN',
+                                    time: cell.inTime || '',
+                                    date: cell.formattedDate,
+                                    employeeName: selectedStaff,
+                                  });
+                                }}
+                                title="View Morning Punch In Selfie"
+                                className="relative w-6 h-6 rounded-md overflow-hidden border border-emerald-400 shadow-2xs hover:scale-110 transition-transform cursor-pointer"
+                              >
+                                <img
+                                  src={cell.inPhoto}
+                                  alt="Morning Punch In"
+                                  className="w-full h-full object-cover"
+                                />
+                                <span className="absolute bottom-0 right-0 w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                              </button>
+                            )}
+                            {cell.outPhoto && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActivePhotoModal({
+                                    url: cell.outPhoto!,
+                                    title: `Evening Punch Out - ${cell.formattedDate}`,
+                                    type: 'PUNCH_OUT',
+                                    time: cell.outTime || '',
+                                    date: cell.formattedDate,
+                                    employeeName: selectedStaff,
+                                  });
+                                }}
+                                title="View Evening Punch Out Selfie"
+                                className="relative w-6 h-6 rounded-md overflow-hidden border border-rose-400 shadow-2xs hover:scale-110 transition-transform cursor-pointer"
+                              >
+                                <img
+                                  src={cell.outPhoto}
+                                  alt="Evening Punch Out"
+                                  className="w-full h-full object-cover"
+                                />
+                                <span className="absolute bottom-0 right-0 w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                              </button>
+                            )}
+                            <span className="text-[10px] text-slate-400 ml-auto font-mono">Zoom</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
