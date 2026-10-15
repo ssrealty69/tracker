@@ -471,13 +471,6 @@ export default function AgentFormPage() {
 
           <div className="flex items-center gap-2">
             <Link
-              href="/attendance"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-bold transition-all shadow-2xs"
-            >
-              <Camera size={13} className="text-emerald-600" />
-              Site Attendance
-            </Link>
-            <Link
               href="/admin"
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-all shadow-xs"
             >
