@@ -39,11 +39,32 @@ export default function AttendancePage() {
   // Mount state to eliminate browser extension hydration mismatches
   const [mounted, setMounted] = useState(false);
 
+  // Dynamic projects & staff options from Admin Site Config
+  const [projectOptions, setProjectOptions] = useState<string[]>(DEFAULT_PROJECTS);
+  const [staffOptions, setStaffOptions] = useState<string[]>(DEFAULT_STAFF);
+
   // Selection states - initialized empty so user must explicitly choose
   const [selectedProject, setSelectedProject] = useState('');
   const [customProject, setCustomProject] = useState('');
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [customEmployee, setCustomEmployee] = useState('');
+
+  // Fetch live site config from admin on mount
+  useEffect(() => {
+    fetch('/api/site-config')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          if (Array.isArray(data.projects) && data.projects.length) {
+            setProjectOptions(data.projects);
+          }
+          if (Array.isArray(data.staff) && data.staff.length) {
+            setStaffOptions(data.staff.map((s: { name?: string } | string) => (typeof s === 'string' ? s : s.name || '')));
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Punch Mode: PUNCH_IN vs PUNCH_OUT (Auto-detects afternoon as PUNCH_OUT)
   const [punchType, setPunchType] = useState<'PUNCH_IN' | 'PUNCH_OUT'>(() => {
@@ -616,7 +637,7 @@ export default function AttendancePage() {
                   <option value="" disabled className="text-slate-500 bg-slate-950">
                     -- Project / Site Select Karein --
                   </option>
-                  {DEFAULT_PROJECTS.map((proj) => (
+                  {projectOptions.map((proj) => (
                     <option key={proj} value={proj} className="bg-slate-950 text-white">
                       {proj}
                     </option>
@@ -650,7 +671,7 @@ export default function AttendancePage() {
                   <option value="" disabled className="text-slate-500 bg-slate-950">
                     -- Staff / Apna Naam Select Karein --
                   </option>
-                  {DEFAULT_STAFF.map((staff) => (
+                  {staffOptions.map((staff) => (
                     <option key={staff} value={staff} className="bg-slate-950 text-white">
                       {staff}
                     </option>

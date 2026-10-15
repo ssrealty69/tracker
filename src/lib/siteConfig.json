@@ -1,0 +1,39 @@
+{
+  "staff": [
+    {
+      "id": "staff_1",
+      "name": "Ravi Tanwar",
+      "role": "Site Supervisor",
+      "phone": "+91 98110 00001",
+      "active": true,
+      "createdAt": "2026-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "staff_2",
+      "name": "Naveen Tanwar",
+      "role": "Site Manager",
+      "phone": "+91 98110 00002",
+      "active": true,
+      "createdAt": "2026-10-01T00:00:00.000Z"
+    },
+    {
+      "id": "staff_3",
+      "name": "Harshit",
+      "role": "Civil Engineer",
+      "phone": "+91 98110 00003",
+      "active": true,
+      "createdAt": "2026-10-01T00:00:00.000Z"
+    }
+  ],
+  "projects": [
+    "Nivasa II (Site 1)",
+    "Nirvana",
+    "Orchid",
+    "Velora",
+    "The Arch",
+    "Vasundhara",
+    "Amaryllis",
+    "Floria",
+    "Other / Custom Site"
+  ]
+}

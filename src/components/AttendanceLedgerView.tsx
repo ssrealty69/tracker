@@ -135,12 +135,16 @@ export default function AttendanceLedgerView({
     projectName: string;
   } | null>(null);
 
+  // Active Site Staff List (dynamically loaded from siteConfig)
+  const [activeStaffList, setActiveStaffList] = useState<string[]>(KNOWN_STAFF);
+
   const fetchRecords = async () => {
     setLoading(true);
     try {
-      const [attRes, tasksRes] = await Promise.all([
+      const [attRes, tasksRes, configRes] = await Promise.all([
         fetch('/api/attendance/list', { cache: 'no-store' }),
         fetch('/api/attendance/tasks', { cache: 'no-store' }),
+        fetch('/api/site-config', { cache: 'no-store' }),
       ]);
       if (attRes.ok) {
         const data: AttendanceRecord[] = await attRes.json();
@@ -150,6 +154,15 @@ export default function AttendanceLedgerView({
         const taskJson = await tasksRes.json();
         if (taskJson.success && Array.isArray(taskJson.tasks)) {
           setSiteTasks(taskJson.tasks);
+        }
+      }
+      if (configRes.ok) {
+        const configJson = await configRes.json();
+        if (configJson.success && Array.isArray(configJson.staff) && configJson.staff.length) {
+          const names = configJson.staff
+            .map((s: { name?: string } | string) => (typeof s === 'string' ? s : s.name || ''))
+            .filter(Boolean);
+          if (names.length) setActiveStaffList(names);
         }
       }
     } catch (err) {
@@ -294,9 +307,11 @@ export default function AttendanceLedgerView({
         r.projectName.toLowerCase().includes(dailySearchTerm.toLowerCase());
       const matchesStatus =
         dailyStatusFilter === 'ALL' || r.status === dailyStatusFilter;
-      return matchesDate && matchesSearch && matchesStatus;
+      const matchesStaff =
+        selectedStaff === 'All' || r.employeeName === selectedStaff;
+      return matchesDate && matchesSearch && matchesStatus && matchesStaff;
     });
-  }, [allConsolidatedRows, dailyDateFilter, todayStr, dailySearchTerm, dailyStatusFilter]);
+  }, [allConsolidatedRows, dailyDateFilter, todayStr, dailySearchTerm, dailyStatusFilter, selectedStaff]);
 
   // Quick stats for Today's view
   const todayRows = useMemo(() => {
@@ -551,7 +566,7 @@ export default function AttendanceLedgerView({
     }[] = [];
 
     const targetStaffList =
-      selectedStaff === 'All' ? KNOWN_STAFF : [selectedStaff];
+      selectedStaff === 'All' ? activeStaffList : [selectedStaff];
 
     // Filter to selected day if user clicked a specific calendar cell
     const daysToInclude = selectedDayDetail
@@ -765,9 +780,9 @@ export default function AttendanceLedgerView({
                         : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                     }`}
                   >
-                    All Staff (3)
+                    All Staff ({activeStaffList.length})
                   </button>
-                  {KNOWN_STAFF.map((staff) => (
+                  {activeStaffList.map((staff) => (
                     <button
                       key={staff}
                       onClick={() => {
@@ -1631,6 +1646,57 @@ export default function AttendanceLedgerView({
                 <p className="text-2xl font-black text-emerald-600 mt-1.5">100%</p>
                 <span className="text-[11px] text-emerald-600 font-medium">All verified &le;50m</span>
               </div>
+            </div>
+
+            {/* Staff Filter Tabs for Daily Register */}
+            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="w-full sm:w-auto space-y-1.5">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                  STAFF MEMBER / AGENT:
+                </span>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedStaff('All')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      selectedStaff === 'All'
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    }`}
+                  >
+                    All Staff ({activeStaffList.length})
+                  </button>
+                  {activeStaffList.map((staff) => (
+                    <button
+                      key={staff}
+                      type="button"
+                      onClick={() => setSelectedStaff(staff)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        selectedStaff === staff
+                          ? 'bg-indigo-600 text-white shadow-xs'
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      }`}
+                    >
+                      {staff}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {selectedStaff !== 'All' && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-500 font-medium">
+                    Filtered for: <strong className="text-indigo-600">{selectedStaff}</strong>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedStaff('All')}
+                    className="text-xs text-indigo-600 hover:text-indigo-800 font-bold underline cursor-pointer"
+                  >
+                    Show All Staff
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Filter and Search Bar for Daily View */}

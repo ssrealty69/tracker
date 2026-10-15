@@ -13,6 +13,7 @@ import {
   X,
   PhoneCall,
   UserCheck,
+  HardHat,
   SlidersHorizontal,
   ChevronLeft,
   ChevronRight,
@@ -22,6 +23,7 @@ import { useState, useEffect } from 'react';
 const navItems = [
   { href: '/admin', label: 'Overview Dashboard', icon: LayoutDashboard },
   { href: '/admin/attendance', label: 'Site Attendance & Selfies', icon: UserCheck },
+  { href: '/admin/site-staff', label: 'Site Staff & Projects', icon: HardHat },
   { href: '/admin/visits', label: 'Site Visits Center', icon: MapPin },
   { href: '/admin/leads', label: 'Leads & Dedup Grid', icon: TableProperties },
   { href: '/admin/settings', label: 'Form & Master Settings', icon: SlidersHorizontal },
