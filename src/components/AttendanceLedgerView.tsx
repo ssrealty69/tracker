@@ -397,7 +397,7 @@ export default function AttendanceLedgerView({
             hoursFormatted = `${presentCount + onSiteCount}/${targetStaffList.length} Attended`;
           } else {
             primaryStatus = 'ABSENT';
-            hoursFormatted = 'All Absent (Gayab)';
+            hoursFormatted = 'All Absent';
           }
         } else {
           // Single Staff View
@@ -416,7 +416,7 @@ export default function AttendanceLedgerView({
             inPhoto = sr.row?.punchIn?.photoUrl;
           } else {
             primaryStatus = 'ABSENT';
-            hoursFormatted = 'Gayab / Absent';
+            hoursFormatted = 'Absent';
           }
         }
       }
@@ -581,7 +581,7 @@ export default function AttendanceLedgerView({
             employeeName: staffName,
             projectName: 'Nivasa II (Site 1)',
             status: 'ABSENT',
-            duration: 'No Punch Logged (Gayab)',
+            duration: 'No Punch Logged (Absent)',
           });
         }
       });
@@ -837,7 +837,7 @@ export default function AttendanceLedgerView({
 
               <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
                 <div className="flex items-center justify-between text-rose-600 text-xs font-semibold">
-                  <span>Days Absent (Gayab)</span>
+                  <span>Days Absent</span>
                   <UserX className="w-4 h-4 text-rose-600" />
                 </div>
                 <p className="text-2xl font-black text-rose-600 mt-1.5">
@@ -902,7 +902,7 @@ export default function AttendanceLedgerView({
                     <span className="w-2 h-2 rounded-full bg-amber-500"></span> On Site
                   </span>
                   <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 font-semibold">
-                    <span className="w-2 h-2 rounded-full bg-rose-500"></span> Absent (Gayab)
+                    <span className="w-2 h-2 rounded-full bg-rose-500"></span> Absent
                   </span>
                 </div>
               </div>
@@ -992,7 +992,7 @@ export default function AttendanceLedgerView({
                               ) : hasAbsence ? (
                                 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9.5px] font-black bg-rose-50 text-rose-700 border border-rose-200 shrink-0">
                                   <UserX className="w-2.5 h-2.5 text-rose-600" />
-                                  <span>{absentCount} Gayab</span>
+                                  <span>{absentCount} Absent</span>
                                 </span>
                               ) : onSiteCount > 0 ? (
                                 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9.5px] font-bold bg-amber-50 text-amber-800 border border-amber-200 shrink-0">
@@ -1015,7 +1015,7 @@ export default function AttendanceLedgerView({
                                   ? 'Present'
                                   : cell.primaryStatus === 'ON_SITE'
                                   ? 'On Site'
-                                  : 'Gayab'}
+                                  : 'Absent'}
                               </span>
                             )
                           )}
@@ -1116,7 +1116,7 @@ export default function AttendanceLedgerView({
                               ) : (
                                 <div className="text-center py-2 bg-rose-50/50 rounded-lg border border-rose-100">
                                   <span className="text-[11px] font-extrabold text-rose-700 block">
-                                    Absent (Gayab)
+                                    Absent
                                   </span>
                                   <span className="text-[9.5px] text-rose-500 block">
                                     No Punch Logged
@@ -1250,7 +1250,7 @@ export default function AttendanceLedgerView({
                     >
                       <option value="ALL">All Status</option>
                       <option value="PRESENT">Present (Completed)</option>
-                      <option value="ABSENT">Absent (Gayab)</option>
+                      <option value="ABSENT">Absent</option>
                       <option value="ON_SITE">On Site (In Progress)</option>
                     </select>
                   </div>
@@ -1323,7 +1323,7 @@ export default function AttendanceLedgerView({
                             ) : (
                               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
                                 <UserX className="w-3.5 h-3.5 text-rose-600" />
-                                Absent (Gayab)
+                                Absent
                               </span>
                             )}
                           </td>

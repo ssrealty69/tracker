@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
       createdAt: now.toISOString(),
     };
 
-    saveAttendanceRecord(record);
+    await saveAttendanceRecord(record);
 
     const punchLabel = record.punchType === 'PUNCH_IN' ? 'Punch In (Morning)' : 'Punch Out (Evening)';
 

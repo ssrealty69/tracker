@@ -114,3 +114,26 @@ model AdminUser {
   password  String
   createdAt DateTime @default(now())
 }
+
+model AttendanceRecord {
+  id                  String   @id
+  employeeName        String
+  projectName         String
+  punchType           String
+  timestamp           DateTime @default(now())
+  formattedDate       String
+  formattedTime       String
+  latitude            Float?
+  longitude           Float?
+  distanceMeters      Int?
+  isWithinRadius      Boolean  @default(true)
+  siteLatitude        Float?
+  siteLongitude       Float?
+  allowedRadiusMeters Int?     @default(50)
+  photoUrl            String   @db.Text
+  createdAt           DateTime @default(now())
+
+  @@index([formattedDate])
+  @@index([employeeName])
+}
+

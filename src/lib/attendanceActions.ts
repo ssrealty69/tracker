@@ -100,7 +100,7 @@ export async function submitPunchAction(input: PunchInput): Promise<PunchRespons
       createdAt: now.toISOString(),
     };
 
-    saveAttendanceRecord(record);
+    await saveAttendanceRecord(record);
     revalidatePath('/admin/attendance');
 
     const punchLabel = punchType === 'PUNCH_IN' ? 'Punch In (Morning)' : 'Punch Out (Evening)';
