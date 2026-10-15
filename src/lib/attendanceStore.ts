@@ -104,14 +104,29 @@ export async function getAttendanceRecordsAsync(): Promise<AttendanceRecord[]> {
 }
 
 export async function saveAttendanceRecord(record: AttendanceRecord): Promise<void> {
-  // Always update in-memory cache
-  if (!inMemoryRecords.some((r) => r.id === record.id)) {
-    inMemoryRecords.unshift(record);
+  // 1. Remove previous matching punch from in-memory cache so only latest selfie is kept
+  const existingIdx = inMemoryRecords.findIndex(
+    (r) =>
+      r.employeeName === record.employeeName &&
+      r.formattedDate === record.formattedDate &&
+      r.punchType === record.punchType
+  );
+  if (existingIdx >= 0) {
+    inMemoryRecords.splice(existingIdx, 1);
   }
+  inMemoryRecords.unshift(record);
 
-  // 1. Save to PostgreSQL database
+  // 2. Save to PostgreSQL database (delete previous punch on same date for this employee)
   try {
     if ((prisma as any).attendanceRecord) {
+      await (prisma as any).attendanceRecord.deleteMany({
+        where: {
+          employeeName: record.employeeName,
+          formattedDate: record.formattedDate,
+          punchType: record.punchType,
+        },
+      });
+
       await (prisma as any).attendanceRecord.create({
         data: {
           id: record.id,
@@ -134,6 +149,13 @@ export async function saveAttendanceRecord(record: AttendanceRecord): Promise<vo
       });
       return;
     } else {
+      await prisma.$executeRawUnsafe(
+        `DELETE FROM "AttendanceRecord" WHERE "employeeName" = $1 AND "formattedDate" = $2 AND "punchType" = $3`,
+        record.employeeName,
+        record.formattedDate,
+        record.punchType
+      );
+
       await prisma.$executeRawUnsafe(
         `INSERT INTO "AttendanceRecord" ("id", "employeeName", "projectName", "punchType", "timestamp", "formattedDate", "formattedTime", "latitude", "longitude", "distanceMeters", "isWithinRadius", "siteLatitude", "siteLongitude", "allowedRadiusMeters", "photoUrl", "createdAt")
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
@@ -161,9 +183,17 @@ export async function saveAttendanceRecord(record: AttendanceRecord): Promise<vo
     console.warn('Database save attendance notice:', dbErr);
   }
 
-  // 2. Try saving to disk JSON file if writable (local dev environment)
+  // 3. Try saving to disk JSON file if writable (local dev environment)
   try {
-    const diskRecords = getDiskAttendanceRecords();
+    let diskRecords = getDiskAttendanceRecords();
+    diskRecords = diskRecords.filter(
+      (r) =>
+        !(
+          r.employeeName === record.employeeName &&
+          r.formattedDate === record.formattedDate &&
+          r.punchType === record.punchType
+        )
+    );
     diskRecords.unshift(record);
     fs.writeFileSync(ATTENDANCE_STORE_FILE, JSON.stringify(diskRecords, null, 2), 'utf-8');
   } catch (fsErr) {

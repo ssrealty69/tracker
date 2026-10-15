@@ -575,8 +575,8 @@ export default function AttendancePage() {
 
               <p className="text-xs text-slate-300 mb-3.5 leading-relaxed">
                 {successRecord.punchType === 'PUNCH_IN'
-                  ? 'Punch In ke baad site par aaj kya-kya kaam hoga (Plaster, POP, Tank, Safai etc.) select karein aur live back camera se photos lein.'
-                  : 'Punch Out ke baad subah liye gaye tasks ka proof (Live back camera photos) upload karein ki shaam tak kitna kaam hua.'}
+                  ? 'Aaj aap site par kya kya kaam karwayenge?'
+                  : 'Shaam tak site par kitna kaam hua?'}
               </p>
 
               <button
@@ -594,26 +594,10 @@ export default function AttendancePage() {
                 <Camera className="w-5 h-5 animate-pulse" />
                 <span>
                   {successRecord.punchType === 'PUNCH_IN'
-                    ? '📸 Add Today’s Tasks & Back-Camera Photos'
-                    : '📸 Upload Evening Completion Proof Photos'}
+                    ? "📸 Add Today's Task"
+                    : '📸 Upload Evening Proof'}
                 </span>
               </button>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                type="button"
-                onClick={resetFormForNext}
-                className="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer text-sm"
-              >
-                <RotateCcw className="w-4 h-4" /> Next Employee Punch
-              </button>
-              <Link
-                href="/admin/attendance"
-                className="py-3 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl border border-slate-700 transition-all flex items-center justify-center gap-2 text-sm"
-              >
-                View Punch Ledger
-              </Link>
             </div>
           </div>
         ) : (

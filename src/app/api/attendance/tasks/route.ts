@@ -60,12 +60,19 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      const finalTasks =
+        Array.isArray(tasks) && tasks.length > 0
+          ? tasks
+          : tasksDescription
+          ? [String(tasksDescription).trim()]
+          : [];
+
       const updated = await saveMorningTaskPlan({
         dateKey,
         formattedDate: formattedDate || dateKey,
         employeeName,
         projectName,
-        tasks: tasks || [],
+        tasks: finalTasks,
         tasksDescription: tasksDescription || '',
         morningPhotos,
       });

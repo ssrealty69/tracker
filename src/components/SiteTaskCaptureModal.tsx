@@ -3,35 +3,15 @@
 import { useState, useRef, useEffect } from 'react';
 import {
   Camera,
-  Plus,
   Trash2,
   CheckCircle2,
   Clock,
   X,
-  ShieldCheck,
-  Building2,
-  Calendar,
-  AlertCircle,
   Eye,
-  Check,
   ArrowRight,
-  Sparkles,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import type { TaskPhoto, SiteDailyTaskData } from '@/lib/siteTaskStore';
-
-const COMMON_CONSTRUCTION_TASKS = [
-  { id: 'plaster', label: 'Plastering (प्लास्टर)', icon: '🧱' },
-  { id: 'pop', label: 'POP Work (पीओपी / सीलिंग)', icon: '🏛️' },
-  { id: 'tank', label: 'Water Tank (पानी की टंकी)', icon: '🚰' },
-  { id: 'cleaning', label: 'Site Cleaning (सफाई / मलबा)', icon: '🧹' },
-  { id: 'brickwork', label: 'Brickwork (चिनाई का काम)', icon: '🧱' },
-  { id: 'tile', label: 'Tile Fixing (टाइल वर्क)', icon: '🔲' },
-  { id: 'plumbing', label: 'Plumbing (प्लंबिंग वर्क)', icon: '🚿' },
-  { id: 'electrical', label: 'Electrical (बिजली फिटिंग)', icon: '⚡' },
-  { id: 'painting', label: 'Painting / Putty (पेंट / पुट्टी)', icon: '🎨' },
-  { id: 'other', label: 'Other Work (अन्य काम)', icon: '✍️' },
-];
 
 export interface SiteTaskCaptureModalProps {
   isOpen: boolean;
@@ -67,19 +47,17 @@ export default function SiteTaskCaptureModal({
       year: 'numeric',
     });
 
-  // Morning States
-  const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
+  // Morning States: Simple description of tasks
   const [taskDescription, setTaskDescription] = useState('');
   const [morningPhotos, setMorningPhotos] = useState<TaskPhoto[]>([]);
 
-  // Evening States
+  // Evening States: Status, notes and completion photos
   const [completionStatus, setCompletionStatus] = useState<'COMPLETED' | 'PARTIAL' | 'IN_PROGRESS'>('COMPLETED');
   const [completionNotes, setCompletionNotes] = useState('');
   const [eveningPhotos, setEveningPhotos] = useState<TaskPhoto[]>([]);
 
   // Existing Morning Data loaded when in Evening mode
   const [existingData, setExistingData] = useState<SiteDailyTaskData | null>(null);
-  const [loadingExisting, setLoadingExisting] = useState(false);
 
   // Camera & Capture States
   const [isCapturing, setIsCapturing] = useState(false);
@@ -94,22 +72,29 @@ export default function SiteTaskCaptureModal({
     if (!isOpen) return;
 
     const fetchExisting = async () => {
-      setLoadingExisting(true);
       try {
         const res = await fetch(
           `/api/attendance/tasks?dateKey=${effectiveDateKey}&employeeName=${encodeURIComponent(
             employeeName
           )}&projectName=${encodeURIComponent(projectName)}`
         );
-        const data = await res.json();
+        const resText = await res.text();
+        let data: any = {};
+        try {
+          data = JSON.parse(resText);
+        } catch {
+          // ignore non-json
+        }
         if (data.success && data.task) {
           setExistingData(data.task);
           if (mode === 'MORNING') {
-            if (data.task.tasks) setSelectedTasks(data.task.tasks);
-            if (data.task.tasksDescription) setTaskDescription(data.task.tasksDescription);
+            if (data.task.tasksDescription) {
+              setTaskDescription(data.task.tasksDescription);
+            } else if (data.task.tasks && data.task.tasks.length > 0) {
+              setTaskDescription(data.task.tasks.join(', '));
+            }
             if (data.task.morningPhotos) setMorningPhotos(data.task.morningPhotos);
           } else {
-            // Evening mode: load any previously saved evening data
             if (data.task.completionStatus) setCompletionStatus(data.task.completionStatus);
             if (data.task.completionNotes) setCompletionNotes(data.task.completionNotes);
             if (data.task.eveningPhotos) setEveningPhotos(data.task.eveningPhotos);
@@ -117,8 +102,6 @@ export default function SiteTaskCaptureModal({
         }
       } catch (err) {
         console.error('Error fetching existing site task:', err);
-      } finally {
-        setLoadingExisting(false);
       }
     };
 
@@ -127,22 +110,13 @@ export default function SiteTaskCaptureModal({
 
   if (!isOpen) return null;
 
-  // Toggle task category
-  const toggleTask = (taskLabel: string) => {
-    if (selectedTasks.includes(taskLabel)) {
-      setSelectedTasks(selectedTasks.filter((t) => t !== taskLabel));
-    } else {
-      setSelectedTasks([...selectedTasks, taskLabel]);
-    }
-  };
-
-  // Stamp Live Watermark & Compress to WebP
-  const processCapturedPhotoToWebP = (imageSrc: string): Promise<string> => {
+  // Stamp Live Watermark & Compress (WebP with safe JPEG fallback for iOS Safari)
+  const processCapturedPhoto = (imageSrc: string): Promise<string> => {
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => {
-        // Optimize resolution for mobile back camera (max 1280px)
-        const maxDim = 1280;
+        // Optimize resolution for mobile back camera (max 900px keeps size ~40-60KB)
+        const maxDim = 900;
         let width = img.width || 800;
         let height = img.height || 600;
 
@@ -169,27 +143,27 @@ export default function SiteTaskCaptureModal({
         ctx.drawImage(img, 0, 0, width, height);
 
         // Watermark Banner (Bottom)
-        const barHeight = Math.max(68, height * 0.13);
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+        const barHeight = Math.max(55, height * 0.12);
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.90)';
         ctx.fillRect(0, height - barHeight, width, barHeight);
 
         // Watermark Banner (Top-Right Badge)
-        const badgeWidth = Math.min(220, width * 0.35);
+        const badgeWidth = Math.min(180, width * 0.35);
         ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
-        ctx.fillRect(width - badgeWidth - 14, 14, badgeWidth, 34);
+        ctx.fillRect(width - badgeWidth - 12, 12, badgeWidth, 30);
         ctx.strokeStyle = '#10b981';
         ctx.lineWidth = 1.5;
-        ctx.strokeRect(width - badgeWidth - 14, 14, badgeWidth, 34);
+        ctx.strokeRect(width - badgeWidth - 12, 12, badgeWidth, 30);
 
         // Verified indicator dot
         ctx.fillStyle = '#10b981';
         ctx.beginPath();
-        ctx.arc(width - badgeWidth + 4, 31, 5, 0, Math.PI * 2);
+        ctx.arc(width - badgeWidth + 2, 27, 4, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.fillStyle = '#ffffff';
-        ctx.font = `bold ${Math.max(11, Math.round(width * 0.022))}px sans-serif`;
-        ctx.fillText('LIVE BACK CAMERA', width - badgeWidth + 16, 35);
+        ctx.font = `bold ${Math.max(10, Math.round(width * 0.02))}px sans-serif`;
+        ctx.fillText('LIVE BACK CAMERA', width - badgeWidth + 14, 31);
 
         // Timestamp & details
         const now = new Date();
@@ -206,39 +180,42 @@ export default function SiteTaskCaptureModal({
         });
 
         const bannerTitle =
-          mode === 'MORNING' ? 'SS REALTY • MORNING TASK PLAN' : 'SS REALTY • EVENING COMPLETION PROOF';
+          mode === 'MORNING' ? 'SS REALTY • MORNING TASK' : 'SS REALTY • EVENING PROOF';
 
         // Title line
         ctx.fillStyle = '#f8fafc';
-        ctx.font = `bold ${Math.max(14, Math.round(width * 0.028))}px sans-serif`;
-        ctx.fillText(bannerTitle, 16, height - barHeight + 24);
+        ctx.font = `bold ${Math.max(12, Math.round(width * 0.024))}px sans-serif`;
+        ctx.fillText(bannerTitle, 14, height - barHeight + 20);
 
         // Details line
         ctx.fillStyle = '#cbd5e1';
-        ctx.font = `${Math.max(11, Math.round(width * 0.022))}px sans-serif`;
-        const taskSummary = selectedTasks.slice(0, 3).join(', ') || 'Site Work';
+        ctx.font = `${Math.max(10, Math.round(width * 0.019))}px sans-serif`;
         ctx.fillText(
           `${employeeName} | ${projectName} | ${dateStr} ${timeStr}`,
-          16,
-          height - barHeight + 45
+          14,
+          height - barHeight + 38
         );
 
         // GPS line
         ctx.fillStyle = '#94a3b8';
-        ctx.font = `monospace ${Math.max(10, Math.round(width * 0.019))}px`;
+        ctx.font = `monospace ${Math.max(9, Math.round(width * 0.016))}px`;
         ctx.fillText(
-          `GPS: ${latitude.toFixed(6)}, ${longitude.toFixed(6)} | Work: ${taskSummary}`,
-          16,
-          height - 10
+          `GPS: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+          14,
+          height - 6
         );
 
-        // Convert to WebP format (0.84 quality factor for small size & HD sharpness)
+        // Try WebP compression first; on iOS Safari if it returns PNG, fall back to JPEG to prevent giant payloads
         try {
-          const webpUrl = canvas.toDataURL('image/webp', 0.84);
-          resolve(webpUrl);
+          const webpUrl = canvas.toDataURL('image/webp', 0.80);
+          if (webpUrl.startsWith('data:image/png')) {
+            // Safari fell back to PNG! Use JPEG for tiny size
+            resolve(canvas.toDataURL('image/jpeg', 0.75));
+          } else {
+            resolve(webpUrl);
+          }
         } catch {
-          // Fallback to jpeg if browser doesn't support webp canvas export
-          resolve(canvas.toDataURL('image/jpeg', 0.84));
+          resolve(canvas.toDataURL('image/jpeg', 0.75));
         }
       };
       img.onerror = () => resolve(imageSrc);
@@ -265,13 +242,13 @@ export default function SiteTaskCaptureModal({
       const reader = new FileReader();
       reader.onload = async () => {
         const rawSrc = reader.result as string;
-        const webpStampted = await processCapturedPhotoToWebP(rawSrc);
+        const compressed = await processCapturedPhoto(rawSrc);
 
         const now = new Date();
         const newPhoto: TaskPhoto = {
           id: `photo_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-          url: webpStampted,
-          caption: mode === 'MORNING' ? (selectedTasks[0] || 'Site Work Area') : 'Completed Work',
+          url: compressed,
+          caption: mode === 'MORNING' ? 'Site Work' : 'Completed Work',
           timestamp: now.toISOString(),
           timeStr: now.toLocaleTimeString('en-IN', {
             hour: '2-digit',
@@ -287,7 +264,7 @@ export default function SiteTaskCaptureModal({
           setEveningPhotos((prev) => [...prev, newPhoto]);
         }
 
-        toast.success('Live back-camera photo add ho gayi! (WebP Compressed)', { id: toastId });
+        toast.success('Live photo add ho gayi!', { id: toastId });
         setIsCapturing(false);
       };
       reader.readAsDataURL(file);
@@ -309,38 +286,25 @@ export default function SiteTaskCaptureModal({
     }
   };
 
-  // Update caption
-  const handleUpdateCaption = (photoId: string, caption: string) => {
-    if (mode === 'MORNING') {
-      setMorningPhotos(
-        morningPhotos.map((p) => (p.id === photoId ? { ...p, caption } : p))
-      );
-    } else {
-      setEveningPhotos(
-        eveningPhotos.map((p) => (p.id === photoId ? { ...p, caption } : p))
-      );
-    }
-  };
-
   // Final Submit
   const handleSubmit = async () => {
     const activePhotos = mode === 'MORNING' ? morningPhotos : eveningPhotos;
 
     if (activePhotos.length === 0) {
-      toast.error('Kripya back camera se kam se kam ek live site photo zaroor lein!');
+      toast.error('Kripya back camera se kam se kam ek live photo zaroor lein!');
       return;
     }
 
-    if (mode === 'MORNING' && selectedTasks.length === 0 && !taskDescription.trim()) {
-      toast.error('Kripya aaj ka task select karein (e.g. Plaster, POP, Tank etc.)');
+    if (mode === 'MORNING' && !taskDescription.trim()) {
+      toast.error('Kripya aaj ka kaam zaroor likhein (e.g. POP, Plaster, Tank etc.)');
       return;
     }
 
     setSubmitting(true);
     const toastId = toast.loading(
       mode === 'MORNING'
-        ? 'Morning task plan save ho raha hai...'
-        : 'Evening completion report save ho rahi hai...'
+        ? 'Task save ho raha hai...'
+        : 'Shaam ka report save ho raha hai...'
     );
 
     try {
@@ -352,8 +316,8 @@ export default function SiteTaskCaptureModal({
               formattedDate: effectiveFormattedDate,
               employeeName,
               projectName,
-              tasks: selectedTasks,
-              tasksDescription: taskDescription,
+              tasks: taskDescription.trim() ? [taskDescription.trim()] : [],
+              tasksDescription: taskDescription.trim(),
               morningPhotos,
             }
           : {
@@ -363,7 +327,7 @@ export default function SiteTaskCaptureModal({
               employeeName,
               projectName,
               completionStatus,
-              completionNotes,
+              completionNotes: completionNotes.trim(),
               eveningPhotos,
             };
 
@@ -373,9 +337,20 @@ export default function SiteTaskCaptureModal({
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
+      const resText = await res.text();
+      let data: any = {};
+      try {
+        data = JSON.parse(resText);
+      } catch {
+        throw new Error(
+          res.status === 413
+            ? 'Photos ka file size zyaada hai, kripya 1-2 photos lein.'
+            : `Server response error (${res.status})`
+        );
+      }
+
       if (res.ok && data.success) {
-        toast.success(data.message || 'Saved successfully!', { id: toastId, duration: 5000 });
+        toast.success(data.message || 'Saved successfully!', { id: toastId, duration: 4000 });
         if (onSuccess) onSuccess();
         onClose();
       } else {
@@ -404,7 +379,7 @@ export default function SiteTaskCaptureModal({
         className="hidden"
       />
 
-      <div className="bg-slate-900 border border-slate-700/80 rounded-3xl w-full max-w-xl max-h-[92vh] flex flex-col shadow-2xl text-slate-100 overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-slate-900 border border-slate-700/80 rounded-3xl w-full max-w-lg max-h-[92vh] flex flex-col shadow-2xl text-slate-100 overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
         {/* Top Header Bar */}
         <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60 shrink-0">
           <div className="flex items-center gap-3">
@@ -420,20 +395,11 @@ export default function SiteTaskCaptureModal({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-extrabold text-base sm:text-lg text-white">
-                  {mode === 'MORNING' ? "Today's Site Tasks (Subah Ka Plan)" : "Evening Work Completion Proof (Shaam Ka Jaiza)"}
+                  {mode === 'MORNING' ? "Today's Task (आज का काम)" : "Evening Work Proof (शाम का काम)"}
                 </h3>
-                <span
-                  className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${
-                    mode === 'MORNING'
-                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-                      : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-                  }`}
-                >
-                  {mode === 'MORNING' ? 'Morning Plan' : 'Evening Result'}
-                </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                {employeeName} &bull; {projectName} &bull; {effectiveFormattedDate}
+                {employeeName} &bull; {projectName}
               </p>
             </div>
           </div>
@@ -448,204 +414,17 @@ export default function SiteTaskCaptureModal({
         </div>
 
         {/* Scrollable Content Body */}
-        <div className="p-4 sm:p-6 overflow-y-auto space-y-6 flex-1 text-xs">
-          {/* Strict Back-Camera Warning Banner */}
-          <div className="p-3 rounded-2xl bg-indigo-950/60 border border-indigo-500/30 flex items-start gap-3">
-            <ShieldCheck className="w-5 h-5 text-indigo-400 shrink-0 mt-0.5" />
-            <div className="space-y-0.5 text-slate-300">
-              <p className="font-bold text-white text-xs">Live Back-Camera Only (Gallery Upload Blocked)</p>
-              <p className="text-[11px] text-slate-400">
-                Site par live camera khol kar hi photo li jayegi. AI ya puraani gallery photo upload karna sakht mana hai. Photos WebP me save hongi.
-              </p>
-            </div>
-          </div>
-
+        <div className="p-4 sm:p-6 overflow-y-auto space-y-5 flex-1 text-xs">
           {/* ═══════════════════════════════════════════════════════════════════ */}
-          {/* SECTION 1: MORNING PLANNING OR EVENING REVIEW                       */}
+          {/* SECTION 1: LIVE BACK-CAMERA PHOTOS                                  */}
           {/* ═══════════════════════════════════════════════════════════════════ */}
-          {mode === 'MORNING' ? (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-200 mb-2 uppercase tracking-wider">
-                  1. Aaj Site Par Kya-Kya Kaam Hoga? (Select Tasks)
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {COMMON_CONSTRUCTION_TASKS.map((task) => {
-                    const isSelected = selectedTasks.includes(task.label);
-                    return (
-                      <button
-                        type="button"
-                        key={task.id}
-                        onClick={() => toggleTask(task.label)}
-                        className={`p-2.5 rounded-xl border text-left flex items-center gap-2 transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-amber-500/20 border-amber-400/80 text-amber-200 font-bold shadow-xs'
-                            : 'bg-slate-800/70 border-slate-700/70 text-slate-300 hover:bg-slate-800'
-                        }`}
-                      >
-                        <span className="text-base">{task.icon}</span>
-                        <span className="text-[11px] leading-tight truncate">{task.label.split(' ')[0]}</span>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-amber-400 ml-auto shrink-0" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-200 mb-1.5 uppercase tracking-wider">
-                  Task Details &amp; Notes (Specific Jagah / Kamra)
-                </label>
-                <textarea
-                  rows={2}
-                  value={taskDescription}
-                  onChange={(e) => setTaskDescription(e.target.value)}
-                  placeholder="Jaise: Hall me POP false ceiling, Bedroom 1 me plaster, aur ground floor par tank ka kaam..."
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                />
-              </div>
-            </div>
-          ) : (
-            /* EVENING MODE: Show Morning Planned Tasks First */
-            <div className="space-y-4">
-              {/* Morning Plan Summary Card */}
-              <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                    Subah Ka Plan (Morning Target):
-                  </span>
-                  <span className="text-[10px] font-mono text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
-                    Logged at {existingData?.morningTimeStr || 'Morning'}
-                  </span>
-                </div>
-
-                {existingData?.tasks && existingData.tasks.length > 0 ? (
-                  <div className="flex flex-wrap gap-1.5">
-                    {existingData.tasks.map((t) => (
-                      <span
-                        key={t}
-                        className="px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 font-semibold text-[11px]"
-                      >
-                        {t}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-slate-400 italic">Subah koi specific task select nahi tha.</p>
-                )}
-
-                {existingData?.tasksDescription && (
-                  <p className="text-xs text-slate-300 bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
-                    &ldquo;{existingData.tasksDescription}&rdquo;
-                  </p>
-                )}
-
-                {/* Morning Photos Thumbnails */}
-                {existingData?.morningPhotos && existingData.morningPhotos.length > 0 && (
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1.5">
-                      Subah Ki Li Gayi Live Photos ({existingData.morningPhotos.length}):
-                    </span>
-                    <div className="flex gap-2 overflow-x-auto pb-1">
-                      {existingData.morningPhotos.map((photo, i) => (
-                        <div
-                          key={photo.id || i}
-                          onClick={() => setPreviewPhoto(photo.url)}
-                          className="relative w-16 h-16 rounded-xl overflow-hidden border border-slate-700 shrink-0 cursor-pointer group"
-                        >
-                          <img src={photo.url} alt="Morning View" className="w-full h-full object-cover" />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white">
-                            <Eye className="w-3.5 h-3.5" />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Completion Status Selection */}
-              <div>
-                <label className="block text-xs font-bold text-slate-200 mb-2 uppercase tracking-wider">
-                  2. Shaam Tak Kaam Kitna Hua? (Completion Status)
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setCompletionStatus('COMPLETED')}
-                    className={`p-3 rounded-xl border text-center transition-all cursor-pointer ${
-                      completionStatus === 'COMPLETED'
-                        ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 font-bold shadow-xs'
-                        : 'bg-slate-800/70 border-slate-700/70 text-slate-300 hover:bg-slate-800'
-                    }`}
-                  >
-                    <span className="text-lg block mb-0.5">🟢</span>
-                    <span className="text-[11px] font-bold block">100% Poora Hua</span>
-                    <span className="text-[9.5px] text-slate-400">Completed</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setCompletionStatus('PARTIAL')}
-                    className={`p-3 rounded-xl border text-center transition-all cursor-pointer ${
-                      completionStatus === 'PARTIAL'
-                        ? 'bg-amber-500/20 border-amber-400 text-amber-300 font-bold shadow-xs'
-                        : 'bg-slate-800/70 border-slate-700/70 text-slate-300 hover:bg-slate-800'
-                    }`}
-                  >
-                    <span className="text-lg block mb-0.5">🟡</span>
-                    <span className="text-[11px] font-bold block">Aadha / Kuch Hua</span>
-                    <span className="text-[9.5px] text-slate-400">Partial</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setCompletionStatus('IN_PROGRESS')}
-                    className={`p-3 rounded-xl border text-center transition-all cursor-pointer ${
-                      completionStatus === 'IN_PROGRESS'
-                        ? 'bg-sky-500/20 border-sky-400 text-sky-300 font-bold shadow-xs'
-                        : 'bg-slate-800/70 border-slate-700/70 text-slate-300 hover:bg-slate-800'
-                    }`}
-                  >
-                    <span className="text-lg block mb-0.5">⏳</span>
-                    <span className="text-[11px] font-bold block">Kaam Chal Raha Hai</span>
-                    <span className="text-[9.5px] text-slate-400">In Progress</span>
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-200 mb-1.5 uppercase tracking-wider">
-                  Shaam Ki Pragati Ka Vivran (Notes on Work Done)
-                </label>
-                <textarea
-                  rows={2}
-                  value={completionNotes}
-                  onChange={(e) => setCompletionNotes(e.target.value)}
-                  placeholder="Jaise: Hall plaster complete ho gaya hai, room 2 ka kal subah karenge..."
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* ═══════════════════════════════════════════════════════════════════ */}
-          {/* SECTION 2: LIVE BACK CAMERA PHOTO UPLOAD & ADD MORE                 */}
-          {/* ═══════════════════════════════════════════════════════════════════ */}
-          <div className="space-y-3 pt-2 border-t border-slate-800">
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div>
-                <label className="block text-xs font-bold text-slate-200 uppercase tracking-wider">
-                  {mode === 'MORNING'
-                    ? '2. Kaam Ki Shuruat Ki Photo (Back Camera)'
-                    : '3. Taiyaar Kaam Ki Photo (Back Camera Completion Proof)'}
-                </label>
-                <p className="text-[11px] text-slate-400 mt-0.5">
-                  Live photo lein jisme jagah saaf dikhe. Aap multiple photos jod sakte hain.
-                </p>
-              </div>
+              <label className="block text-xs font-bold text-slate-200 uppercase tracking-wider">
+                {mode === 'MORNING' ? '1. Live Site Photo (Back Camera)' : '1. Taiyaar Kaam Ki Photo (Back Camera)'}
+              </label>
 
-              <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
+              <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">
                 {currentPhotos.length} Photo{currentPhotos.length !== 1 ? 's' : ''}
               </span>
             </div>
@@ -671,14 +450,8 @@ export default function SiteTaskCaptureModal({
                       </div>
                     </div>
 
-                    <div className="p-2 bg-slate-900 flex items-center gap-1.5">
-                      <input
-                        type="text"
-                        value={photo.caption}
-                        onChange={(e) => handleUpdateCaption(photo.id, e.target.value)}
-                        placeholder="Room / Wall name..."
-                        className="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-[10px] text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-indigo-500"
-                      />
+                    <div className="p-1.5 bg-slate-900 flex items-center justify-between">
+                      <span className="text-[10px] text-slate-400 truncate pl-1">Photo #{index + 1}</span>
                       <button
                         type="button"
                         onClick={() => handleDeletePhoto(photo.id)}
@@ -693,28 +466,114 @@ export default function SiteTaskCaptureModal({
               </div>
             )}
 
-            {/* Big Launch Back Camera Button */}
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={handleTriggerBackCamera}
-                disabled={isCapturing}
-                className="w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-indigo-600 to-emerald-600 hover:from-indigo-500 hover:to-emerald-500 active:scale-[0.99] transition-all font-black text-sm text-white shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3 cursor-pointer border border-indigo-400/30"
-              >
-                <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center">
-                  <Camera className="w-5 h-5 text-white animate-pulse" />
-                </div>
-                <span>
-                  {currentPhotos.length === 0
-                    ? '📸 Open Back Camera & Take Live Photo'
-                    : '➕ Add More Photos (और फोटो जोड़ें)'}
-                </span>
-              </button>
-              <p className="text-center text-[10.5px] text-slate-400 mt-2">
-                Back camera automatically opens with date, GPS coordinates, and task watermark.
-              </p>
-            </div>
+            {/* Launch Back Camera Button */}
+            <button
+              type="button"
+              onClick={handleTriggerBackCamera}
+              disabled={isCapturing}
+              className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-emerald-600 hover:from-indigo-500 hover:to-emerald-500 active:scale-[0.99] transition-all font-black text-sm text-white shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-2.5 cursor-pointer border border-indigo-400/30"
+            >
+              <Camera className="w-5 h-5 text-white animate-pulse" />
+              <span>
+                {currentPhotos.length === 0
+                  ? '📸 Click Live Photo (Back Camera)'
+                  : '➕ Add More Live Photos (और फोटो जोड़ें)'}
+              </span>
+            </button>
           </div>
+
+          {/* ═══════════════════════════════════════════════════════════════════ */}
+          {/* SECTION 2: WORK DESCRIPTION (PHOTO KE NICHE KYA KAAM HOGA)           */}
+          {/* ═══════════════════════════════════════════════════════════════════ */}
+          {mode === 'MORNING' ? (
+            <div className="space-y-1.5 pt-2 border-t border-slate-800">
+              <label className="block text-xs font-bold text-slate-200 uppercase tracking-wider">
+                2. Aaj Site Par Kya-Kya Kaam Hoga?
+              </label>
+              <textarea
+                rows={3}
+                value={taskDescription}
+                onChange={(e) => setTaskDescription(e.target.value)}
+                placeholder="Jaise: POP ka kaam hoga, plastering hogi, tank banega, safai hogi..."
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+              />
+            </div>
+          ) : (
+            /* EVENING MODE */
+            <div className="space-y-4 pt-2 border-t border-slate-800">
+              {/* Morning Plan Summary if available */}
+              {(existingData?.tasksDescription || (existingData?.tasks && existingData.tasks.length > 0)) && (
+                <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
+                    Subah Ka Plan (Morning Target):
+                  </span>
+                  <p className="text-xs text-amber-300 font-medium">
+                    {existingData.tasksDescription || existingData.tasks?.join(', ')}
+                  </p>
+                </div>
+              )}
+
+              {/* Completion Status Selection */}
+              <div>
+                <label className="block text-xs font-bold text-slate-200 mb-2 uppercase tracking-wider">
+                  2. Shaam Tak Kaam Kitna Hua?
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCompletionStatus('COMPLETED')}
+                    className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
+                      completionStatus === 'COMPLETED'
+                        ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 font-bold shadow-xs'
+                        : 'bg-slate-800/70 border-slate-700/70 text-slate-300 hover:bg-slate-800'
+                    }`}
+                  >
+                    <span className="text-base block mb-0.5">🟢</span>
+                    <span className="text-[11px] font-bold block">100% Poora Hua</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setCompletionStatus('PARTIAL')}
+                    className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
+                      completionStatus === 'PARTIAL'
+                        ? 'bg-amber-500/20 border-amber-400 text-amber-300 font-bold shadow-xs'
+                        : 'bg-slate-800/70 border-slate-700/70 text-slate-300 hover:bg-slate-800'
+                    }`}
+                  >
+                    <span className="text-base block mb-0.5">🟡</span>
+                    <span className="text-[11px] font-bold block">Aadha / Kuch Hua</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setCompletionStatus('IN_PROGRESS')}
+                    className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
+                      completionStatus === 'IN_PROGRESS'
+                        ? 'bg-sky-500/20 border-sky-400 text-sky-300 font-bold shadow-xs'
+                        : 'bg-slate-800/70 border-slate-700/70 text-slate-300 hover:bg-slate-800'
+                    }`}
+                  >
+                    <span className="text-base block mb-0.5">⏳</span>
+                    <span className="text-[11px] font-bold block">Chal Raha Hai</span>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-200 mb-1.5 uppercase tracking-wider">
+                  Kaam Ka Vivran (Notes)
+                </label>
+                <textarea
+                  rows={2}
+                  value={completionNotes}
+                  onChange={(e) => setCompletionNotes(e.target.value)}
+                  placeholder="Jaise: Hall plaster complete ho gaya hai, safai ho gayi..."
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Modal Action Footer */}
@@ -724,7 +583,7 @@ export default function SiteTaskCaptureModal({
             onClick={onClose}
             className="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-400 hover:text-white hover:bg-slate-800 font-semibold text-xs transition-colors cursor-pointer"
           >
-            Cancel / Later
+            Cancel
           </button>
 
           <button
@@ -740,11 +599,11 @@ export default function SiteTaskCaptureModal({
             }`}
           >
             {submitting ? (
-              <span>Saving Report...</span>
+              <span>Saving...</span>
             ) : (
               <>
                 <span>
-                  {mode === 'MORNING' ? '✅ Save Morning Task Plan' : '✅ Submit Evening Work Report'}
+                  {mode === 'MORNING' ? '✅ Save Task' : '✅ Submit Work Report'}
                 </span>
                 <ArrowRight className="w-4 h-4" />
               </>
