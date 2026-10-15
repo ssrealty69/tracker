@@ -15,6 +15,7 @@ import {
   Calendar,
   CalendarCheck,
   Sparkles,
+  Camera,
 } from 'lucide-react';
 import {
   submitLead,
@@ -256,7 +257,22 @@ export default function AgentFormPage() {
       setPhoneInfo(null);
       setWasAssignedToOtherAgent(null);
     }
-  }, [agentId, agents]);
+  }, [agentId, agents, projects]);
+
+  // Support pre-filling phone from query params (e.g. /?phone=9811645856)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const queryPhone = params.get('phone');
+      if (queryPhone) {
+        const clean = queryPhone.replace(/\D/g, '').slice(0, 10);
+        if (clean.length === 10) {
+          setPhone(clean);
+          checkPhone(clean);
+        }
+      }
+    }
+  }, [checkPhone]);
 
   const handlePhoneChange = (val: string) => {
     const clean = val.replace(/\D/g, '').slice(0, 10);
@@ -453,13 +469,22 @@ export default function AgentFormPage() {
             </div>
           </div>
 
-          <Link
-            href="/admin"
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-all shadow-xs"
-          >
-            <Lock size={13} className="text-amber-400" />
-            Admin Portal
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/attendance"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-bold transition-all shadow-2xs"
+            >
+              <Camera size={13} className="text-emerald-600" />
+              Site Attendance
+            </Link>
+            <Link
+              href="/admin"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-all shadow-xs"
+            >
+              <Lock size={13} className="text-amber-400" />
+              Admin Portal
+            </Link>
+          </div>
         </div>
       </header>
 

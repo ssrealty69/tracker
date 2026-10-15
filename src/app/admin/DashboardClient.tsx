@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Fragment } from 'react';
 import toast from 'react-hot-toast';
+import Link from 'next/link';
 import {
   Users,
   Phone,
@@ -19,8 +20,10 @@ import {
   AlertTriangle,
   X,
   Radio,
+  RotateCcw,
+  Check,
 } from 'lucide-react';
-import { getDashboardStats } from '@/lib/leadActions';
+import { getDashboardStats, rescheduleVisit, markVisitDone } from '@/lib/leadActions';
 import type { DashboardStatsResult } from '@/lib/leadActions';
 
 const DATE_FILTERS = [
@@ -144,6 +147,57 @@ export default function DashboardClient({ initialStats }: Props) {
   const [loading, setLoading] = useState(false);
   const [expandedAgentId, setExpandedAgentId] = useState<string | null>(null);
   const [agentSubTab, setAgentSubTab] = useState<{ [agentId: string]: 'scheduled' | 'dropped' | 'done' | 'followup' | 'not_connected' | 'all' }>({});
+  const [rescheduleLeadId, setRescheduleLeadId] = useState<string | null>(null);
+  const [rescheduleDate, setRescheduleDate] = useState<string>('');
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+
+  const handleInlineReschedule = async (leadId: string) => {
+    if (!rescheduleDate) {
+      toast.error('Kripya new visit date select karein');
+      return;
+    }
+    setActionLoadingId(leadId);
+    try {
+      const res = await rescheduleVisit(leadId, rescheduleDate);
+      if (res.success) {
+        toast.success(`Visit rescheduled to ${formatDisplayDDMMYY(rescheduleDate)}! Status updated.`);
+        setRescheduleLeadId(null);
+        setRescheduleDate('');
+        if (activeFilter === 'custom') {
+          await applyCustomRange(true);
+        } else {
+          await applyFilter(activeFilter, true);
+        }
+      } else {
+        toast.error(res.message || 'Failed to reschedule visit');
+      }
+    } catch {
+      toast.error('Error rescheduling visit');
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleInlineMarkDone = async (leadId: string) => {
+    setActionLoadingId(leadId);
+    try {
+      const res = await markVisitDone(leadId);
+      if (res.success) {
+        toast.success('Site visit marked as completed!');
+        if (activeFilter === 'custom') {
+          await applyCustomRange(true);
+        } else {
+          await applyFilter(activeFilter, true);
+        }
+      } else {
+        toast.error(res.message || 'Failed to update visit status');
+      }
+    } catch {
+      toast.error('Error marking visit completed');
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
 
   const applyFilter = async (filter: string, isSilent = false) => {
     setActiveFilter(filter);
@@ -823,6 +877,7 @@ export default function DashboardClient({ initialStats }: Props) {
                                             <th className="py-2.5 px-3">Budget</th>
                                             <th className="py-2.5 px-3">Agent Remark</th>
                                             <th className="py-2.5 px-3">Last Updated</th>
+                                            <th className="py-2.5 px-3 text-center whitespace-nowrap">Action / Update</th>
                                           </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100">
@@ -880,16 +935,17 @@ export default function DashboardClient({ initialStats }: Props) {
                                                   )}
                                                 </td>
 
-                                                {/* Customer Name & Phone */}
+                                                {/* Customer Name & Phone (Masked: Only starting 5 digits visible on Overview Dashboard) */}
                                                 <td className="py-2.5 px-3 whitespace-nowrap">
                                                   <div className="font-bold text-slate-900">{vLead.name}</div>
-                                                  <a
-                                                    href={`tel:${vLead.phone}`}
-                                                    className="text-[11px] text-indigo-600 hover:underline font-mono"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                  >
-                                                    {vLead.phone}
-                                                  </a>
+                                                  {vLead.phone ? (
+                                                    <div className="text-[11px] font-mono font-semibold text-slate-700 inline-flex items-center">
+                                                      <span>{vLead.phone.replace(/\D/g, '').slice(0, 5) || vLead.phone.slice(0, 5)}</span>
+                                                      <span className="text-slate-400 font-normal tracking-wider">*****</span>
+                                                    </div>
+                                                  ) : (
+                                                    <span className="text-[11px] text-slate-400 font-mono">—</span>
+                                                  )}
                                                 </td>
 
                                                 {/* Action Date */}
@@ -943,6 +999,72 @@ export default function DashboardClient({ initialStats }: Props) {
                                                 {/* Last Updated */}
                                                 <td className="py-2.5 px-3 whitespace-nowrap font-mono text-slate-500 text-xs">
                                                   {formatToDDMMYY(vLead.updatedAt || vLead.createdAt)}
+                                                </td>
+
+                                                {/* Actions: Reschedule / Done / Call Update */}
+                                                <td className="py-2 px-3 whitespace-nowrap">
+                                                  {rescheduleLeadId === vLead.id ? (
+                                                    <div className="flex items-center gap-1.5 bg-amber-50 p-1 rounded-lg border border-amber-200">
+                                                      <input
+                                                        type="date"
+                                                        value={rescheduleDate}
+                                                        onChange={(e) => setRescheduleDate(e.target.value)}
+                                                        min={new Date().toISOString().split('T')[0]}
+                                                        className="px-1.5 py-0.5 text-[11px] font-mono border border-slate-300 rounded bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                                      />
+                                                      <button
+                                                        onClick={() => handleInlineReschedule(vLead.id)}
+                                                        disabled={actionLoadingId === vLead.id}
+                                                        className="px-2 py-0.5 bg-amber-600 hover:bg-amber-700 text-white rounded text-[11px] font-bold shadow-xs disabled:opacity-50"
+                                                      >
+                                                        {actionLoadingId === vLead.id ? '...' : 'Save'}
+                                                      </button>
+                                                      <button
+                                                        onClick={() => setRescheduleLeadId(null)}
+                                                        className="px-1.5 py-0.5 text-slate-600 hover:text-slate-900 text-[11px]"
+                                                      >
+                                                        Cancel
+                                                      </button>
+                                                    </div>
+                                                  ) : (
+                                                    <div className="flex items-center gap-1.5">
+                                                      {(vLead.isDropped || vLead.isUpcoming || hasVisit) && (
+                                                        <>
+                                                          <button
+                                                            onClick={() => {
+                                                              setRescheduleLeadId(vLead.id);
+                                                              setRescheduleDate('');
+                                                            }}
+                                                            title="Reschedule to a new visit date"
+                                                            className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 transition-colors shadow-2xs"
+                                                          >
+                                                            <RotateCcw className="w-3 h-3" />
+                                                            Reschedule
+                                                          </button>
+                                                          <button
+                                                            onClick={() => handleInlineMarkDone(vLead.id)}
+                                                            disabled={actionLoadingId === vLead.id}
+                                                            title="Mark Site Visit Done"
+                                                            className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors shadow-2xs disabled:opacity-50"
+                                                          >
+                                                            <Check className="w-3 h-3" />
+                                                            {actionLoadingId === vLead.id ? '...' : 'Done'}
+                                                          </button>
+                                                        </>
+                                                      )}
+                                                      {vLead.phone && (
+                                                        <Link
+                                                          href={`/?phone=${encodeURIComponent(vLead.phone)}`}
+                                                          target="_blank"
+                                                          title="Open calling form with this customer's details to log new call or change status"
+                                                          className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-colors shadow-2xs"
+                                                        >
+                                                          <Phone className="w-3 h-3" />
+                                                          Update Call
+                                                        </Link>
+                                                      )}
+                                                    </div>
+                                                  )}
                                                 </td>
                                               </tr>
                                             );

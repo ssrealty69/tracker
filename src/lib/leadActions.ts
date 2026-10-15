@@ -171,15 +171,38 @@ function submitLeadToStore(
     interactionCount = existing.totalInteractions + 1;
 
     let finalVisitStatus = visitStatus;
-    if (
-      data.disposition === Disposition.SITE_VISIT_SCHEDULED &&
-      visitDateObj &&
-      existing.visitDate &&
-      !isSameDay(existing.visitDate, visitDateObj) &&
-      existing.visitStatus === VisitStatus.SCHEDULED &&
-      !data.markVisitDone
-    ) {
-      finalVisitStatus = ((VisitStatus as any).RESCHEDULED || VisitStatus.SCHEDULED);
+    let finalVisitDate = visitDateObj;
+    let finalPrevVisitDate = existing.visitDate ?? null;
+
+    if (data.callOutcome === CallOutcome.CONNECTED) {
+      if (data.disposition === Disposition.SITE_VISIT_SCHEDULED) {
+        if (
+          visitDateObj &&
+          existing.visitDate &&
+          !isSameDay(existing.visitDate, visitDateObj) &&
+          !data.markVisitDone
+        ) {
+          finalVisitStatus = ((VisitStatus as any).RESCHEDULED || VisitStatus.SCHEDULED);
+          finalPrevVisitDate = existing.visitDate;
+        } else if (data.markVisitDone) {
+          finalVisitStatus = VisitStatus.VISIT_DONE;
+        } else {
+          finalVisitStatus = VisitStatus.SCHEDULED;
+        }
+      } else if (data.markVisitDone) {
+        finalVisitStatus = VisitStatus.VISIT_DONE;
+        finalVisitDate = visitDateObj || existing.visitDate || new Date();
+      } else {
+        // Customer was connected, but disposition changed away from visit scheduled (e.g. FOLLOW_UP, NOT_INTERESTED)
+        // Clear active visit status and date so this dropped/old visit does NOT stay stuck in dropped visits!
+        finalVisitStatus = VisitStatus.NONE;
+        finalPrevVisitDate = existing.visitDate || existing.previousVisitDate || null;
+        finalVisitDate = null;
+      }
+    } else {
+      // Call not connected: preserve existing visit status and date
+      finalVisitStatus = existing.visitStatus;
+      finalVisitDate = existing.visitDate;
     }
 
     store.leads[existingIndex] = {
@@ -202,13 +225,13 @@ function submitLeadToStore(
       fundingMode: data.fundingMode || existing.fundingMode,
       leadPriority: data.leadPriority || existing.leadPriority,
       followUpDate: data.followUpDate ? new Date(data.followUpDate) : existing.followUpDate,
-      visitDate: visitDateObj !== null ? visitDateObj : existing.visitDate,
+      visitDate: finalVisitDate,
       visitTimeSlot: data.visitTimeSlot || existing.visitTimeSlot,
       cabRequired: data.cabRequired !== undefined ? data.cabRequired : existing.cabRequired,
       pickupLocation: data.pickupLocation || existing.pickupLocation,
       accompanyingPerson: data.accompanyingPerson || existing.accompanyingPerson,
-      visitStatus: finalVisitStatus !== VisitStatus.NONE ? finalVisitStatus : existing.visitStatus,
-      previousVisitDate: existing.visitDate ?? null,
+      visitStatus: finalVisitStatus,
+      previousVisitDate: finalPrevVisitDate,
       latestRemark: data.remark || existing.latestRemark,
       assignedAgentId: data.agentId,
       assignedAgent: assignedAgent ? { id: assignedAgent.id, name: assignedAgent.name } : existing.assignedAgent,
@@ -335,18 +358,41 @@ export async function submitLead(data: LeadFormData): Promise<LeadFormResult> {
           where: { phone: cleanPhone },
         });
 
-        const previousVisitDate: Date | null = existingLead?.visitDate ?? null;
-        let finalVisitStatus = visitStatus;
+        let finalVisitStatus: VisitStatus = visitStatus as VisitStatus;
+        let finalVisitDate: Date | null = visitDateObj;
+        let finalPrevVisitDate: Date | null = existingLead?.visitDate ?? null;
 
-        if (
-          data.disposition === Disposition.SITE_VISIT_SCHEDULED &&
-          visitDateObj &&
-          existingLead?.visitDate &&
-          !isSameDay(existingLead.visitDate, visitDateObj) &&
-          existingLead.visitStatus === VisitStatus.SCHEDULED &&
-          !data.markVisitDone
-        ) {
-          finalVisitStatus = ((VisitStatus as any).RESCHEDULED || VisitStatus.SCHEDULED);
+        if (data.callOutcome === CallOutcome.CONNECTED) {
+          if (data.disposition === Disposition.SITE_VISIT_SCHEDULED) {
+            if (
+              visitDateObj &&
+              existingLead?.visitDate &&
+              !isSameDay(existingLead.visitDate, visitDateObj) &&
+              !data.markVisitDone
+            ) {
+              finalVisitStatus = ((VisitStatus as any).RESCHEDULED || VisitStatus.SCHEDULED);
+              finalPrevVisitDate = existingLead.visitDate;
+            } else if (data.markVisitDone) {
+              finalVisitStatus = VisitStatus.VISIT_DONE;
+            } else {
+              finalVisitStatus = VisitStatus.SCHEDULED;
+            }
+          } else if (data.markVisitDone) {
+            finalVisitStatus = VisitStatus.VISIT_DONE;
+            finalVisitDate = visitDateObj || existingLead?.visitDate || new Date();
+          } else {
+            // Customer was connected, but disposition changed away from visit scheduled (e.g. FOLLOW_UP, NOT_INTERESTED)
+            // Clear active visit status and date so this dropped/old visit does NOT stay stuck in dropped visits!
+            finalVisitStatus = VisitStatus.NONE;
+            finalPrevVisitDate = existingLead?.visitDate || existingLead?.previousVisitDate || null;
+            finalVisitDate = null;
+          }
+        } else {
+          // Call not connected: preserve existing visit status and date
+          if (existingLead) {
+            finalVisitStatus = existingLead.visitStatus;
+            finalVisitDate = existingLead.visitDate;
+          }
         }
 
         let lead: Lead;
@@ -376,10 +422,9 @@ export async function submitLead(data: LeadFormData): Promise<LeadFormResult> {
               disposition: data.disposition ?? existingLead.disposition,
               requirement: prismaReq ?? existingLead.requirement,
               budget: prismaBudget ?? existingLead.budget,
-              visitDate: visitDateObj !== null ? visitDateObj : existingLead.visitDate,
-              visitStatus:
-                finalVisitStatus !== VisitStatus.NONE ? finalVisitStatus : existingLead.visitStatus,
-              previousVisitDate: previousVisitDate,
+              visitDate: finalVisitDate,
+              visitStatus: finalVisitStatus,
+              previousVisitDate: finalPrevVisitDate,
               latestRemark: data.remark || existingLead.latestRemark,
               assignedAgentId: finalAgentId || existingLead.assignedAgentId,
             },
@@ -527,6 +572,7 @@ export async function rescheduleVisit(
         previousVisitDate: lead.visitDate,
         visitDate: newDateObj,
         visitStatus: VisitStatus.RESCHEDULED,
+        disposition: Disposition.SITE_VISIT_SCHEDULED,
       },
     });
 
@@ -554,6 +600,7 @@ export async function rescheduleVisit(
       targetLead.previousVisitDate = targetLead.visitDate;
       targetLead.visitDate = newDateObj;
       targetLead.visitStatus = VisitStatus.RESCHEDULED;
+      targetLead.disposition = Disposition.SITE_VISIT_SCHEDULED;
       targetLead.updatedAt = new Date();
 
       store.logs.unshift({

@@ -21,6 +21,7 @@ import { useState, useEffect } from 'react';
 
 const navItems = [
   { href: '/admin', label: 'Overview Dashboard', icon: LayoutDashboard },
+  { href: '/admin/attendance', label: 'Site Attendance & Selfies', icon: UserCheck },
   { href: '/admin/visits', label: 'Site Visits Center', icon: MapPin },
   { href: '/admin/leads', label: 'Leads & Dedup Grid', icon: TableProperties },
   { href: '/admin/settings', label: 'Form & Master Settings', icon: SlidersHorizontal },
