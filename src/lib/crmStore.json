@@ -1,28 +1,12 @@
 {
   "agents": [
     {
-      "id": "cmv6ii8900001ll7c5oa7es81",
-      "name": "Nihal",
-      "email": "nihal@ssrealty.org",
-      "isActive": true,
-      "createdAt": "2026-10-13T10:02:23.172Z",
-      "updatedAt": "2026-10-13T11:56:47.779Z"
-    },
-    {
       "id": "cmv6ii89w0002ll7cccia5nbc",
       "name": "Ayaan",
       "email": "ayaan@ssrealty.org",
       "isActive": true,
       "createdAt": "2026-10-13T10:02:23.204Z",
-      "updatedAt": "2026-10-13T11:56:47.812Z"
-    },
-    {
-      "id": "cmv6ii8ac0003ll7cwikviijn",
-      "name": "Nikhil",
-      "email": "nikhil@ssrealty.org",
-      "isActive": true,
-      "createdAt": "2026-10-13T10:02:23.220Z",
-      "updatedAt": "2026-10-13T11:56:47.829Z"
+      "updatedAt": "2026-10-15T13:12:39.124Z"
     },
     {
       "id": "cmv6ii8as0004ll7ck90jrn40",
@@ -30,7 +14,7 @@
       "email": "bhavishya@ssrealty.org",
       "isActive": true,
       "createdAt": "2026-10-13T10:02:23.236Z",
-      "updatedAt": "2026-10-13T11:56:47.846Z"
+      "updatedAt": "2026-10-15T13:12:39.154Z"
     },
     {
       "id": "cmv6ii8b80005ll7cdixvz09g",
@@ -38,7 +22,23 @@
       "email": "gulshan@ssrealty.org",
       "isActive": true,
       "createdAt": "2026-10-13T10:02:23.252Z",
-      "updatedAt": "2026-10-13T11:56:47.863Z"
+      "updatedAt": "2026-10-15T13:12:39.168Z"
+    },
+    {
+      "id": "cmv6ii8900001ll7c5oa7es81",
+      "name": "Nihal",
+      "email": "nihal@ssrealty.org",
+      "isActive": true,
+      "createdAt": "2026-10-13T10:02:23.172Z",
+      "updatedAt": "2026-10-15T13:12:39.046Z"
+    },
+    {
+      "id": "cmv6ii8ac0003ll7cwikviijn",
+      "name": "Nikhil",
+      "email": "nikhil@ssrealty.org",
+      "isActive": true,
+      "createdAt": "2026-10-13T10:02:23.220Z",
+      "updatedAt": "2026-10-15T13:12:39.139Z"
     },
     {
       "id": "cmv6ii8bp0006ll7ccezp7l6q",
@@ -46,19 +46,19 @@
       "email": "vikas@ssrealty.org",
       "isActive": true,
       "createdAt": "2026-10-13T10:02:23.269Z",
-      "updatedAt": "2026-10-13T11:56:47.880Z"
+      "updatedAt": "2026-10-15T13:12:39.183Z"
     }
   ],
   "leads": [
     {
-      "id": "cmv6kslht0061pmfie8543gqc",
-      "phone": "9582349667",
-      "name": "Harsika",
+      "id": "cmvatzwi70011w6szoz66h4rp",
+      "phone": "8707696312",
+      "name": "Bhaloha",
       "leadSource": "CALLING_SHEET",
-      "totalInteractions": 2,
-      "callOutcome": "NOT_CONNECTED",
-      "notConnectedReason": "CALL_NOT_PICKED",
-      "disposition": "NOT_CONNECTED",
+      "totalInteractions": 1,
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "NOT_INTERESTED",
       "projectName": "Nivasa II",
       "requirement": null,
       "budget": null,
@@ -66,13 +66,388 @@
       "visitDate": null,
       "visitStatus": "NONE",
       "previousVisitDate": null,
-      "latestRemark": "Two more called tomorrow call again \nAnd details shared",
-      "assignedAgentId": "cmv6ii8900001ll7c5oa7es81",
-      "createdAt": "2026-10-12T09:09:29.000Z",
-      "updatedAt": "2026-10-13T11:50:41.879Z",
+      "latestRemark": "[Reason: Other Reason]",
+      "assignedAgentId": "cmv6ii8b80005ll7cdixvz09g",
+      "createdAt": "2026-10-16T10:35:08.240Z",
+      "updatedAt": "2026-10-16T10:35:08.240Z",
       "assignedAgent": {
-        "id": "cmv6ii8900001ll7c5oa7es81",
-        "name": "Nihal"
+        "id": "cmv6ii8b80005ll7cdixvz09g",
+        "name": "Gulshan"
+      }
+    },
+    {
+      "id": "cmvatyxka000ww6szrgd9knme",
+      "phone": "7838620829",
+      "name": "Charika",
+      "leadSource": "CALLING_SHEET",
+      "totalInteractions": 1,
+      "callOutcome": "NOT_CONNECTED",
+      "notConnectedReason": "CALL_NOT_PICKED",
+      "disposition": null,
+      "projectName": "Nivasa II",
+      "requirement": null,
+      "budget": null,
+      "followUpDate": null,
+      "visitDate": null,
+      "visitStatus": "NONE",
+      "previousVisitDate": null,
+      "latestRemark": null,
+      "assignedAgentId": "cmv6ii8b80005ll7cdixvz09g",
+      "createdAt": "2026-10-16T10:34:22.954Z",
+      "updatedAt": "2026-10-16T10:34:22.954Z",
+      "assignedAgent": {
+        "id": "cmv6ii8b80005ll7cdixvz09g",
+        "name": "Gulshan"
+      }
+    },
+    {
+      "id": "cmvatydqk000rw6sz52v806qi",
+      "phone": "7356476850",
+      "name": "Nitash",
+      "leadSource": "CALLING_SHEET",
+      "totalInteractions": 1,
+      "callOutcome": "NOT_CONNECTED",
+      "notConnectedReason": "CALL_NOT_PICKED",
+      "disposition": null,
+      "projectName": "Nivasa II",
+      "requirement": null,
+      "budget": null,
+      "followUpDate": null,
+      "visitDate": null,
+      "visitStatus": "NONE",
+      "previousVisitDate": null,
+      "latestRemark": null,
+      "assignedAgentId": "cmv6ii8b80005ll7cdixvz09g",
+      "createdAt": "2026-10-16T10:33:57.260Z",
+      "updatedAt": "2026-10-16T10:33:57.260Z",
+      "assignedAgent": {
+        "id": "cmv6ii8b80005ll7cdixvz09g",
+        "name": "Gulshan"
+      }
+    },
+    {
+      "id": "cmvatxt3j000mw6szo9cayw01",
+      "phone": "7048964882",
+      "name": "Jais",
+      "leadSource": "CALLING_SHEET",
+      "totalInteractions": 1,
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "LOCATION_MISMATCH",
+      "projectName": "Nivasa II",
+      "requirement": "BHK_3",
+      "budget": "L50_75",
+      "followUpDate": null,
+      "visitDate": null,
+      "visitStatus": "NONE",
+      "previousVisitDate": null,
+      "latestRemark": null,
+      "assignedAgentId": "cmv6ii8b80005ll7cdixvz09g",
+      "createdAt": "2026-10-16T10:33:30.511Z",
+      "updatedAt": "2026-10-16T10:33:30.511Z",
+      "assignedAgent": {
+        "id": "cmv6ii8b80005ll7cdixvz09g",
+        "name": "Gulshan"
+      }
+    },
+    {
+      "id": "cmvatx0iv000hw6szi272qmnn",
+      "phone": "8826753944",
+      "name": "Chanchal",
+      "leadSource": "CALLING_SHEET",
+      "totalInteractions": 1,
+      "callOutcome": "NOT_CONNECTED",
+      "notConnectedReason": "SWITCHED_OFF",
+      "disposition": null,
+      "projectName": "Nivasa II",
+      "requirement": null,
+      "budget": null,
+      "followUpDate": null,
+      "visitDate": null,
+      "visitStatus": "NONE",
+      "previousVisitDate": null,
+      "latestRemark": null,
+      "assignedAgentId": "cmv6ii8b80005ll7cdixvz09g",
+      "createdAt": "2026-10-16T10:32:53.480Z",
+      "updatedAt": "2026-10-16T10:32:53.480Z",
+      "assignedAgent": {
+        "id": "cmv6ii8b80005ll7cdixvz09g",
+        "name": "Gulshan"
+      }
+    },
+    {
+      "id": "cmvatwass000cw6szjbvl4i46",
+      "phone": "9717435831",
+      "name": "Gaurav",
+      "leadSource": "CALLING_SHEET",
+      "totalInteractions": 1,
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "SITE_VISIT_SCHEDULED",
+      "projectName": "Nivasa II",
+      "requirement": "BHK_3",
+      "budget": "L50_75",
+      "followUpDate": null,
+      "visitDate": "2026-10-17T00:00:00.000Z",
+      "visitStatus": "SCHEDULED",
+      "previousVisitDate": null,
+      "latestRemark": null,
+      "assignedAgentId": "cmv6ii8b80005ll7cdixvz09g",
+      "createdAt": "2026-10-16T10:32:20.140Z",
+      "updatedAt": "2026-10-16T10:32:20.140Z",
+      "assignedAgent": {
+        "id": "cmv6ii8b80005ll7cdixvz09g",
+        "name": "Gulshan"
+      }
+    },
+    {
+      "id": "cmvatv2cy0007w6szawr7fsk9",
+      "phone": "7678266339",
+      "name": "Balsinder",
+      "leadSource": "CALLING_SHEET",
+      "totalInteractions": 1,
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "SITE_VISIT_SCHEDULED",
+      "projectName": "Velora",
+      "requirement": "BHK_3",
+      "budget": "L75_PLUS",
+      "followUpDate": null,
+      "visitDate": "2026-10-17T00:00:00.000Z",
+      "visitStatus": "VISIT_DONE",
+      "previousVisitDate": null,
+      "latestRemark": null,
+      "assignedAgentId": "cmv6ii8b80005ll7cdixvz09g",
+      "createdAt": "2026-10-16T10:31:22.547Z",
+      "updatedAt": "2026-10-16T10:31:22.547Z",
+      "assignedAgent": {
+        "id": "cmv6ii8b80005ll7cdixvz09g",
+        "name": "Gulshan"
+      }
+    },
+    {
+      "id": "cmvattwmi0002w6szpqgf01ge",
+      "phone": "9810985062",
+      "name": "Chitra",
+      "leadSource": "CALLING_SHEET",
+      "totalInteractions": 1,
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "SITE_VISIT_SCHEDULED",
+      "projectName": "Nirvana",
+      "requirement": "BHK_3",
+      "budget": "L50_75",
+      "followUpDate": null,
+      "visitDate": "2026-10-24T00:00:00.000Z",
+      "visitStatus": "VISIT_DONE",
+      "previousVisitDate": null,
+      "latestRemark": null,
+      "assignedAgentId": "cmv6ii8b80005ll7cdixvz09g",
+      "createdAt": "2026-10-16T10:30:28.458Z",
+      "updatedAt": "2026-10-16T10:30:28.458Z",
+      "assignedAgent": {
+        "id": "cmv6ii8b80005ll7cdixvz09g",
+        "name": "Gulshan"
+      }
+    },
+    {
+      "id": "cmvaswn580011cdosuffj1lja",
+      "phone": "8010588877",
+      "name": "Roma",
+      "leadSource": "CALLING_SHEET",
+      "totalInteractions": 1,
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "INTERESTED_FOLLOW_UP",
+      "projectName": "Nivasa II",
+      "requirement": "BHK_3",
+      "budget": "L50_75",
+      "followUpDate": null,
+      "visitDate": null,
+      "visitStatus": "NONE",
+      "previousVisitDate": null,
+      "latestRemark": "After diwali",
+      "assignedAgentId": "cmv6ii8ac0003ll7cwikviijn",
+      "createdAt": "2026-10-16T10:04:36.524Z",
+      "updatedAt": "2026-10-16T10:04:36.524Z",
+      "assignedAgent": {
+        "id": "cmv6ii8ac0003ll7cwikviijn",
+        "name": "Nikhil"
+      }
+    },
+    {
+      "id": "cmvassfad000wcdosp5a6pfqe",
+      "phone": "9811522600",
+      "name": "pankaj",
+      "leadSource": "CALLING_SHEET",
+      "totalInteractions": 1,
+      "callOutcome": "NOT_CONNECTED",
+      "notConnectedReason": "CALL_NOT_PICKED",
+      "disposition": null,
+      "projectName": "Velora",
+      "requirement": null,
+      "budget": null,
+      "followUpDate": null,
+      "visitDate": null,
+      "visitStatus": "NONE",
+      "previousVisitDate": null,
+      "latestRemark": null,
+      "assignedAgentId": "cmv6ii89w0002ll7cccia5nbc",
+      "createdAt": "2026-10-16T10:01:19.718Z",
+      "updatedAt": "2026-10-16T10:01:19.718Z",
+      "assignedAgent": {
+        "id": "cmv6ii89w0002ll7cccia5nbc",
+        "name": "Ayaan"
+      }
+    },
+    {
+      "id": "cmvasrr07000rcdosn9rwzour",
+      "phone": "8287829413",
+      "name": "joyti",
+      "leadSource": "CALLING_SHEET",
+      "totalInteractions": 1,
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "INTERESTED_FOLLOW_UP",
+      "projectName": "Velora",
+      "requirement": "BHK_3",
+      "budget": "L75_PLUS",
+      "followUpDate": null,
+      "visitDate": null,
+      "visitStatus": "NONE",
+      "previousVisitDate": null,
+      "latestRemark": null,
+      "assignedAgentId": "cmv6ii89w0002ll7cccia5nbc",
+      "createdAt": "2026-10-16T10:00:48.248Z",
+      "updatedAt": "2026-10-16T10:00:48.248Z",
+      "assignedAgent": {
+        "id": "cmv6ii89w0002ll7cccia5nbc",
+        "name": "Ayaan"
+      }
+    },
+    {
+      "id": "cmvasr0c4000mcdos9w3pemdl",
+      "phone": "8130511137",
+      "name": "neeraj",
+      "leadSource": "CALLING_SHEET",
+      "totalInteractions": 1,
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "LOCATION_MISMATCH",
+      "projectName": "Nivasa II",
+      "requirement": "BHK_3",
+      "budget": "L50_75",
+      "followUpDate": null,
+      "visitDate": null,
+      "visitStatus": "NONE",
+      "previousVisitDate": null,
+      "latestRemark": "want in faridabad",
+      "assignedAgentId": "cmv6ii89w0002ll7cccia5nbc",
+      "createdAt": "2026-10-16T10:00:13.684Z",
+      "updatedAt": "2026-10-16T10:00:13.684Z",
+      "assignedAgent": {
+        "id": "cmv6ii89w0002ll7cccia5nbc",
+        "name": "Ayaan"
+      }
+    },
+    {
+      "id": "cmvaspnmi000hcdosly4yf9ns",
+      "phone": "8585971934",
+      "name": "mrinal",
+      "leadSource": "CALLING_SHEET",
+      "totalInteractions": 1,
+      "callOutcome": "NOT_CONNECTED",
+      "notConnectedReason": "CALL_NOT_PICKED",
+      "disposition": null,
+      "projectName": "Nivasa II",
+      "requirement": null,
+      "budget": null,
+      "followUpDate": null,
+      "visitDate": null,
+      "visitStatus": "NONE",
+      "previousVisitDate": null,
+      "latestRemark": null,
+      "assignedAgentId": "cmv6ii89w0002ll7cccia5nbc",
+      "createdAt": "2026-10-16T09:59:10.555Z",
+      "updatedAt": "2026-10-16T09:59:10.555Z",
+      "assignedAgent": {
+        "id": "cmv6ii89w0002ll7cccia5nbc",
+        "name": "Ayaan"
+      }
+    },
+    {
+      "id": "cmvasoy5r000ccdosmhmtd0sc",
+      "phone": "8826829505",
+      "name": "jai",
+      "leadSource": "CALLING_SHEET",
+      "totalInteractions": 1,
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "INTERESTED_FOLLOW_UP",
+      "projectName": "Nivasa II",
+      "requirement": "BHK_3",
+      "budget": "L50_75",
+      "followUpDate": null,
+      "visitDate": null,
+      "visitStatus": "NONE",
+      "previousVisitDate": null,
+      "latestRemark": null,
+      "assignedAgentId": "cmv6ii89w0002ll7cccia5nbc",
+      "createdAt": "2026-10-16T09:58:37.552Z",
+      "updatedAt": "2026-10-16T09:58:37.552Z",
+      "assignedAgent": {
+        "id": "cmv6ii89w0002ll7cccia5nbc",
+        "name": "Ayaan"
+      }
+    },
+    {
+      "id": "cmvasnusz0007cdosajo4dm0d",
+      "phone": "9560303392",
+      "name": "raj",
+      "leadSource": "CALLING_SHEET",
+      "totalInteractions": 1,
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "SITE_VISIT_SCHEDULED",
+      "projectName": "Nivasa II",
+      "requirement": "BHK_3",
+      "budget": "L50_75",
+      "followUpDate": null,
+      "visitDate": "2026-10-18T00:00:00.000Z",
+      "visitStatus": "SCHEDULED",
+      "previousVisitDate": null,
+      "latestRemark": null,
+      "assignedAgentId": "cmv6ii89w0002ll7cccia5nbc",
+      "createdAt": "2026-10-16T09:57:46.548Z",
+      "updatedAt": "2026-10-16T09:57:46.548Z",
+      "assignedAgent": {
+        "id": "cmv6ii89w0002ll7cccia5nbc",
+        "name": "Ayaan"
+      }
+    },
+    {
+      "id": "cmvasmpp90002cdosfandcmox",
+      "phone": "8527211770",
+      "name": "faisal",
+      "leadSource": "CALLING_SHEET",
+      "totalInteractions": 1,
+      "callOutcome": "NOT_CONNECTED",
+      "notConnectedReason": "CALL_NOT_PICKED",
+      "disposition": null,
+      "projectName": "Nirvana",
+      "requirement": null,
+      "budget": null,
+      "followUpDate": null,
+      "visitDate": null,
+      "visitStatus": "NONE",
+      "previousVisitDate": null,
+      "latestRemark": null,
+      "assignedAgentId": "cmv6ii89w0002ll7cccia5nbc",
+      "createdAt": "2026-10-16T09:56:53.278Z",
+      "updatedAt": "2026-10-16T09:56:53.278Z",
+      "assignedAgent": {
+        "id": "cmv6ii89w0002ll7cccia5nbc",
+        "name": "Ayaan"
       }
     },
     {
@@ -84,7 +459,7 @@
       "callOutcome": "CONNECTED",
       "notConnectedReason": null,
       "disposition": "NOT_INTERESTED",
-      "projectName": "Nivasa II",
+      "projectName": "Amaryllis",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -94,57 +469,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii8b80005ll7cdixvz09g",
       "createdAt": "2026-10-12T12:39:04.000Z",
-      "updatedAt": "2026-10-12T12:39:04.000Z",
-      "assignedAgent": {
-        "id": "cmv6ii8b80005ll7cdixvz09g",
-        "name": "Gulshan"
-      }
-    },
-    {
-      "id": "cmv6ksvei0081pmfi6842j2la",
-      "phone": "9582170367",
-      "name": "Shivang",
-      "leadSource": "CALLING_SHEET",
-      "totalInteractions": 1,
-      "callOutcome": "CONNECTED",
-      "notConnectedReason": null,
-      "disposition": "SITE_VISIT_SCHEDULED",
-      "projectName": "Nivasa II",
-      "requirement": null,
-      "budget": null,
-      "followUpDate": null,
-      "visitDate": "2026-10-15T00:00:00.000Z",
-      "visitStatus": "SCHEDULED",
-      "previousVisitDate": null,
-      "latestRemark": null,
-      "assignedAgentId": "cmv6ii8b80005ll7cdixvz09g",
-      "createdAt": "2026-10-12T12:39:04.000Z",
-      "updatedAt": "2026-10-12T12:39:04.000Z",
-      "assignedAgent": {
-        "id": "cmv6ii8b80005ll7cdixvz09g",
-        "name": "Gulshan"
-      }
-    },
-    {
-      "id": "cmv6ksuzb007xpmfinghcapa6",
-      "phone": "8010819024",
-      "name": "Varun",
-      "leadSource": "CALLING_SHEET",
-      "totalInteractions": 1,
-      "callOutcome": "CONNECTED",
-      "notConnectedReason": null,
-      "disposition": "NOT_INTERESTED",
-      "projectName": "Nivasa II",
-      "requirement": null,
-      "budget": null,
-      "followUpDate": null,
-      "visitDate": null,
-      "visitStatus": "NONE",
-      "previousVisitDate": null,
-      "latestRemark": null,
-      "assignedAgentId": "cmv6ii8b80005ll7cdixvz09g",
-      "createdAt": "2026-10-12T12:39:04.000Z",
-      "updatedAt": "2026-10-12T12:39:04.000Z",
+      "updatedAt": "2026-10-13T13:05:48.319Z",
       "assignedAgent": {
         "id": "cmv6ii8b80005ll7cdixvz09g",
         "name": "Gulshan"
@@ -159,7 +484,7 @@
       "callOutcome": "CONNECTED",
       "notConnectedReason": null,
       "disposition": "NOT_INTERESTED",
-      "projectName": "Nivasa II",
+      "projectName": "Vasundhara",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -169,7 +494,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii8b80005ll7cdixvz09g",
       "createdAt": "2026-10-12T12:39:04.000Z",
-      "updatedAt": "2026-10-12T12:39:04.000Z",
+      "updatedAt": "2026-10-13T13:05:41.122Z",
       "assignedAgent": {
         "id": "cmv6ii8b80005ll7cdixvz09g",
         "name": "Gulshan"
@@ -194,7 +519,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii8b80005ll7cdixvz09g",
       "createdAt": "2026-10-12T12:39:04.000Z",
-      "updatedAt": "2026-10-12T12:39:04.000Z",
+      "updatedAt": "2026-10-13T13:05:38.789Z",
       "assignedAgent": {
         "id": "cmv6ii8b80005ll7cdixvz09g",
         "name": "Gulshan"
@@ -209,7 +534,7 @@
       "callOutcome": "NOT_CONNECTED",
       "notConnectedReason": "CALL_NOT_PICKED",
       "disposition": "NOT_CONNECTED",
-      "projectName": "Nivasa II",
+      "projectName": "Vasundhara",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -219,7 +544,32 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii8b80005ll7cdixvz09g",
       "createdAt": "2026-10-12T12:39:04.000Z",
-      "updatedAt": "2026-10-12T12:39:04.000Z",
+      "updatedAt": "2026-10-13T13:05:37.984Z",
+      "assignedAgent": {
+        "id": "cmv6ii8b80005ll7cdixvz09g",
+        "name": "Gulshan"
+      }
+    },
+    {
+      "id": "cmv6ksuzb007xpmfinghcapa6",
+      "phone": "8010819024",
+      "name": "Varun",
+      "leadSource": "CALLING_SHEET",
+      "totalInteractions": 1,
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "NOT_INTERESTED",
+      "projectName": "The Arch",
+      "requirement": null,
+      "budget": null,
+      "followUpDate": null,
+      "visitDate": null,
+      "visitStatus": "NONE",
+      "previousVisitDate": null,
+      "latestRemark": null,
+      "assignedAgentId": "cmv6ii8b80005ll7cdixvz09g",
+      "createdAt": "2026-10-12T12:39:04.000Z",
+      "updatedAt": "2026-10-13T13:05:42.644Z",
       "assignedAgent": {
         "id": "cmv6ii8b80005ll7cdixvz09g",
         "name": "Gulshan"
@@ -234,7 +584,7 @@
       "callOutcome": "NOT_CONNECTED",
       "notConnectedReason": "CALL_NOT_PICKED",
       "disposition": "NOT_CONNECTED",
-      "projectName": "Nivasa II",
+      "projectName": "The Arch",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -244,10 +594,35 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii8ac0003ll7cwikviijn",
       "createdAt": "2026-10-12T12:39:04.000Z",
-      "updatedAt": "2026-10-12T12:39:04.000Z",
+      "updatedAt": "2026-10-13T13:05:37.183Z",
       "assignedAgent": {
         "id": "cmv6ii8ac0003ll7cwikviijn",
         "name": "Nikhil"
+      }
+    },
+    {
+      "id": "cmv6ksvei0081pmfi6842j2la",
+      "phone": "9582170367",
+      "name": "Shivang",
+      "leadSource": "CALLING_SHEET",
+      "totalInteractions": 1,
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "SITE_VISIT_SCHEDULED",
+      "projectName": "Nivasa II",
+      "requirement": null,
+      "budget": null,
+      "followUpDate": null,
+      "visitDate": "2026-10-15T00:00:00.000Z",
+      "visitStatus": "SCHEDULED",
+      "previousVisitDate": null,
+      "latestRemark": null,
+      "assignedAgentId": "cmv6ii8b80005ll7cdixvz09g",
+      "createdAt": "2026-10-12T12:39:04.000Z",
+      "updatedAt": "2026-10-13T13:05:44.338Z",
+      "assignedAgent": {
+        "id": "cmv6ii8b80005ll7cdixvz09g",
+        "name": "Gulshan"
       }
     },
     {
@@ -269,7 +644,7 @@
       "latestRemark": "Dekh raha hu let you know",
       "assignedAgentId": "cmv6ii8ac0003ll7cwikviijn",
       "createdAt": "2026-10-12T12:38:12.000Z",
-      "updatedAt": "2026-10-12T12:38:12.000Z",
+      "updatedAt": "2026-10-13T13:05:36.380Z",
       "assignedAgent": {
         "id": "cmv6ii8ac0003ll7cwikviijn",
         "name": "Nikhil"
@@ -284,7 +659,7 @@
       "callOutcome": "NOT_CONNECTED",
       "notConnectedReason": "CALL_NOT_PICKED",
       "disposition": "NOT_CONNECTED",
-      "projectName": "Nivasa II",
+      "projectName": "General Enquiry",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -294,7 +669,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii89w0002ll7cccia5nbc",
       "createdAt": "2026-10-12T12:37:42.000Z",
-      "updatedAt": "2026-10-12T12:37:42.000Z",
+      "updatedAt": "2026-10-13T13:05:35.574Z",
       "assignedAgent": {
         "id": "cmv6ii89w0002ll7cccia5nbc",
         "name": "Ayaan"
@@ -319,7 +694,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii8ac0003ll7cwikviijn",
       "createdAt": "2026-10-12T12:37:12.000Z",
-      "updatedAt": "2026-10-12T12:37:12.000Z",
+      "updatedAt": "2026-10-13T13:05:34.753Z",
       "assignedAgent": {
         "id": "cmv6ii8ac0003ll7cwikviijn",
         "name": "Nikhil"
@@ -334,7 +709,7 @@
       "callOutcome": "NOT_CONNECTED",
       "notConnectedReason": "CALL_NOT_PICKED",
       "disposition": "NOT_CONNECTED",
-      "projectName": "Nivasa II",
+      "projectName": "General Enquiry",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -344,7 +719,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii89w0002ll7cccia5nbc",
       "createdAt": "2026-10-12T12:37:04.000Z",
-      "updatedAt": "2026-10-12T12:37:04.000Z",
+      "updatedAt": "2026-10-13T13:05:32.664Z",
       "assignedAgent": {
         "id": "cmv6ii89w0002ll7cccia5nbc",
         "name": "Ayaan"
@@ -359,7 +734,7 @@
       "callOutcome": "NOT_CONNECTED",
       "notConnectedReason": "CALL_NOT_PICKED",
       "disposition": "NOT_CONNECTED",
-      "projectName": "Nivasa II",
+      "projectName": "General Enquiry",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -369,7 +744,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii89w0002ll7cccia5nbc",
       "createdAt": "2026-10-12T12:36:33.000Z",
-      "updatedAt": "2026-10-12T12:36:33.000Z",
+      "updatedAt": "2026-10-13T13:05:31.380Z",
       "assignedAgent": {
         "id": "cmv6ii89w0002ll7cccia5nbc",
         "name": "Ayaan"
@@ -384,7 +759,7 @@
       "callOutcome": "CONNECTED",
       "notConnectedReason": null,
       "disposition": "INTERESTED_FOLLOW_UP",
-      "projectName": "Nivasa II",
+      "projectName": "Vasundhara",
       "requirement": null,
       "budget": "L75_PLUS",
       "followUpDate": null,
@@ -394,7 +769,7 @@
       "latestRemark": "Ds share kro do 3bhk ki",
       "assignedAgentId": "cmv6ii8ac0003ll7cwikviijn",
       "createdAt": "2026-10-12T12:36:21.000Z",
-      "updatedAt": "2026-10-12T12:36:21.000Z",
+      "updatedAt": "2026-10-13T13:05:30.070Z",
       "assignedAgent": {
         "id": "cmv6ii8ac0003ll7cwikviijn",
         "name": "Nikhil"
@@ -409,7 +784,7 @@
       "callOutcome": "CONNECTED",
       "notConnectedReason": null,
       "disposition": "INTERESTED_FOLLOW_UP",
-      "projectName": "Nivasa II",
+      "projectName": "Orchid",
       "requirement": null,
       "budget": "L75_PLUS",
       "followUpDate": null,
@@ -419,7 +794,7 @@
       "latestRemark": "want 3 bhk in mandi",
       "assignedAgentId": "cmv6ii89w0002ll7cccia5nbc",
       "createdAt": "2026-10-12T12:35:58.000Z",
-      "updatedAt": "2026-10-12T12:35:58.000Z",
+      "updatedAt": "2026-10-13T13:05:29.245Z",
       "assignedAgent": {
         "id": "cmv6ii89w0002ll7cccia5nbc",
         "name": "Ayaan"
@@ -434,7 +809,7 @@
       "callOutcome": "CONNECTED",
       "notConnectedReason": null,
       "disposition": "SITE_VISIT_SCHEDULED",
-      "projectName": "Nivasa II",
+      "projectName": "Vasundhara",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -444,7 +819,7 @@
       "latestRemark": "Chattarpur aaega visit",
       "assignedAgentId": "cmv6ii8ac0003ll7cwikviijn",
       "createdAt": "2026-10-12T12:35:22.000Z",
-      "updatedAt": "2026-10-12T12:35:22.000Z",
+      "updatedAt": "2026-10-13T13:05:28.441Z",
       "assignedAgent": {
         "id": "cmv6ii8ac0003ll7cwikviijn",
         "name": "Nikhil"
@@ -459,7 +834,7 @@
       "callOutcome": "NOT_CONNECTED",
       "notConnectedReason": "CALL_NOT_PICKED",
       "disposition": "NOT_CONNECTED",
-      "projectName": "Nivasa II",
+      "projectName": "General Enquiry",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -469,7 +844,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii89w0002ll7cccia5nbc",
       "createdAt": "2026-10-12T12:34:58.000Z",
-      "updatedAt": "2026-10-12T12:34:58.000Z",
+      "updatedAt": "2026-10-13T13:05:27.596Z",
       "assignedAgent": {
         "id": "cmv6ii89w0002ll7cccia5nbc",
         "name": "Ayaan"
@@ -484,7 +859,7 @@
       "callOutcome": "NOT_CONNECTED",
       "notConnectedReason": "CALL_NOT_PICKED",
       "disposition": "NOT_CONNECTED",
-      "projectName": "Nivasa II",
+      "projectName": "General Enquiry",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -494,7 +869,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii89w0002ll7cccia5nbc",
       "createdAt": "2026-10-12T12:34:23.000Z",
-      "updatedAt": "2026-10-12T12:34:23.000Z",
+      "updatedAt": "2026-10-13T13:05:26.053Z",
       "assignedAgent": {
         "id": "cmv6ii89w0002ll7cccia5nbc",
         "name": "Ayaan"
@@ -509,7 +884,7 @@
       "callOutcome": "CONNECTED",
       "notConnectedReason": null,
       "disposition": "SITE_VISIT_SCHEDULED",
-      "projectName": "Nivasa II",
+      "projectName": "Vasundhara",
       "requirement": null,
       "budget": "L75_PLUS",
       "followUpDate": null,
@@ -519,7 +894,7 @@
       "latestRemark": "want 3 bhk in chattarpur",
       "assignedAgentId": "cmv6ii89w0002ll7cccia5nbc",
       "createdAt": "2026-10-12T12:33:12.000Z",
-      "updatedAt": "2026-10-12T12:33:12.000Z",
+      "updatedAt": "2026-10-13T13:05:25.238Z",
       "assignedAgent": {
         "id": "cmv6ii89w0002ll7cccia5nbc",
         "name": "Ayaan"
@@ -534,7 +909,7 @@
       "callOutcome": "NOT_CONNECTED",
       "notConnectedReason": "CALL_NOT_PICKED",
       "disposition": "NOT_CONNECTED",
-      "projectName": "Nivasa II",
+      "projectName": "General Enquiry",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -544,7 +919,32 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii8900001ll7c5oa7es81",
       "createdAt": "2026-10-12T09:11:03.000Z",
-      "updatedAt": "2026-10-12T09:11:03.000Z",
+      "updatedAt": "2026-10-13T13:05:24.158Z",
+      "assignedAgent": {
+        "id": "cmv6ii8900001ll7c5oa7es81",
+        "name": "Nihal"
+      }
+    },
+    {
+      "id": "cmv6kslht0061pmfie8543gqc",
+      "phone": "9582349667",
+      "name": "Harsika",
+      "leadSource": "CALLING_SHEET",
+      "totalInteractions": 2,
+      "callOutcome": "NOT_CONNECTED",
+      "notConnectedReason": "CALL_NOT_PICKED",
+      "disposition": "NOT_CONNECTED",
+      "projectName": "Amaryllis",
+      "requirement": null,
+      "budget": null,
+      "followUpDate": null,
+      "visitDate": null,
+      "visitStatus": "NONE",
+      "previousVisitDate": null,
+      "latestRemark": "Two more called tomorrow call again \nAnd details shared",
+      "assignedAgentId": "cmv6ii8900001ll7c5oa7es81",
+      "createdAt": "2026-10-12T09:09:29.000Z",
+      "updatedAt": "2026-10-13T13:05:23.350Z",
       "assignedAgent": {
         "id": "cmv6ii8900001ll7c5oa7es81",
         "name": "Nihal"
@@ -569,7 +969,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii8900001ll7c5oa7es81",
       "createdAt": "2026-10-12T09:08:02.000Z",
-      "updatedAt": "2026-10-12T09:08:02.000Z",
+      "updatedAt": "2026-10-13T13:05:22.540Z",
       "assignedAgent": {
         "id": "cmv6ii8900001ll7c5oa7es81",
         "name": "Nihal"
@@ -584,7 +984,7 @@
       "callOutcome": "CONNECTED",
       "notConnectedReason": null,
       "disposition": "NOT_INTERESTED",
-      "projectName": "Nivasa II",
+      "projectName": "General Enquiry",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -594,7 +994,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii8900001ll7c5oa7es81",
       "createdAt": "2026-10-12T09:05:17.000Z",
-      "updatedAt": "2026-10-12T09:05:17.000Z",
+      "updatedAt": "2026-10-13T13:05:21.210Z",
       "assignedAgent": {
         "id": "cmv6ii8900001ll7c5oa7es81",
         "name": "Nihal"
@@ -609,7 +1009,7 @@
       "callOutcome": "NOT_CONNECTED",
       "notConnectedReason": "CALL_NOT_PICKED",
       "disposition": "NOT_CONNECTED",
-      "projectName": "Nivasa II",
+      "projectName": "General Enquiry",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -619,7 +1019,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii8900001ll7c5oa7es81",
       "createdAt": "2026-10-12T09:01:39.000Z",
-      "updatedAt": "2026-10-12T09:01:39.000Z",
+      "updatedAt": "2026-10-13T13:05:19.922Z",
       "assignedAgent": {
         "id": "cmv6ii8900001ll7c5oa7es81",
         "name": "Nihal"
@@ -634,7 +1034,7 @@
       "callOutcome": "CONNECTED",
       "notConnectedReason": null,
       "disposition": "SITE_VISIT_SCHEDULED",
-      "projectName": "Nivasa II",
+      "projectName": "General Enquiry",
       "requirement": null,
       "budget": "L75_PLUS",
       "followUpDate": null,
@@ -644,7 +1044,7 @@
       "latestRemark": "3bhk chahiye metro ke near by... 1.20cr over budget hai, Try karte hai visit ka metro se pick karna hoga",
       "assignedAgentId": "cmv6ii8900001ll7c5oa7es81",
       "createdAt": "2026-10-12T09:00:34.000Z",
-      "updatedAt": "2026-10-12T09:00:34.000Z",
+      "updatedAt": "2026-10-13T13:05:17.602Z",
       "assignedAgent": {
         "id": "cmv6ii8900001ll7c5oa7es81",
         "name": "Nihal"
@@ -659,7 +1059,7 @@
       "callOutcome": "NOT_CONNECTED",
       "notConnectedReason": "CALL_NOT_PICKED",
       "disposition": "NOT_CONNECTED",
-      "projectName": "Nivasa II",
+      "projectName": "General Enquiry",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -669,7 +1069,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii8900001ll7c5oa7es81",
       "createdAt": "2026-10-11T13:04:45.000Z",
-      "updatedAt": "2026-10-11T13:04:45.000Z",
+      "updatedAt": "2026-10-13T13:05:16.238Z",
       "assignedAgent": {
         "id": "cmv6ii8900001ll7c5oa7es81",
         "name": "Nihal"
@@ -684,7 +1084,7 @@
       "callOutcome": "CONNECTED",
       "notConnectedReason": null,
       "disposition": "SITE_VISIT_SCHEDULED",
-      "projectName": "Nivasa II",
+      "projectName": "The Arch",
       "requirement": null,
       "budget": "L50_75",
       "followUpDate": null,
@@ -694,7 +1094,7 @@
       "latestRemark": "Gali me nhi chahiye... Batata hu visit ka... 3bhk",
       "assignedAgentId": "cmv6ii8900001ll7c5oa7es81",
       "createdAt": "2026-10-11T13:02:49.000Z",
-      "updatedAt": "2026-10-11T13:04:13.000Z",
+      "updatedAt": "2026-10-13T13:05:15.284Z",
       "assignedAgent": {
         "id": "cmv6ii8900001ll7c5oa7es81",
         "name": "Nihal"
@@ -709,7 +1109,7 @@
       "callOutcome": "NOT_CONNECTED",
       "notConnectedReason": "CALL_NOT_PICKED",
       "disposition": "NOT_CONNECTED",
-      "projectName": "Nivasa II",
+      "projectName": "General Enquiry",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -719,7 +1119,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii8900001ll7c5oa7es81",
       "createdAt": "2026-10-11T13:02:13.000Z",
-      "updatedAt": "2026-10-11T13:02:13.000Z",
+      "updatedAt": "2026-10-13T13:05:14.261Z",
       "assignedAgent": {
         "id": "cmv6ii8900001ll7c5oa7es81",
         "name": "Nihal"
@@ -734,7 +1134,7 @@
       "callOutcome": "NOT_CONNECTED",
       "notConnectedReason": "SWITCHED_OFF",
       "disposition": "NOT_CONNECTED",
-      "projectName": "Nivasa II",
+      "projectName": "General Enquiry",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -744,7 +1144,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii8900001ll7c5oa7es81",
       "createdAt": "2026-10-11T13:01:39.000Z",
-      "updatedAt": "2026-10-11T13:01:39.000Z",
+      "updatedAt": "2026-10-13T13:05:13.362Z",
       "assignedAgent": {
         "id": "cmv6ii8900001ll7c5oa7es81",
         "name": "Nihal"
@@ -759,7 +1159,7 @@
       "callOutcome": "NOT_CONNECTED",
       "notConnectedReason": "CALL_NOT_PICKED",
       "disposition": "NOT_CONNECTED",
-      "projectName": "Nivasa II",
+      "projectName": "General Enquiry",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -769,7 +1169,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii8900001ll7c5oa7es81",
       "createdAt": "2026-10-11T13:00:50.000Z",
-      "updatedAt": "2026-10-11T13:00:50.000Z",
+      "updatedAt": "2026-10-13T13:05:12.390Z",
       "assignedAgent": {
         "id": "cmv6ii8900001ll7c5oa7es81",
         "name": "Nihal"
@@ -784,7 +1184,7 @@
       "callOutcome": "CONNECTED",
       "notConnectedReason": null,
       "disposition": "NOT_INTERESTED",
-      "projectName": "Nivasa II",
+      "projectName": "General Enquiry",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -794,7 +1194,7 @@
       "latestRemark": "Lal dora me nhi chahiye aor Bank loan chahiye",
       "assignedAgentId": "cmv6ii8900001ll7c5oa7es81",
       "createdAt": "2026-10-11T13:00:10.000Z",
-      "updatedAt": "2026-10-11T13:00:10.000Z",
+      "updatedAt": "2026-10-13T13:05:11.557Z",
       "assignedAgent": {
         "id": "cmv6ii8900001ll7c5oa7es81",
         "name": "Nihal"
@@ -819,7 +1219,7 @@
       "latestRemark": "55 lakh budget... Saturday visit plan karega... 2bhk chahiye",
       "assignedAgentId": "cmv6ii8900001ll7c5oa7es81",
       "createdAt": "2026-10-11T12:58:41.000Z",
-      "updatedAt": "2026-10-11T12:58:41.000Z",
+      "updatedAt": "2026-10-13T13:05:10.747Z",
       "assignedAgent": {
         "id": "cmv6ii8900001ll7c5oa7es81",
         "name": "Nihal"
@@ -834,7 +1234,7 @@
       "callOutcome": "NOT_CONNECTED",
       "notConnectedReason": "CALL_NOT_PICKED",
       "disposition": "NOT_CONNECTED",
-      "projectName": "Nivasa II",
+      "projectName": "General Enquiry",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -844,7 +1244,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii8900001ll7c5oa7es81",
       "createdAt": "2026-10-11T12:57:19.000Z",
-      "updatedAt": "2026-10-11T12:57:19.000Z",
+      "updatedAt": "2026-10-13T13:05:09.849Z",
       "assignedAgent": {
         "id": "cmv6ii8900001ll7c5oa7es81",
         "name": "Nihal"
@@ -859,7 +1259,7 @@
       "callOutcome": "NOT_CONNECTED",
       "notConnectedReason": "CALL_NOT_PICKED",
       "disposition": "NOT_CONNECTED",
-      "projectName": "Nivasa II",
+      "projectName": "General Enquiry",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -869,7 +1269,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii8900001ll7c5oa7es81",
       "createdAt": "2026-10-11T12:56:50.000Z",
-      "updatedAt": "2026-10-11T12:56:50.000Z",
+      "updatedAt": "2026-10-13T13:05:08.777Z",
       "assignedAgent": {
         "id": "cmv6ii8900001ll7c5oa7es81",
         "name": "Nihal"
@@ -884,7 +1284,7 @@
       "callOutcome": "NOT_CONNECTED",
       "notConnectedReason": "CALL_NOT_PICKED",
       "disposition": "NOT_CONNECTED",
-      "projectName": "Nivasa II",
+      "projectName": "General Enquiry",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -894,7 +1294,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii8900001ll7c5oa7es81",
       "createdAt": "2026-10-11T12:56:18.000Z",
-      "updatedAt": "2026-10-11T12:56:18.000Z",
+      "updatedAt": "2026-10-13T13:05:06.685Z",
       "assignedAgent": {
         "id": "cmv6ii8900001ll7c5oa7es81",
         "name": "Nihal"
@@ -909,7 +1309,7 @@
       "callOutcome": "NOT_CONNECTED",
       "notConnectedReason": "CALL_NOT_PICKED",
       "disposition": "NOT_CONNECTED",
-      "projectName": "Nivasa II",
+      "projectName": "General Enquiry",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -919,7 +1319,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii8900001ll7c5oa7es81",
       "createdAt": "2026-10-11T12:55:46.000Z",
-      "updatedAt": "2026-10-11T12:55:46.000Z",
+      "updatedAt": "2026-10-13T13:05:05.808Z",
       "assignedAgent": {
         "id": "cmv6ii8900001ll7c5oa7es81",
         "name": "Nihal"
@@ -934,7 +1334,7 @@
       "callOutcome": "NOT_CONNECTED",
       "notConnectedReason": "CALL_NOT_PICKED",
       "disposition": "NOT_CONNECTED",
-      "projectName": "Nivasa II",
+      "projectName": "General Enquiry",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -944,7 +1344,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii8900001ll7c5oa7es81",
       "createdAt": "2026-10-11T12:55:04.000Z",
-      "updatedAt": "2026-10-11T12:55:04.000Z",
+      "updatedAt": "2026-10-13T13:05:04.429Z",
       "assignedAgent": {
         "id": "cmv6ii8900001ll7c5oa7es81",
         "name": "Nihal"
@@ -959,7 +1359,7 @@
       "callOutcome": "NOT_CONNECTED",
       "notConnectedReason": "CALL_NOT_PICKED",
       "disposition": "NOT_CONNECTED",
-      "projectName": "Nivasa II",
+      "projectName": "General Enquiry",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -969,7 +1369,7 @@
       "latestRemark": "Not answering",
       "assignedAgentId": "cmv6ii8900001ll7c5oa7es81",
       "createdAt": "2026-10-11T12:54:22.000Z",
-      "updatedAt": "2026-10-11T12:54:22.000Z",
+      "updatedAt": "2026-10-13T13:05:03.358Z",
       "assignedAgent": {
         "id": "cmv6ii8900001ll7c5oa7es81",
         "name": "Nihal"
@@ -984,7 +1384,7 @@
       "callOutcome": "CONNECTED",
       "notConnectedReason": null,
       "disposition": "SITE_VISIT_SCHEDULED",
-      "projectName": "Nivasa II",
+      "projectName": "Nirvana",
       "requirement": null,
       "budget": "L75_PLUS",
       "followUpDate": null,
@@ -994,7 +1394,7 @@
       "latestRemark": "3bhk, Sunday visit plan, 80 lakh budget",
       "assignedAgentId": "cmv6ii8900001ll7c5oa7es81",
       "createdAt": "2026-10-11T12:53:06.000Z",
-      "updatedAt": "2026-10-11T12:53:06.000Z",
+      "updatedAt": "2026-10-13T13:05:02.548Z",
       "assignedAgent": {
         "id": "cmv6ii8900001ll7c5oa7es81",
         "name": "Nihal"
@@ -1009,7 +1409,7 @@
       "callOutcome": "NOT_CONNECTED",
       "notConnectedReason": "CALL_NOT_PICKED",
       "disposition": "NOT_CONNECTED",
-      "projectName": "Nivasa II",
+      "projectName": "General Enquiry",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -1019,7 +1419,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii8b80005ll7cdixvz09g",
       "createdAt": "2026-10-11T12:28:56.000Z",
-      "updatedAt": "2026-10-11T12:28:56.000Z",
+      "updatedAt": "2026-10-13T13:05:01.112Z",
       "assignedAgent": {
         "id": "cmv6ii8b80005ll7cdixvz09g",
         "name": "Gulshan"
@@ -1034,7 +1434,7 @@
       "callOutcome": "NOT_CONNECTED",
       "notConnectedReason": "CALL_NOT_PICKED",
       "disposition": "NOT_CONNECTED",
-      "projectName": "Nivasa II",
+      "projectName": "General Enquiry",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -1044,32 +1444,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii8b80005ll7cdixvz09g",
       "createdAt": "2026-10-11T12:28:20.000Z",
-      "updatedAt": "2026-10-11T12:28:20.000Z",
-      "assignedAgent": {
-        "id": "cmv6ii8b80005ll7cdixvz09g",
-        "name": "Gulshan"
-      }
-    },
-    {
-      "id": "cmv6krz02000xpmfibtca87sa",
-      "phone": "8142222100",
-      "name": "Pratibha",
-      "leadSource": "CALLING_SHEET",
-      "totalInteractions": 2,
-      "callOutcome": "NOT_CONNECTED",
-      "notConnectedReason": "CALL_NOT_PICKED",
-      "disposition": "NOT_CONNECTED",
-      "projectName": "Nivasa II",
-      "requirement": null,
-      "budget": null,
-      "followUpDate": null,
-      "visitDate": null,
-      "visitStatus": "NONE",
-      "previousVisitDate": null,
-      "latestRemark": null,
-      "assignedAgentId": "cmv6ii8b80005ll7cdixvz09g",
-      "createdAt": "2026-10-11T11:49:43.000Z",
-      "updatedAt": "2026-10-11T12:26:24.000Z",
+      "updatedAt": "2026-10-13T13:05:00.301Z",
       "assignedAgent": {
         "id": "cmv6ii8b80005ll7cdixvz09g",
         "name": "Gulshan"
@@ -1084,7 +1459,7 @@
       "callOutcome": "NOT_CONNECTED",
       "notConnectedReason": "CALL_NOT_PICKED",
       "disposition": "NOT_CONNECTED",
-      "projectName": "Nivasa II",
+      "projectName": "General Enquiry",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -1094,7 +1469,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii8b80005ll7cdixvz09g",
       "createdAt": "2026-10-11T12:23:09.000Z",
-      "updatedAt": "2026-10-11T12:23:09.000Z",
+      "updatedAt": "2026-10-13T13:04:59.454Z",
       "assignedAgent": {
         "id": "cmv6ii8b80005ll7cdixvz09g",
         "name": "Gulshan"
@@ -1109,7 +1484,7 @@
       "callOutcome": "NOT_CONNECTED",
       "notConnectedReason": "CALL_NOT_PICKED",
       "disposition": "NOT_CONNECTED",
-      "projectName": "Nivasa II",
+      "projectName": "General Enquiry",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -1119,7 +1494,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii8b80005ll7cdixvz09g",
       "createdAt": "2026-10-11T12:22:13.000Z",
-      "updatedAt": "2026-10-11T12:22:13.000Z",
+      "updatedAt": "2026-10-13T13:04:58.649Z",
       "assignedAgent": {
         "id": "cmv6ii8b80005ll7cdixvz09g",
         "name": "Gulshan"
@@ -1134,7 +1509,7 @@
       "callOutcome": "NOT_CONNECTED",
       "notConnectedReason": "CALL_NOT_PICKED",
       "disposition": "NOT_CONNECTED",
-      "projectName": "Nivasa II",
+      "projectName": "General Enquiry",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -1144,7 +1519,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii8b80005ll7cdixvz09g",
       "createdAt": "2026-10-11T12:21:03.000Z",
-      "updatedAt": "2026-10-11T12:21:03.000Z",
+      "updatedAt": "2026-10-13T13:04:57.850Z",
       "assignedAgent": {
         "id": "cmv6ii8b80005ll7cdixvz09g",
         "name": "Gulshan"
@@ -1169,7 +1544,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii8b80005ll7cdixvz09g",
       "createdAt": "2026-10-11T12:18:58.000Z",
-      "updatedAt": "2026-10-11T12:18:58.000Z",
+      "updatedAt": "2026-10-13T13:04:57.034Z",
       "assignedAgent": {
         "id": "cmv6ii8b80005ll7cdixvz09g",
         "name": "Gulshan"
@@ -1184,7 +1559,7 @@
       "callOutcome": "NOT_CONNECTED",
       "notConnectedReason": "CALL_NOT_PICKED",
       "disposition": "NOT_CONNECTED",
-      "projectName": "Nivasa II",
+      "projectName": "General Enquiry",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -1194,7 +1569,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii8b80005ll7cdixvz09g",
       "createdAt": "2026-10-11T12:17:15.000Z",
-      "updatedAt": "2026-10-11T12:17:15.000Z",
+      "updatedAt": "2026-10-13T13:04:56.221Z",
       "assignedAgent": {
         "id": "cmv6ii8b80005ll7cdixvz09g",
         "name": "Gulshan"
@@ -1209,7 +1584,7 @@
       "callOutcome": "NOT_CONNECTED",
       "notConnectedReason": "CALL_NOT_PICKED",
       "disposition": "NOT_CONNECTED",
-      "projectName": "Nivasa II",
+      "projectName": "The Arch",
       "requirement": null,
       "budget": "L75_PLUS",
       "followUpDate": null,
@@ -1219,7 +1594,7 @@
       "latestRemark": "NP",
       "assignedAgentId": "cmv6ii8bp0006ll7ccezp7l6q",
       "createdAt": "2026-10-11T12:16:03.000Z",
-      "updatedAt": "2026-10-11T12:16:03.000Z",
+      "updatedAt": "2026-10-13T13:04:55.414Z",
       "assignedAgent": {
         "id": "cmv6ii8bp0006ll7ccezp7l6q",
         "name": "Vikas"
@@ -1234,7 +1609,7 @@
       "callOutcome": "NOT_CONNECTED",
       "notConnectedReason": "CALL_NOT_PICKED",
       "disposition": "NOT_CONNECTED",
-      "projectName": "Nivasa II",
+      "projectName": "The Arch",
       "requirement": null,
       "budget": "L75_PLUS",
       "followUpDate": null,
@@ -1244,7 +1619,7 @@
       "latestRemark": "NP",
       "assignedAgentId": "cmv6ii8bp0006ll7ccezp7l6q",
       "createdAt": "2026-10-11T12:15:05.000Z",
-      "updatedAt": "2026-10-11T12:15:05.000Z",
+      "updatedAt": "2026-10-13T13:04:53.712Z",
       "assignedAgent": {
         "id": "cmv6ii8bp0006ll7ccezp7l6q",
         "name": "Vikas"
@@ -1269,7 +1644,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii8b80005ll7cdixvz09g",
       "createdAt": "2026-10-11T12:14:51.000Z",
-      "updatedAt": "2026-10-11T12:14:51.000Z",
+      "updatedAt": "2026-10-13T13:04:52.875Z",
       "assignedAgent": {
         "id": "cmv6ii8b80005ll7cdixvz09g",
         "name": "Gulshan"
@@ -1294,7 +1669,7 @@
       "latestRemark": "NA",
       "assignedAgentId": "cmv6ii8bp0006ll7ccezp7l6q",
       "createdAt": "2026-10-11T12:14:06.000Z",
-      "updatedAt": "2026-10-11T12:14:06.000Z",
+      "updatedAt": "2026-10-13T13:04:51.778Z",
       "assignedAgent": {
         "id": "cmv6ii8bp0006ll7ccezp7l6q",
         "name": "Vikas"
@@ -1319,7 +1694,7 @@
       "latestRemark": "NA",
       "assignedAgentId": "cmv6ii8bp0006ll7ccezp7l6q",
       "createdAt": "2026-10-11T12:13:15.000Z",
-      "updatedAt": "2026-10-11T12:13:15.000Z",
+      "updatedAt": "2026-10-13T13:04:50.940Z",
       "assignedAgent": {
         "id": "cmv6ii8bp0006ll7ccezp7l6q",
         "name": "Vikas"
@@ -1344,7 +1719,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii8b80005ll7cdixvz09g",
       "createdAt": "2026-10-11T12:12:03.000Z",
-      "updatedAt": "2026-10-11T12:12:03.000Z",
+      "updatedAt": "2026-10-13T13:04:50.133Z",
       "assignedAgent": {
         "id": "cmv6ii8b80005ll7cdixvz09g",
         "name": "Gulshan"
@@ -1369,7 +1744,7 @@
       "latestRemark": "NA",
       "assignedAgentId": "cmv6ii8bp0006ll7ccezp7l6q",
       "createdAt": "2026-10-11T12:11:05.000Z",
-      "updatedAt": "2026-10-11T12:11:05.000Z",
+      "updatedAt": "2026-10-13T13:04:49.323Z",
       "assignedAgent": {
         "id": "cmv6ii8bp0006ll7ccezp7l6q",
         "name": "Vikas"
@@ -1394,7 +1769,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii8b80005ll7cdixvz09g",
       "createdAt": "2026-10-11T12:10:45.000Z",
-      "updatedAt": "2026-10-11T12:10:45.000Z",
+      "updatedAt": "2026-10-13T13:04:48.241Z",
       "assignedAgent": {
         "id": "cmv6ii8b80005ll7cdixvz09g",
         "name": "Gulshan"
@@ -1419,7 +1794,7 @@
       "latestRemark": "NA",
       "assignedAgentId": "cmv6ii8bp0006ll7ccezp7l6q",
       "createdAt": "2026-10-11T12:09:45.000Z",
-      "updatedAt": "2026-10-11T12:09:45.000Z",
+      "updatedAt": "2026-10-13T13:04:47.138Z",
       "assignedAgent": {
         "id": "cmv6ii8bp0006ll7ccezp7l6q",
         "name": "Vikas"
@@ -1444,7 +1819,7 @@
       "latestRemark": "Sent him Detail",
       "assignedAgentId": "cmv6ii8bp0006ll7ccezp7l6q",
       "createdAt": "2026-10-11T12:08:34.000Z",
-      "updatedAt": "2026-10-11T12:08:34.000Z",
+      "updatedAt": "2026-10-13T13:04:46.330Z",
       "assignedAgent": {
         "id": "cmv6ii8bp0006ll7ccezp7l6q",
         "name": "Vikas"
@@ -1469,7 +1844,7 @@
       "latestRemark": "No Answer",
       "assignedAgentId": "cmv6ii8bp0006ll7ccezp7l6q",
       "createdAt": "2026-10-11T12:07:02.000Z",
-      "updatedAt": "2026-10-11T12:07:02.000Z",
+      "updatedAt": "2026-10-13T13:04:45.116Z",
       "assignedAgent": {
         "id": "cmv6ii8bp0006ll7ccezp7l6q",
         "name": "Vikas"
@@ -1494,7 +1869,7 @@
       "latestRemark": "No Answer",
       "assignedAgentId": "cmv6ii8bp0006ll7ccezp7l6q",
       "createdAt": "2026-10-11T12:06:05.000Z",
-      "updatedAt": "2026-10-11T12:06:05.000Z",
+      "updatedAt": "2026-10-13T13:04:43.851Z",
       "assignedAgent": {
         "id": "cmv6ii8bp0006ll7ccezp7l6q",
         "name": "Vikas"
@@ -1519,7 +1894,7 @@
       "latestRemark": "No Answer",
       "assignedAgentId": "cmv6ii8bp0006ll7ccezp7l6q",
       "createdAt": "2026-10-11T12:05:11.000Z",
-      "updatedAt": "2026-10-11T12:05:11.000Z",
+      "updatedAt": "2026-10-13T13:04:43.037Z",
       "assignedAgent": {
         "id": "cmv6ii8bp0006ll7ccezp7l6q",
         "name": "Vikas"
@@ -1534,7 +1909,7 @@
       "callOutcome": "CONNECTED",
       "notConnectedReason": null,
       "disposition": "NOT_INTERESTED",
-      "projectName": "Nivasa II",
+      "projectName": "Vasundhara",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -1544,7 +1919,7 @@
       "latestRemark": "3bhk-140 gaj 1cr",
       "assignedAgentId": "cmv6ii8ac0003ll7cwikviijn",
       "createdAt": "2026-10-11T11:57:56.000Z",
-      "updatedAt": "2026-10-11T11:57:56.000Z",
+      "updatedAt": "2026-10-13T13:04:41.484Z",
       "assignedAgent": {
         "id": "cmv6ii8ac0003ll7cwikviijn",
         "name": "Nikhil"
@@ -1559,7 +1934,7 @@
       "callOutcome": "CONNECTED",
       "notConnectedReason": null,
       "disposition": "INTERESTED_FOLLOW_UP",
-      "projectName": "Nivasa II",
+      "projectName": "Vasundhara",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -1569,7 +1944,7 @@
       "latestRemark": "Ds kar do",
       "assignedAgentId": "cmv6ii8ac0003ll7cwikviijn",
       "createdAt": "2026-10-11T11:56:39.000Z",
-      "updatedAt": "2026-10-11T11:56:39.000Z",
+      "updatedAt": "2026-10-13T13:04:40.476Z",
       "assignedAgent": {
         "id": "cmv6ii8ac0003ll7cwikviijn",
         "name": "Nikhil"
@@ -1584,7 +1959,7 @@
       "callOutcome": "NOT_CONNECTED",
       "notConnectedReason": "SWITCHED_OFF",
       "disposition": "NOT_CONNECTED",
-      "projectName": "Nivasa II",
+      "projectName": "General Enquiry",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -1594,7 +1969,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii8ac0003ll7cwikviijn",
       "createdAt": "2026-10-11T11:55:33.000Z",
-      "updatedAt": "2026-10-11T11:55:33.000Z",
+      "updatedAt": "2026-10-13T13:04:39.632Z",
       "assignedAgent": {
         "id": "cmv6ii8ac0003ll7cwikviijn",
         "name": "Nikhil"
@@ -1609,7 +1984,7 @@
       "callOutcome": "CONNECTED",
       "notConnectedReason": null,
       "disposition": "SITE_VISIT_SCHEDULED",
-      "projectName": "Nivasa II",
+      "projectName": "Velora",
       "requirement": null,
       "budget": "L75_PLUS",
       "followUpDate": null,
@@ -1619,7 +1994,7 @@
       "latestRemark": "3bhk -150 gaj",
       "assignedAgentId": "cmv6ii8ac0003ll7cwikviijn",
       "createdAt": "2026-10-11T11:53:51.000Z",
-      "updatedAt": "2026-10-11T11:53:51.000Z",
+      "updatedAt": "2026-10-13T13:04:38.792Z",
       "assignedAgent": {
         "id": "cmv6ii8ac0003ll7cwikviijn",
         "name": "Nikhil"
@@ -1634,7 +2009,7 @@
       "callOutcome": "CONNECTED",
       "notConnectedReason": null,
       "disposition": "SITE_VISIT_SCHEDULED",
-      "projectName": "Nivasa II",
+      "projectName": "Vasundhara",
       "requirement": null,
       "budget": "L75_PLUS",
       "followUpDate": null,
@@ -1644,7 +2019,7 @@
       "latestRemark": null,
       "assignedAgentId": "cmv6ii8ac0003ll7cwikviijn",
       "createdAt": "2026-10-11T11:52:22.000Z",
-      "updatedAt": "2026-10-11T11:52:22.000Z",
+      "updatedAt": "2026-10-13T13:04:37.965Z",
       "assignedAgent": {
         "id": "cmv6ii8ac0003ll7cwikviijn",
         "name": "Nikhil"
@@ -1659,7 +2034,7 @@
       "callOutcome": "CONNECTED",
       "notConnectedReason": null,
       "disposition": "SITE_VISIT_SCHEDULED",
-      "projectName": "Nivasa II",
+      "projectName": "Vasundhara",
       "requirement": null,
       "budget": "L75_PLUS",
       "followUpDate": null,
@@ -1669,10 +2044,35 @@
       "latestRemark": "Plannig for visit",
       "assignedAgentId": "cmv6ii8ac0003ll7cwikviijn",
       "createdAt": "2026-10-11T11:51:07.000Z",
-      "updatedAt": "2026-10-11T11:51:07.000Z",
+      "updatedAt": "2026-10-13T13:04:37.114Z",
       "assignedAgent": {
         "id": "cmv6ii8ac0003ll7cwikviijn",
         "name": "Nikhil"
+      }
+    },
+    {
+      "id": "cmv6krz02000xpmfibtca87sa",
+      "phone": "8142222100",
+      "name": "Pratibha",
+      "leadSource": "CALLING_SHEET",
+      "totalInteractions": 2,
+      "callOutcome": "NOT_CONNECTED",
+      "notConnectedReason": "CALL_NOT_PICKED",
+      "disposition": "NOT_CONNECTED",
+      "projectName": "General Enquiry",
+      "requirement": null,
+      "budget": null,
+      "followUpDate": null,
+      "visitDate": null,
+      "visitStatus": "NONE",
+      "previousVisitDate": null,
+      "latestRemark": null,
+      "assignedAgentId": "cmv6ii8b80005ll7cdixvz09g",
+      "createdAt": "2026-10-11T11:49:43.000Z",
+      "updatedAt": "2026-10-13T13:04:36.004Z",
+      "assignedAgent": {
+        "id": "cmv6ii8b80005ll7cdixvz09g",
+        "name": "Gulshan"
       }
     },
     {
@@ -1694,7 +2094,7 @@
       "latestRemark": "Visited int for nivasa 2",
       "assignedAgentId": "cmv6ii8ac0003ll7cwikviijn",
       "createdAt": "2026-10-11T11:48:51.000Z",
-      "updatedAt": "2026-10-11T11:48:51.000Z",
+      "updatedAt": "2026-10-13T13:04:35.185Z",
       "assignedAgent": {
         "id": "cmv6ii8ac0003ll7cwikviijn",
         "name": "Nikhil"
@@ -1709,7 +2109,7 @@
       "callOutcome": "CONNECTED",
       "notConnectedReason": null,
       "disposition": "NOT_INTERESTED",
-      "projectName": "Nivasa II",
+      "projectName": "General Enquiry",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -1719,7 +2119,7 @@
       "latestRemark": "Dwarka exp",
       "assignedAgentId": "cmv6ii8ac0003ll7cwikviijn",
       "createdAt": "2026-10-11T11:47:39.000Z",
-      "updatedAt": "2026-10-11T11:47:39.000Z",
+      "updatedAt": "2026-10-13T13:04:34.116Z",
       "assignedAgent": {
         "id": "cmv6ii8ac0003ll7cwikviijn",
         "name": "Nikhil"
@@ -1734,7 +2134,7 @@
       "callOutcome": "CONNECTED",
       "notConnectedReason": null,
       "disposition": "SITE_VISIT_SCHEDULED",
-      "projectName": "Nivasa II",
+      "projectName": "General Enquiry",
       "requirement": null,
       "budget": "L50_75",
       "followUpDate": null,
@@ -1744,7 +2144,7 @@
       "latestRemark": "Na",
       "assignedAgentId": "cmv6ii8ac0003ll7cwikviijn",
       "createdAt": "2026-10-11T11:46:29.000Z",
-      "updatedAt": "2026-10-11T11:46:29.000Z",
+      "updatedAt": "2026-10-13T13:04:33.016Z",
       "assignedAgent": {
         "id": "cmv6ii8ac0003ll7cwikviijn",
         "name": "Nikhil"
@@ -1759,7 +2159,7 @@
       "callOutcome": "CONNECTED",
       "notConnectedReason": null,
       "disposition": "NOT_INTERESTED",
-      "projectName": "Nivasa II",
+      "projectName": "General Enquiry",
       "requirement": null,
       "budget": null,
       "followUpDate": null,
@@ -1769,7 +2169,7 @@
       "latestRemark": "Not req",
       "assignedAgentId": "cmv6ii8ac0003ll7cwikviijn",
       "createdAt": "2026-10-11T11:45:13.000Z",
-      "updatedAt": "2026-10-11T11:45:13.000Z",
+      "updatedAt": "2026-10-13T13:04:32.197Z",
       "assignedAgent": {
         "id": "cmv6ii8ac0003ll7cwikviijn",
         "name": "Nikhil"
@@ -1794,7 +2194,7 @@
       "latestRemark": "3bhk ds",
       "assignedAgentId": "cmv6ii8ac0003ll7cwikviijn",
       "createdAt": "2026-10-11T11:42:23.000Z",
-      "updatedAt": "2026-10-11T11:42:23.000Z",
+      "updatedAt": "2026-10-13T13:04:28.588Z",
       "assignedAgent": {
         "id": "cmv6ii8ac0003ll7cwikviijn",
         "name": "Nikhil"
@@ -1805,9 +2205,9 @@
       "phone": "9811645856",
       "name": "Karan",
       "leadSource": "CALLING_SHEET",
-      "totalInteractions": 1,
-      "callOutcome": "CONNECTED",
-      "notConnectedReason": null,
+      "totalInteractions": 2,
+      "callOutcome": "NOT_CONNECTED",
+      "notConnectedReason": "CALL_NOT_PICKED",
       "disposition": "SITE_VISIT_SCHEDULED",
       "projectName": "Nivasa II",
       "requirement": null,
@@ -1815,11 +2215,11 @@
       "followUpDate": null,
       "visitDate": "2026-10-12T00:00:00.000Z",
       "visitStatus": "SCHEDULED",
-      "previousVisitDate": null,
-      "latestRemark": "Monday planning for visit the site",
+      "previousVisitDate": "2026-10-12T00:00:00.000Z",
+      "latestRemark": "Client response in wtsp chat - Not sure, will update",
       "assignedAgentId": "cmv6ii8900001ll7c5oa7es81",
       "createdAt": "2026-10-10T12:26:05.000Z",
-      "updatedAt": "2026-10-10T12:26:05.000Z",
+      "updatedAt": "2026-10-14T13:00:01.302Z",
       "assignedAgent": {
         "id": "cmv6ii8900001ll7c5oa7es81",
         "name": "Nihal"
@@ -1844,7 +2244,7 @@
       "latestRemark": "Out of Service",
       "assignedAgentId": "cmv6ii8bp0006ll7ccezp7l6q",
       "createdAt": "2026-10-10T12:25:06.000Z",
-      "updatedAt": "2026-10-10T12:25:06.000Z",
+      "updatedAt": "2026-10-13T13:04:21.546Z",
       "assignedAgent": {
         "id": "cmv6ii8bp0006ll7ccezp7l6q",
         "name": "Vikas"
@@ -1855,21 +2255,21 @@
       "phone": "8130149231",
       "name": "Karan",
       "leadSource": "CALLING_SHEET",
-      "totalInteractions": 1,
+      "totalInteractions": 2,
       "callOutcome": "CONNECTED",
       "notConnectedReason": null,
-      "disposition": "SITE_VISIT_SCHEDULED",
-      "projectName": "Nivasa II",
-      "requirement": null,
+      "disposition": "INTERESTED_FOLLOW_UP",
+      "projectName": "Amaryllis",
+      "requirement": "INDEPENDENT_FLOOR",
       "budget": "L75_PLUS",
       "followUpDate": null,
-      "visitDate": "2026-10-10T00:00:00.000Z",
-      "visitStatus": "SCHEDULED",
-      "previousVisitDate": null,
-      "latestRemark": "Re visit planning with wife",
+      "visitDate": null,
+      "visitStatus": "NONE",
+      "previousVisitDate": "2026-10-10T00:00:00.000Z",
+      "latestRemark": "Intrested hai... Wife ke sath visit kar liya, thoda doubt hai, or bhi explore kar raha hai...pani aor school ke bare me pata kar raha hai.., Sunday tak batayega",
       "assignedAgentId": "cmv6ii8900001ll7c5oa7es81",
       "createdAt": "2026-10-10T12:23:03.000Z",
-      "updatedAt": "2026-10-10T12:23:03.000Z",
+      "updatedAt": "2026-10-14T13:04:22.931Z",
       "assignedAgent": {
         "id": "cmv6ii8900001ll7c5oa7es81",
         "name": "Nihal"
@@ -1877,6 +2277,276 @@
     }
   ],
   "logs": [
+    {
+      "id": "cmvatzwku0013w6szs7samsy8",
+      "leadId": "cmvatzwi70011w6szoz66h4rp",
+      "agentId": "cmv6ii8b80005ll7cdixvz09g",
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "NOT_INTERESTED",
+      "requirement": null,
+      "budget": null,
+      "visitDate": null,
+      "visitStatus": "NONE",
+      "remark": "[Reason: Other Reason]",
+      "interactionNumber": 1,
+      "createdAt": "2026-10-16T10:35:08.334Z"
+    },
+    {
+      "id": "cmvatyxko000yw6szd7mcvdp7",
+      "leadId": "cmvatyxka000ww6szrgd9knme",
+      "agentId": "cmv6ii8b80005ll7cdixvz09g",
+      "callOutcome": "NOT_CONNECTED",
+      "notConnectedReason": "CALL_NOT_PICKED",
+      "disposition": null,
+      "requirement": null,
+      "budget": null,
+      "visitDate": null,
+      "visitStatus": "NONE",
+      "remark": null,
+      "interactionNumber": 1,
+      "createdAt": "2026-10-16T10:34:22.968Z"
+    },
+    {
+      "id": "cmvatydqy000tw6szz42m87eq",
+      "leadId": "cmvatydqk000rw6sz52v806qi",
+      "agentId": "cmv6ii8b80005ll7cdixvz09g",
+      "callOutcome": "NOT_CONNECTED",
+      "notConnectedReason": "CALL_NOT_PICKED",
+      "disposition": null,
+      "requirement": null,
+      "budget": null,
+      "visitDate": null,
+      "visitStatus": "NONE",
+      "remark": null,
+      "interactionNumber": 1,
+      "createdAt": "2026-10-16T10:33:57.275Z"
+    },
+    {
+      "id": "cmvatxt3x000ow6sztkzglxn7",
+      "leadId": "cmvatxt3j000mw6szo9cayw01",
+      "agentId": "cmv6ii8b80005ll7cdixvz09g",
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "LOCATION_MISMATCH",
+      "requirement": "BHK_3",
+      "budget": "L50_75",
+      "visitDate": null,
+      "visitStatus": "NONE",
+      "remark": null,
+      "interactionNumber": 1,
+      "createdAt": "2026-10-16T10:33:30.526Z"
+    },
+    {
+      "id": "cmvatx0kt000jw6szzlhzpqfz",
+      "leadId": "cmvatx0iv000hw6szi272qmnn",
+      "agentId": "cmv6ii8b80005ll7cdixvz09g",
+      "callOutcome": "NOT_CONNECTED",
+      "notConnectedReason": "SWITCHED_OFF",
+      "disposition": null,
+      "requirement": null,
+      "budget": null,
+      "visitDate": null,
+      "visitStatus": "NONE",
+      "remark": null,
+      "interactionNumber": 1,
+      "createdAt": "2026-10-16T10:32:53.550Z"
+    },
+    {
+      "id": "cmvatwat6000ew6szvvdkj2se",
+      "leadId": "cmvatwass000cw6szjbvl4i46",
+      "agentId": "cmv6ii8b80005ll7cdixvz09g",
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "SITE_VISIT_SCHEDULED",
+      "requirement": "BHK_3",
+      "budget": "L50_75",
+      "visitDate": "2026-10-17T00:00:00.000Z",
+      "visitStatus": "SCHEDULED",
+      "remark": null,
+      "interactionNumber": 1,
+      "createdAt": "2026-10-16T10:32:20.155Z"
+    },
+    {
+      "id": "cmvatv2dd0009w6szk3gptdb7",
+      "leadId": "cmvatv2cy0007w6szawr7fsk9",
+      "agentId": "cmv6ii8b80005ll7cdixvz09g",
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "SITE_VISIT_SCHEDULED",
+      "requirement": "BHK_3",
+      "budget": "L75_PLUS",
+      "visitDate": "2026-10-17T00:00:00.000Z",
+      "visitStatus": "VISIT_DONE",
+      "remark": null,
+      "interactionNumber": 1,
+      "createdAt": "2026-10-16T10:31:22.562Z"
+    },
+    {
+      "id": "cmvattwoq0004w6szh6janiqe",
+      "leadId": "cmvattwmi0002w6szpqgf01ge",
+      "agentId": "cmv6ii8b80005ll7cdixvz09g",
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "SITE_VISIT_SCHEDULED",
+      "requirement": "BHK_3",
+      "budget": "L50_75",
+      "visitDate": "2026-10-24T00:00:00.000Z",
+      "visitStatus": "VISIT_DONE",
+      "remark": null,
+      "interactionNumber": 1,
+      "createdAt": "2026-10-16T10:30:28.539Z"
+    },
+    {
+      "id": "cmvaswn6h0013cdosc6ggw39h",
+      "leadId": "cmvaswn580011cdosuffj1lja",
+      "agentId": "cmv6ii8ac0003ll7cwikviijn",
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "INTERESTED_FOLLOW_UP",
+      "requirement": "BHK_3",
+      "budget": "L50_75",
+      "visitDate": null,
+      "visitStatus": "NONE",
+      "remark": "After diwali",
+      "interactionNumber": 1,
+      "createdAt": "2026-10-16T10:04:36.569Z"
+    },
+    {
+      "id": "cmvassfcu000ycdosg5s824fu",
+      "leadId": "cmvassfad000wcdosp5a6pfqe",
+      "agentId": "cmv6ii89w0002ll7cccia5nbc",
+      "callOutcome": "NOT_CONNECTED",
+      "notConnectedReason": "CALL_NOT_PICKED",
+      "disposition": null,
+      "requirement": null,
+      "budget": null,
+      "visitDate": null,
+      "visitStatus": "NONE",
+      "remark": null,
+      "interactionNumber": 1,
+      "createdAt": "2026-10-16T10:01:19.807Z"
+    },
+    {
+      "id": "cmvasrr0k000tcdos95k2pimm",
+      "leadId": "cmvasrr07000rcdosn9rwzour",
+      "agentId": "cmv6ii89w0002ll7cccia5nbc",
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "INTERESTED_FOLLOW_UP",
+      "requirement": "BHK_3",
+      "budget": "L75_PLUS",
+      "visitDate": null,
+      "visitStatus": "NONE",
+      "remark": null,
+      "interactionNumber": 1,
+      "createdAt": "2026-10-16T10:00:48.261Z"
+    },
+    {
+      "id": "cmvasr0ch000ocdos7mjzc5qp",
+      "leadId": "cmvasr0c4000mcdos9w3pemdl",
+      "agentId": "cmv6ii89w0002ll7cccia5nbc",
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "LOCATION_MISMATCH",
+      "requirement": "BHK_3",
+      "budget": "L50_75",
+      "visitDate": null,
+      "visitStatus": "NONE",
+      "remark": "want in faridabad",
+      "interactionNumber": 1,
+      "createdAt": "2026-10-16T10:00:13.698Z"
+    },
+    {
+      "id": "cmvaspnmw000jcdosvrauscl9",
+      "leadId": "cmvaspnmi000hcdosly4yf9ns",
+      "agentId": "cmv6ii89w0002ll7cccia5nbc",
+      "callOutcome": "NOT_CONNECTED",
+      "notConnectedReason": "CALL_NOT_PICKED",
+      "disposition": null,
+      "requirement": null,
+      "budget": null,
+      "visitDate": null,
+      "visitStatus": "NONE",
+      "remark": null,
+      "interactionNumber": 1,
+      "createdAt": "2026-10-16T09:59:10.568Z"
+    },
+    {
+      "id": "cmvasoy66000ecdos5f6pfque",
+      "leadId": "cmvasoy5r000ccdosmhmtd0sc",
+      "agentId": "cmv6ii89w0002ll7cccia5nbc",
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "INTERESTED_FOLLOW_UP",
+      "requirement": "BHK_3",
+      "budget": "L50_75",
+      "visitDate": null,
+      "visitStatus": "NONE",
+      "remark": null,
+      "interactionNumber": 1,
+      "createdAt": "2026-10-16T09:58:37.566Z"
+    },
+    {
+      "id": "cmvasnuu10009cdoszpdka7lo",
+      "leadId": "cmvasnusz0007cdosajo4dm0d",
+      "agentId": "cmv6ii89w0002ll7cccia5nbc",
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "SITE_VISIT_SCHEDULED",
+      "requirement": "BHK_3",
+      "budget": "L50_75",
+      "visitDate": "2026-10-18T00:00:00.000Z",
+      "visitStatus": "SCHEDULED",
+      "remark": null,
+      "interactionNumber": 1,
+      "createdAt": "2026-10-16T09:57:46.585Z"
+    },
+    {
+      "id": "cmvasmps80004cdosm35qljov",
+      "leadId": "cmvasmpp90002cdosfandcmox",
+      "agentId": "cmv6ii89w0002ll7cccia5nbc",
+      "callOutcome": "NOT_CONNECTED",
+      "notConnectedReason": "CALL_NOT_PICKED",
+      "disposition": null,
+      "requirement": null,
+      "budget": null,
+      "visitDate": null,
+      "visitStatus": "NONE",
+      "remark": null,
+      "interactionNumber": 1,
+      "createdAt": "2026-10-16T09:56:53.384Z"
+    },
+    {
+      "id": "cmv84g4nm0005f9elxub38sqa",
+      "leadId": "cmv6krt6x0001pmfi09pbsy87",
+      "agentId": "cmv6ii8900001ll7c5oa7es81",
+      "callOutcome": "CONNECTED",
+      "notConnectedReason": null,
+      "disposition": "INTERESTED_FOLLOW_UP",
+      "requirement": "INDEPENDENT_FLOOR",
+      "budget": "L75_PLUS",
+      "visitDate": null,
+      "visitStatus": "NONE",
+      "remark": "Intrested hai... Wife ke sath visit kar liya, thoda doubt hai, or bhi explore kar raha hai...pani aor school ke bare me pata kar raha hai.., Sunday tak batayega",
+      "interactionNumber": 2,
+      "createdAt": "2026-10-14T13:04:22.931Z"
+    },
+    {
+      "id": "cmv84aiub0002f9elixi05ulj",
+      "leadId": "cmv6krvqg0009pmfibsiq8s5l",
+      "agentId": "cmv6ii8900001ll7c5oa7es81",
+      "callOutcome": "NOT_CONNECTED",
+      "notConnectedReason": "CALL_NOT_PICKED",
+      "disposition": null,
+      "requirement": null,
+      "budget": null,
+      "visitDate": null,
+      "visitStatus": "NONE",
+      "remark": "Client response in wtsp chat - Not sure, will update",
+      "interactionNumber": 2,
+      "createdAt": "2026-10-14T13:00:01.380Z"
+    },
     {
       "id": "cmv6mdiom00023trs2pi23upp",
       "leadId": "cmv6kslht0061pmfie8543gqc",
@@ -1891,6 +2561,21 @@
       "remark": "Two more called tomorrow call again \nAnd details shared",
       "interactionNumber": 2,
       "createdAt": "2026-10-13T11:50:41.879Z"
+    },
+    {
+      "id": "cmv6kstfs007npmfixxmx87yj",
+      "leadId": "cmv6kst8a007lpmfi1p5x3q8p",
+      "agentId": "cmv6ii8b80005ll7cdixvz09g",
+      "callOutcome": "NOT_CONNECTED",
+      "notConnectedReason": "CALL_NOT_PICKED",
+      "disposition": "NOT_CONNECTED",
+      "requirement": null,
+      "budget": null,
+      "visitDate": null,
+      "visitStatus": null,
+      "remark": null,
+      "interactionNumber": 1,
+      "createdAt": "2026-10-12T12:39:04.000Z"
     },
     {
       "id": "cmv6ksx180087pmfi599894qx",
@@ -1963,21 +2648,6 @@
       "budget": null,
       "visitDate": "2026-10-17T00:00:00.000Z",
       "visitStatus": "SCHEDULED",
-      "remark": null,
-      "interactionNumber": 1,
-      "createdAt": "2026-10-12T12:39:04.000Z"
-    },
-    {
-      "id": "cmv6kstfs007npmfixxmx87yj",
-      "leadId": "cmv6kst8a007lpmfi1p5x3q8p",
-      "agentId": "cmv6ii8b80005ll7cdixvz09g",
-      "callOutcome": "NOT_CONNECTED",
-      "notConnectedReason": "CALL_NOT_PICKED",
-      "disposition": "NOT_CONNECTED",
-      "requirement": null,
-      "budget": null,
-      "visitDate": null,
-      "visitStatus": null,
       "remark": null,
       "interactionNumber": 1,
       "createdAt": "2026-10-12T12:39:04.000Z"

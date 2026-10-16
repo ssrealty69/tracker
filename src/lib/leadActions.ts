@@ -82,7 +82,7 @@ async function isDbLive(): Promise<boolean> {
   lastDbCheck = now;
 
   try {
-    const timeoutMs = isLocalhost ? 600 : 3500;
+    const timeoutMs = isLocalhost ? 600 : 7000;
     const res = await Promise.race([
       prisma.$queryRaw`SELECT 1`,
       new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), timeoutMs)),
@@ -200,9 +200,21 @@ function submitLeadToStore(
         finalVisitDate = null;
       }
     } else {
-      // Call not connected: preserve existing visit status and date
-      finalVisitStatus = existing.visitStatus;
-      finalVisitDate = existing.visitDate;
+      // Call not connected:
+      if (
+        existing.disposition === Disposition.INTERESTED_FOLLOW_UP ||
+        existing.disposition === Disposition.NOT_INTERESTED ||
+        existing.disposition === Disposition.BUDGET_MISMATCH ||
+        existing.disposition === Disposition.LOCATION_MISMATCH ||
+        existing.disposition === Disposition.JUNK_BROKER ||
+        existing.visitStatus === VisitStatus.NONE
+      ) {
+        finalVisitStatus = VisitStatus.NONE;
+        finalVisitDate = null;
+      } else {
+        finalVisitStatus = existing.visitStatus;
+        finalVisitDate = existing.visitDate;
+      }
     }
 
     store.leads[existingIndex] = {
@@ -388,10 +400,22 @@ export async function submitLead(data: LeadFormData): Promise<LeadFormResult> {
             finalVisitDate = null;
           }
         } else {
-          // Call not connected: preserve existing visit status and date
+          // Call not connected:
           if (existingLead) {
-            finalVisitStatus = existingLead.visitStatus;
-            finalVisitDate = existingLead.visitDate;
+            if (
+              existingLead.disposition === Disposition.INTERESTED_FOLLOW_UP ||
+              existingLead.disposition === Disposition.NOT_INTERESTED ||
+              existingLead.disposition === Disposition.BUDGET_MISMATCH ||
+              existingLead.disposition === Disposition.LOCATION_MISMATCH ||
+              existingLead.disposition === Disposition.JUNK_BROKER ||
+              existingLead.visitStatus === VisitStatus.NONE
+            ) {
+              finalVisitStatus = VisitStatus.NONE;
+              finalVisitDate = null;
+            } else {
+              finalVisitStatus = existingLead.visitStatus;
+              finalVisitDate = existingLead.visitDate;
+            }
           }
         }
 
@@ -885,7 +909,15 @@ export async function getDashboardStats(startDate?: Date, endDate?: Date): Promi
             where: { isActive: true },
             include: {
               activityLogs: { where: logDateFilter },
-              leads: { where: leadDateFilter },
+              leads: {
+                where: leadDateFilter,
+                include: {
+                  activityLogs: {
+                    orderBy: { createdAt: 'desc' },
+                    take: 1,
+                  },
+                },
+              },
             },
           }),
         ]);
@@ -894,7 +926,7 @@ export async function getDashboardStats(startDate?: Date, endDate?: Date): Promi
       let droppedVisits = 0;
 
       const agentLeaderboard: AgentStatRow[] = agentStats.map(
-        (agent: Agent & { activityLogs: ActivityLog[]; leads: Lead[] }) => {
+        (agent: any) => {
           const logs = agent.activityLogs;
           const totalDials = logs.length;
           const agentLeads = agent.leads;
@@ -909,14 +941,21 @@ export async function getDashboardStats(startDate?: Date, endDate?: Date): Promi
           const contactRate =
             totalLeads > 0 ? Math.round((connectedCalls / totalLeads) * 100) : 0;
           const interested = agentLeads.filter(
-            (l: Lead) => l.disposition === Disposition.INTERESTED_FOLLOW_UP
+            (l: any) => {
+              const disp = l.activityLogs?.[0]?.disposition || l.disposition;
+              return disp === Disposition.INTERESTED_FOLLOW_UP;
+            }
           ).length;
           const notInterested = agentLeads.filter(
-            (l: Lead) =>
-              l.disposition === Disposition.NOT_INTERESTED ||
-              l.disposition === Disposition.BUDGET_MISMATCH ||
-              l.disposition === Disposition.LOCATION_MISMATCH ||
-              l.disposition === Disposition.JUNK_BROKER
+            (l: any) => {
+              const disp = l.activityLogs?.[0]?.disposition || l.disposition;
+              return (
+                disp === Disposition.NOT_INTERESTED ||
+                disp === Disposition.BUDGET_MISMATCH ||
+                disp === Disposition.LOCATION_MISMATCH ||
+                disp === Disposition.JUNK_BROKER
+              );
+            }
           ).length;
 
           let visitsUpcoming = 0;
@@ -924,13 +963,27 @@ export async function getDashboardStats(startDate?: Date, endDate?: Date): Promi
           let visitsDone = 0;
 
           const allLeads: AgentVisitLead[] = agent.leads
-            .map((l: Lead) => {
+            .map((l: any) => {
+              const latestLog = l.activityLogs?.[0];
+              const disposition = latestLog?.disposition || l.disposition;
+              const latestRemark = latestLog?.remark || l.latestRemark;
+
               const isDone = l.visitStatus === VisitStatus.VISIT_DONE;
+              const hasVisitDisp = disposition === Disposition.SITE_VISIT_SCHEDULED;
+              const isOtherDisp =
+                disposition === Disposition.INTERESTED_FOLLOW_UP ||
+                disposition === Disposition.NOT_INTERESTED ||
+                disposition === Disposition.BUDGET_MISMATCH ||
+                disposition === Disposition.LOCATION_MISMATCH ||
+                disposition === Disposition.JUNK_BROKER;
+
               const isScheduled =
                 !isDone &&
-                (l.visitStatus === VisitStatus.SCHEDULED ||
-                  ((VisitStatus as any).RESCHEDULED && l.visitStatus === (VisitStatus as any).RESCHEDULED) ||
-                  l.disposition === Disposition.SITE_VISIT_SCHEDULED);
+                !isOtherDisp &&
+                (hasVisitDisp ||
+                  l.visitStatus === VisitStatus.SCHEDULED ||
+                  ((VisitStatus as any).RESCHEDULED && l.visitStatus === (VisitStatus as any).RESCHEDULED));
+
               let isDropped = false;
               let isUpcoming = false;
 
@@ -949,32 +1002,27 @@ export async function getDashboardStats(startDate?: Date, endDate?: Date): Promi
                 name: l.name,
                 agentId: agent.id,
                 agentName: agent.name,
-                projectName: (l as any).projectName || 'Nivasa II',
-                budget: (l as any).budget ? String((l as any).budget) : null,
-                requirement: (l as any).requirement ? String((l as any).requirement) : null,
+                projectName: l.projectName || 'Nivasa II',
+                budget: l.budget ? String(l.budget) : null,
+                requirement: l.requirement ? String(l.requirement) : null,
                 visitDate: l.visitDate ? l.visitDate.toISOString() : (isScheduled ? l.createdAt.toISOString() : null),
-                visitTimeSlot: (l as any).visitTimeSlot || null,
+                visitTimeSlot: l.visitTimeSlot || null,
                 visitStatus: isDone ? VisitStatus.VISIT_DONE : (isScheduled ? VisitStatus.SCHEDULED : l.visitStatus),
-                callOutcome: (l as any).callOutcome || '',
-                disposition: (l as any).disposition || null,
-                followUpDate: (l as any).followUpDate ? new Date((l as any).followUpDate).toISOString() : null,
+                callOutcome: l.callOutcome || '',
+                disposition: disposition || null,
+                followUpDate: l.followUpDate ? new Date(l.followUpDate).toISOString() : null,
                 updatedAt: l.updatedAt.toISOString(),
                 createdAt: l.createdAt.toISOString(),
-                latestRemark: l.latestRemark,
+                latestRemark: latestRemark || null,
                 isDropped,
                 isUpcoming,
                 isDone,
               };
             })
-            .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+            .sort((a: AgentVisitLead, b: AgentVisitLead) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
           const visitLeads: AgentVisitLead[] = allLeads.filter(
-            (l) =>
-              l.visitDate ||
-              l.visitStatus === VisitStatus.SCHEDULED ||
-              ((VisitStatus as any).RESCHEDULED && l.visitStatus === (VisitStatus as any).RESCHEDULED) ||
-              l.visitStatus === VisitStatus.VISIT_DONE ||
-              l.disposition === Disposition.SITE_VISIT_SCHEDULED
+            (l) => l.isUpcoming || l.isDropped || l.isDone
           );
 
           visitLeads.forEach((vl) => {
@@ -1081,11 +1129,21 @@ export async function getDashboardStats(startDate?: Date, endDate?: Date): Promi
     const allLeads: AgentVisitLead[] = agentLeads
       .map((l) => {
         const isDone = l.visitStatus === VisitStatus.VISIT_DONE;
+        const hasVisitDisp = l.disposition === Disposition.SITE_VISIT_SCHEDULED;
+        const isOtherDisp =
+          l.disposition === Disposition.INTERESTED_FOLLOW_UP ||
+          l.disposition === Disposition.NOT_INTERESTED ||
+          l.disposition === Disposition.BUDGET_MISMATCH ||
+          l.disposition === Disposition.LOCATION_MISMATCH ||
+          l.disposition === Disposition.JUNK_BROKER;
+
         const isScheduled =
           !isDone &&
-          (l.visitStatus === VisitStatus.SCHEDULED ||
-            ((VisitStatus as any).RESCHEDULED && l.visitStatus === (VisitStatus as any).RESCHEDULED) ||
-            l.disposition === Disposition.SITE_VISIT_SCHEDULED);
+          !isOtherDisp &&
+          (hasVisitDisp ||
+            l.visitStatus === VisitStatus.SCHEDULED ||
+            ((VisitStatus as any).RESCHEDULED && l.visitStatus === (VisitStatus as any).RESCHEDULED));
+
         let isDropped = false;
         let isUpcoming = false;
 
@@ -1124,12 +1182,7 @@ export async function getDashboardStats(startDate?: Date, endDate?: Date): Promi
       .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
     const visitLeads: AgentVisitLead[] = allLeads.filter(
-      (l) =>
-        l.visitDate ||
-        l.visitStatus === VisitStatus.SCHEDULED ||
-        ((VisitStatus as any).RESCHEDULED && l.visitStatus === (VisitStatus as any).RESCHEDULED) ||
-        l.visitStatus === VisitStatus.VISIT_DONE ||
-        l.disposition === Disposition.SITE_VISIT_SCHEDULED
+      (l) => l.isUpcoming || l.isDropped || l.isDone
     );
 
     visitLeads.forEach((vl) => {
@@ -1189,6 +1242,15 @@ export async function getVisitsForDate(date: Date) {
           visitStatus: {
             in: [VisitStatus.SCHEDULED, VisitStatus.RESCHEDULED, VisitStatus.VISIT_DONE],
           },
+          disposition: {
+            notIn: [
+              Disposition.INTERESTED_FOLLOW_UP,
+              Disposition.NOT_INTERESTED,
+              Disposition.BUDGET_MISMATCH,
+              Disposition.LOCATION_MISMATCH,
+              Disposition.JUNK_BROKER,
+            ],
+          },
         },
         include: { assignedAgent: { select: { name: true, id: true } } },
         orderBy: { visitDate: 'asc' },
@@ -1204,9 +1266,16 @@ export async function getVisitsForDate(date: Date) {
     .filter((l) => {
       if (!l.visitDate) return false;
       const v = new Date(l.visitDate);
+      const isOtherDisp =
+        l.disposition === Disposition.INTERESTED_FOLLOW_UP ||
+        l.disposition === Disposition.NOT_INTERESTED ||
+        l.disposition === Disposition.BUDGET_MISMATCH ||
+        l.disposition === Disposition.LOCATION_MISMATCH ||
+        l.disposition === Disposition.JUNK_BROKER;
       return (
         v >= startOfDay &&
         v <= endOfDay &&
+        !isOtherDisp &&
         (l.visitStatus === VisitStatus.SCHEDULED ||
           l.visitStatus === VisitStatus.RESCHEDULED ||
           l.visitStatus === VisitStatus.VISIT_DONE)
