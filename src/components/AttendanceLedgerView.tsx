@@ -1692,7 +1692,9 @@ export default function AttendanceLedgerView({
                         {(() => {
                           const val = dailyDateFilter ? parseDateToKey(dailyDateFilter) : new Date().toISOString().split('T')[0];
                           const parts = val.split('-');
-                          return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0].slice(-2)}` : val;
+                          const mIdx = parseInt(parts[1], 10) - 1;
+                          const mStr = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][mIdx] || parts[1];
+                          return `${parts[2]}/${mStr}/${parts[0].slice(-2)}`;
                         })()}
                       </span>
                     </div>

@@ -412,16 +412,20 @@ export default function AgentFormPage() {
 
   const todayStr = new Date().toISOString().split('T')[0];
 
-  // Format YYYY-MM-DD -> DD/MM/YY (e.g. 2026-10-14 -> 14/10/26)
+  const MONTH_NAMES_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  // Format YYYY-MM-DD -> DD/MMM/YY (e.g. 2026-10-14 -> 14/Oct/26)
   const formatToDDMMYY = (dateStr: string) => {
     if (!dateStr) return '';
     const [y, m, d] = dateStr.split('-');
     if (!y || !m || !d) return dateStr;
     const shortYear = y.length === 4 ? y.slice(2) : y;
-    return `${d}/${m}/${shortYear}`;
+    const monthIdx = parseInt(m, 10) - 1;
+    const monthStr = MONTH_NAMES_SHORT[monthIdx] || m;
+    return `${d}/${monthStr}/${shortYear}`;
   };
 
-  // Format YYYY-MM-DDTHH:mm -> DD/MM/YY HH:mm (e.g. 2026-10-14T15:30 -> 14/10/26 15:30)
+  // Format YYYY-MM-DDTHH:mm -> DD/MMM/YY HH:mm (e.g. 2026-10-14T15:30 -> 14/Oct/26 15:30)
   const formatToDDMMYYTime = (dtStr: string) => {
     if (!dtStr) return '';
     const [datePart, timePart] = dtStr.split('T');
@@ -429,7 +433,9 @@ export default function AgentFormPage() {
     const [y, m, d] = datePart.split('-');
     if (!y || !m || !d) return dtStr;
     const shortYear = y.length === 4 ? y.slice(2) : y;
-    return `${d}/${m}/${shortYear} ${timePart || ''}`.trim();
+    const monthIdx = parseInt(m, 10) - 1;
+    const monthStr = MONTH_NAMES_SHORT[monthIdx] || m;
+    return `${d}/${monthStr}/${shortYear} ${timePart || ''}`.trim();
   };
 
   // Helper to format date nicely

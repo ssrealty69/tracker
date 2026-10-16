@@ -1485,3 +1485,67 @@ function isSameDay(d1: Date, d2: Date): boolean {
     d1.getFullYear() === d2.getFullYear()
   );
 }
+
+// ─── ALL EXECUTIVE VISITS PORTFOLIO ──────────────────────────────────────────
+export interface ExecutiveVisitGroup {
+  agentId: string;
+  agentName: string;
+  totalScheduled: number;
+  totalDropped: number;
+  totalDone: number;
+  scheduledVisits: AgentVisitLead[];
+  droppedVisits: AgentVisitLead[];
+  doneVisits: AgentVisitLead[];
+}
+
+export interface ExecutiveVisitsPortfolioResult {
+  executives: ExecutiveVisitGroup[];
+  totalScheduledAll: number;
+  totalDroppedAll: number;
+  totalDoneAll: number;
+}
+
+export async function getAllExecutiveVisitsGrouped(): Promise<ExecutiveVisitsPortfolioResult> {
+  const stats = await getDashboardStats();
+  const executives: ExecutiveVisitGroup[] = stats.agentLeaderboard.map((agent) => {
+    const scheduled = (agent.visitLeads || [])
+      .filter((l) => l.isUpcoming)
+      .sort((a, b) => {
+        const da = a.visitDate ? new Date(a.visitDate).getTime() : 0;
+        const db = b.visitDate ? new Date(b.visitDate).getTime() : 0;
+        return da - db;
+      });
+    const dropped = (agent.visitLeads || [])
+      .filter((l) => l.isDropped)
+      .sort((a, b) => {
+        const da = a.visitDate ? new Date(a.visitDate).getTime() : 0;
+        const db = b.visitDate ? new Date(b.visitDate).getTime() : 0;
+        return db - da;
+      });
+    const done = (agent.visitLeads || [])
+      .filter((l) => l.isDone)
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+
+    return {
+      agentId: agent.id,
+      agentName: agent.name,
+      totalScheduled: scheduled.length,
+      totalDropped: dropped.length,
+      totalDone: done.length,
+      scheduledVisits: scheduled,
+      droppedVisits: dropped,
+      doneVisits: done,
+    };
+  });
+
+  const totalScheduledAll = executives.reduce((sum, e) => sum + e.totalScheduled, 0);
+  const totalDroppedAll = executives.reduce((sum, e) => sum + e.totalDropped, 0);
+  const totalDoneAll = executives.reduce((sum, e) => sum + e.totalDone, 0);
+
+  return {
+    executives,
+    totalScheduledAll,
+    totalDroppedAll,
+    totalDoneAll,
+  };
+}

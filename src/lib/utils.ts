@@ -35,7 +35,7 @@ export function formatDate(date: Date | string | null | undefined): string {
     const parts = new Intl.DateTimeFormat('en-GB', {
       timeZone: 'Asia/Kolkata',
       day: '2-digit',
-      month: '2-digit',
+      month: 'short',
       year: '2-digit',
     }).formatToParts(d);
     const get = (type: string) => parts.find((p) => p.type === type)?.value || '';
@@ -56,7 +56,7 @@ export function formatDateTime(date: Date | string | null | undefined): string {
     const parts = new Intl.DateTimeFormat('en-GB', {
       timeZone: 'Asia/Kolkata',
       day: '2-digit',
-      month: '2-digit',
+      month: 'short',
       year: '2-digit',
       hour: '2-digit',
       minute: '2-digit',

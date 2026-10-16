@@ -92,12 +92,16 @@ function getIstDateRange(filter: string): { start?: Date; end?: Date } {
   }
 }
 
+const MONTH_NAMES_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
 const formatDisplayDDMMYY = (isoDate: string) => {
   if (!isoDate) return '';
   const parts = isoDate.split('-');
   if (parts.length === 3) {
     const [y, m, d] = parts;
-    return `${d}/${m}/${y.slice(-2)}`;
+    const monthIdx = parseInt(m, 10) - 1;
+    const monthStr = MONTH_NAMES_SHORT[monthIdx] || m;
+    return `${d}/${monthStr}/${y.slice(-2)}`;
   }
   return isoDate;
 };
@@ -108,7 +112,7 @@ const formatToDDMMYY = (dateInput: string | Date | null | undefined) => {
     const d = new Date(dateInput);
     if (isNaN(d.getTime())) return String(dateInput);
     const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const month = MONTH_NAMES_SHORT[d.getMonth()] || String(d.getMonth() + 1).padStart(2, '0');
     const year = String(d.getFullYear()).slice(-2);
     return `${day}/${month}/${year}`;
   } catch {
