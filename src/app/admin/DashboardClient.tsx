@@ -107,11 +107,10 @@ const formatToDDMMYY = (dateInput: string | Date | null | undefined) => {
   try {
     const d = new Date(dateInput);
     if (isNaN(d.getTime())) return String(dateInput);
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const day = String(d.getDate()).padStart(2, '0');
-    const month = months[d.getMonth()] || String(d.getMonth() + 1).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
     const year = String(d.getFullYear()).slice(-2);
-    return `${day}-${month}-${year}`;
+    return `${day}/${month}/${year}`;
   } catch {
     return '—';
   }
@@ -1005,22 +1004,34 @@ export default function DashboardClient({ initialStats }: Props) {
                                                 <td className="py-2 px-3 whitespace-nowrap">
                                                   {rescheduleLeadId === vLead.id ? (
                                                     <div className="flex items-center gap-1.5 bg-amber-50 p-1 rounded-lg border border-amber-200">
-                                                      <input
-                                                        type="date"
-                                                        value={rescheduleDate}
-                                                        onChange={(e) => setRescheduleDate(e.target.value)}
-                                                        min={new Date().toISOString().split('T')[0]}
-                                                        className="px-1.5 py-0.5 text-[11px] font-mono border border-slate-300 rounded bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                                                      />
+                                                      <div className="relative inline-flex items-center">
+                                                        <div className="flex items-center gap-1 px-2 py-0.5 bg-white border border-slate-300 rounded text-[11px] font-mono font-bold text-slate-800 shadow-2xs">
+                                                          <Calendar size={12} className="text-amber-600 shrink-0" />
+                                                          <span className={rescheduleDate ? 'text-slate-900 font-extrabold' : 'text-slate-400 font-medium'}>
+                                                            {rescheduleDate ? formatDisplayDDMMYY(rescheduleDate) : 'dd/mm/yy'}
+                                                          </span>
+                                                        </div>
+                                                        <input
+                                                          type="date"
+                                                          value={rescheduleDate}
+                                                          onChange={(e) => setRescheduleDate(e.target.value)}
+                                                          min={new Date().toISOString().split('T')[0]}
+                                                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                                          title="Select Reschedule Date (dd/mm/yy)"
+                                                        />
+                                                      </div>
                                                       <button
                                                         onClick={() => handleInlineReschedule(vLead.id)}
-                                                        disabled={actionLoadingId === vLead.id}
+                                                        disabled={actionLoadingId === vLead.id || !rescheduleDate}
                                                         className="px-2 py-0.5 bg-amber-600 hover:bg-amber-700 text-white rounded text-[11px] font-bold shadow-xs disabled:opacity-50"
                                                       >
                                                         {actionLoadingId === vLead.id ? '...' : 'Save'}
                                                       </button>
                                                       <button
-                                                        onClick={() => setRescheduleLeadId(null)}
+                                                        onClick={() => {
+                                                          setRescheduleLeadId(null);
+                                                          setRescheduleDate('');
+                                                        }}
                                                         className="px-1.5 py-0.5 text-slate-600 hover:text-slate-900 text-[11px]"
                                                       >
                                                         Cancel

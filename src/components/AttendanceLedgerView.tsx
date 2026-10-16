@@ -1685,29 +1685,42 @@ export default function AttendanceLedgerView({
 
                 <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
                   <span className="text-[11px] font-bold text-slate-500 pl-1.5">Date:</span>
-                  <input
-                    type="date"
-                    value={
-                      dailyDateFilter
-                        ? parseDateToKey(dailyDateFilter)
-                        : new Date().toISOString().split('T')[0]
-                    }
-                    onChange={(e) => {
-                      if (!e.target.value) {
-                        setDailyDateFilter('');
-                      } else {
-                        const parts = e.target.value.split('-');
-                        const dObj = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-                        const formatted = dObj.toLocaleDateString('en-IN', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric',
-                        });
-                        setDailyDateFilter(formatted);
+                  <div className="relative inline-flex items-center">
+                    <div className="flex items-center gap-1.5 px-2 py-1 text-xs font-mono font-bold bg-white border border-slate-200 rounded-lg text-slate-900 shadow-2xs cursor-pointer">
+                      <CalendarIcon size={13} className="text-indigo-600 shrink-0" />
+                      <span>
+                        {(() => {
+                          const val = dailyDateFilter ? parseDateToKey(dailyDateFilter) : new Date().toISOString().split('T')[0];
+                          const parts = val.split('-');
+                          return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0].slice(-2)}` : val;
+                        })()}
+                      </span>
+                    </div>
+                    <input
+                      type="date"
+                      value={
+                        dailyDateFilter
+                          ? parseDateToKey(dailyDateFilter)
+                          : new Date().toISOString().split('T')[0]
                       }
-                    }}
-                    className="px-2 py-1 text-xs font-mono font-bold bg-white border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
-                  />
+                      onChange={(e) => {
+                        if (!e.target.value) {
+                          setDailyDateFilter('');
+                        } else {
+                          const parts = e.target.value.split('-');
+                          const dObj = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+                          const formatted = dObj.toLocaleDateString('en-IN', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                          });
+                          setDailyDateFilter(formatted);
+                        }
+                      }}
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                      title="Select Date (dd/mm/yy)"
+                    />
+                  </div>
                   {dailyDateFilter && dailyDateFilter !== todayStr && (
                     <button
                       onClick={() => setDailyDateFilter('')}

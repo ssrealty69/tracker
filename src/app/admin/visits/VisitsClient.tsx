@@ -36,6 +36,16 @@ function getLocalDateString(date: Date): string {
   return getISTDateString(date);
 }
 
+const formatDisplayDDMMYY = (isoDate: string) => {
+  if (!isoDate) return '';
+  const parts = isoDate.split('-');
+  if (parts.length === 3) {
+    const [y, m, d] = parts;
+    return `${d}/${m}/${y.slice(-2)}`;
+  }
+  return isoDate;
+};
+
 function addDays(dateStr: string, days: number): string {
   const [y, m, d] = dateStr.split('-').map(Number);
   const dt = new Date(Date.UTC(y, m - 1, d + days));
@@ -318,12 +328,19 @@ export default function VisitsClient({ initialVisits, initialDate }: Props) {
             >
               <ChevronLeft size={15} />
             </button>
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => loadDate(e.target.value)}
-              className="bg-transparent text-xs font-bold text-slate-800 border-0 focus:ring-0 p-1 w-32 cursor-pointer"
-            />
+            <div className="relative inline-flex items-center">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-bold text-slate-800 bg-white border border-slate-200 rounded-lg shadow-2xs cursor-pointer">
+                <Calendar size={13} className="text-indigo-600 shrink-0" />
+                <span>{formatDisplayDDMMYY(selectedDate)}</span>
+              </div>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => loadDate(e.target.value)}
+                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                title="Select Date (dd/mm/yy)"
+              />
+            </div>
             <button
               onClick={() => loadDate(addDays(selectedDate, 1))}
               className="p-1 rounded-lg text-slate-600 hover:bg-slate-200 transition-all cursor-pointer"
@@ -549,17 +566,27 @@ export default function VisitsClient({ initialVisits, initialDate }: Props) {
                         </span>
                       ) : rescheduleId === visit.id ? (
                         <div className="flex items-center justify-center gap-1.5 animate-fade-in-up">
-                          <input
-                            type="date"
-                            value={newDate}
-                            min={todayStr}
-                            onChange={(e) => setNewDate(e.target.value)}
-                            className="form-input text-xs py-1 px-2 w-32"
-                          />
+                          <div className="relative inline-flex items-center">
+                            <div className="flex items-center gap-1 px-2 py-1 text-xs font-mono font-bold bg-white border border-slate-300 rounded-lg text-slate-800 shadow-2xs">
+                              <Calendar size={12} className="text-amber-600 shrink-0" />
+                              <span className={newDate ? 'text-slate-900 font-extrabold' : 'text-slate-400 font-medium'}>
+                                {newDate ? formatDisplayDDMMYY(newDate) : 'dd/mm/yy'}
+                              </span>
+                            </div>
+                            <input
+                              type="date"
+                              value={newDate}
+                              min={todayStr}
+                              onChange={(e) => setNewDate(e.target.value)}
+                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                              title="Select Reschedule Date (dd/mm/yy)"
+                            />
+                          </div>
                           <button
                             type="button"
                             onClick={() => handleReschedule(visit.id)}
-                            className="px-2.5 py-1 rounded-lg bg-amber-600 text-white text-xs font-bold hover:bg-amber-700 transition-all cursor-pointer shadow-2xs"
+                            disabled={!newDate}
+                            className="px-2.5 py-1 rounded-lg bg-amber-600 text-white text-xs font-bold hover:bg-amber-700 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
                           >
                             Save
                           </button>
