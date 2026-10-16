@@ -95,7 +95,54 @@ function friendlyDateLabel(dateStr: string): string {
   }
 }
 
-type ViewTab = 'daily' | 'all-scheduled' | 'all-dropped';
+type ViewTab = 'daily' | 'all-scheduled' | 'all-done' | 'all-dropped';
+type DateFilterOption = 'all' | 'today' | 'tomorrow' | 'this-week' | 'this-month' | 'custom';
+
+function matchesDateFilter(
+  dateInput: string | Date | null | undefined,
+  filter: DateFilterOption,
+  customDate: string
+): boolean {
+  if (filter === 'all') return true;
+  if (!dateInput) return false;
+
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return false;
+  const leadDateIST = getISTDateString(d);
+
+  const todayIST = getISTDateString();
+  const tomorrowIST = addDays(todayIST, 1);
+
+  if (filter === 'today') {
+    return leadDateIST === todayIST;
+  }
+  if (filter === 'tomorrow') {
+    return leadDateIST === tomorrowIST;
+  }
+  if (filter === 'custom') {
+    return customDate ? leadDateIST === customDate : true;
+  }
+  if (filter === 'this-week') {
+    const [y, m, dayNum] = todayIST.split('-').map(Number);
+    const curr = new Date(Date.UTC(y, m - 1, dayNum));
+    const day = curr.getUTCDay();
+    const diffToMonday = day === 0 ? 6 : day - 1;
+    const monday = new Date(curr);
+    monday.setUTCDate(curr.getUTCDate() - diffToMonday);
+    const sunday = new Date(monday);
+    sunday.setUTCDate(monday.getUTCDate() + 6);
+
+    const [ly, lm, lday] = leadDateIST.split('-').map(Number);
+    const leadDt = new Date(Date.UTC(ly, lm - 1, lday));
+    return leadDt >= monday && leadDt <= sunday;
+  }
+  if (filter === 'this-month') {
+    const [todayY, todayM] = todayIST.split('-');
+    const [leadY, leadM] = leadDateIST.split('-');
+    return todayY === leadY && todayM === leadM;
+  }
+  return true;
+}
 
 interface Props {
   initialVisits: Visit[];
@@ -115,6 +162,13 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
   const [newDate, setNewDate] = useState('');
   const [selectedExecutive, setSelectedExecutive] = useState<string>('ALL');
 
+  // Date filters for Scheduled and Done tabs
+  const [scheduledDateFilter, setScheduledDateFilter] = useState<DateFilterOption>('all');
+  const [scheduledCustomDate, setScheduledCustomDate] = useState<string>('');
+
+  const [doneDateFilter, setDoneDateFilter] = useState<DateFilterOption>('all');
+  const [doneCustomDate, setDoneCustomDate] = useState<string>('');
+
   const allExecutiveNames = useMemo(() => {
     const set = new Set<string>(KNOWN_EXECUTIVES);
     visits.forEach((v) => {
@@ -133,16 +187,59 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
     return visits.filter((v) => (v.assignedAgent?.name || 'Unassigned') === selectedExecutive);
   }, [visits, selectedExecutive]);
 
-  // Grouped portfolios
+  // Grouped Scheduled Executives (Filtered by Date & Selected Executive)
   const activeScheduledExecutives = useMemo(() => {
     if (!portfolio?.executives) return [];
-    let list = portfolio.executives.filter((e) => e.totalScheduled > 0);
+    let list = portfolio.executives
+      .map((e) => {
+        const filteredLeads = (e.scheduledVisits || []).filter((l) =>
+          matchesDateFilter(l.visitDate, scheduledDateFilter, scheduledCustomDate)
+        );
+        return {
+          ...e,
+          scheduledVisits: filteredLeads,
+          filteredCount: filteredLeads.length,
+        };
+      })
+      .filter((e) => e.filteredCount > 0);
+
     if (selectedExecutive !== 'ALL') {
       list = list.filter((e) => e.agentName === selectedExecutive);
     }
     return list;
-  }, [portfolio, selectedExecutive]);
+  }, [portfolio, scheduledDateFilter, scheduledCustomDate, selectedExecutive]);
 
+  const totalFilteredScheduled = useMemo(() => {
+    return activeScheduledExecutives.reduce((sum, e) => sum + e.filteredCount, 0);
+  }, [activeScheduledExecutives]);
+
+  // Grouped Done Executives (Filtered by Date & Selected Executive)
+  const activeDoneExecutives = useMemo(() => {
+    if (!portfolio?.executives) return [];
+    let list = portfolio.executives
+      .map((e) => {
+        const filteredLeads = (e.doneVisits || []).filter((l) =>
+          matchesDateFilter(l.visitDate || l.updatedAt, doneDateFilter, doneCustomDate)
+        );
+        return {
+          ...e,
+          doneVisits: filteredLeads,
+          filteredCount: filteredLeads.length,
+        };
+      })
+      .filter((e) => e.filteredCount > 0);
+
+    if (selectedExecutive !== 'ALL') {
+      list = list.filter((e) => e.agentName === selectedExecutive);
+    }
+    return list;
+  }, [portfolio, doneDateFilter, doneCustomDate, selectedExecutive]);
+
+  const totalFilteredDone = useMemo(() => {
+    return activeDoneExecutives.reduce((sum, e) => sum + e.filteredCount, 0);
+  }, [activeDoneExecutives]);
+
+  // Grouped Dropped Executives
   const activeDroppedExecutives = useMemo(() => {
     if (!portfolio?.executives) return [];
     let list = portfolio.executives.filter((e) => e.totalDropped > 0);
@@ -208,7 +305,6 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
     };
   }, [selectedDate, rescheduleId, activeTab]);
 
-  // If user switches to portfolio tab and portfolio not loaded yet, fetch
   useEffect(() => {
     if (activeTab !== 'daily' && !portfolio) {
       loadPortfolio();
@@ -243,6 +339,28 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
     }
   };
 
+  // Mask Phone helper: first 5 digits visible, ending 5 digits masked as XXXXX
+  const renderMaskedPhone = (phone: string | null | undefined) => {
+    if (!phone) return <span className="text-[11px] text-slate-400 font-mono">—</span>;
+    const cleanDigits = phone.replace(/\D/g, '');
+    if (cleanDigits.length >= 10) {
+      const first5 = cleanDigits.slice(0, 5);
+      return (
+        <div className="text-[11px] font-mono inline-flex items-center tracking-tight">
+          <span className="font-bold text-slate-800">{first5}</span>
+          <span className="text-slate-400 font-semibold tracking-wider">XXXXX</span>
+        </div>
+      );
+    }
+    const firstHalf = phone.slice(0, Math.max(0, phone.length - 5));
+    return (
+      <div className="text-[11px] font-mono inline-flex items-center tracking-tight">
+        <span className="font-bold text-slate-800">{firstHalf}</span>
+        <span className="text-slate-400 font-semibold tracking-wider">XXXXX</span>
+      </div>
+    );
+  };
+
   // Excel Export Handler
   const exportToExcel = () => {
     const escapeCsv = (val: string | null | undefined) => {
@@ -255,7 +373,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
       'Status',
       'Executive',
       'Customer Name',
-      'Mobile Number',
+      'Mobile Number (Masked)',
       'Scheduled Visit Date',
       'Project',
       'Configuration',
@@ -284,7 +402,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
           escapeCsv(statusText),
           escapeCsv(execName),
           escapeCsv(v.name),
-          escapeCsv(v.phone),
+          escapeCsv(v.phone ? maskPhone(v.phone) : ''),
           escapeCsv(formatDate(v.visitDate)),
           escapeCsv(((v as any).projectName as string) || ''),
           escapeCsv(v.requirement ? (REQUIREMENT_LABELS[v.requirement] || String(v.requirement)) : ''),
@@ -303,8 +421,26 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
         escapeCsv(l.visitStatus || 'Scheduled'),
         escapeCsv(l.agentName),
         escapeCsv(l.name),
-        escapeCsv(l.phone),
+        escapeCsv(l.phone ? maskPhone(l.phone) : ''),
         escapeCsv(formatDate(l.visitDate)),
+        escapeCsv(l.projectName || ''),
+        escapeCsv(l.requirement || ''),
+        escapeCsv(l.budget || ''),
+        escapeCsv(l.latestRemark || ''),
+      ].join(','));
+    } else if (activeTab === 'all-done') {
+      const list = activeDoneExecutives.flatMap((e) => e.doneVisits);
+      if (list.length === 0) {
+        toast.error('No completed visits to export');
+        return;
+      }
+      fileNameSuffix = `All_Done_${selectedExecutive === 'ALL' ? 'All_Executives' : selectedExecutive.replace(/\s+/g, '_')}_${getISTDateString()}`;
+      rows = list.map((l) => [
+        escapeCsv('Completed'),
+        escapeCsv(l.agentName),
+        escapeCsv(l.name),
+        escapeCsv(l.phone ? maskPhone(l.phone) : ''),
+        escapeCsv(formatDate(l.visitDate || l.updatedAt)),
         escapeCsv(l.projectName || ''),
         escapeCsv(l.requirement || ''),
         escapeCsv(l.budget || ''),
@@ -321,7 +457,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
         escapeCsv('Dropped'),
         escapeCsv(l.agentName),
         escapeCsv(l.name),
-        escapeCsv(l.phone),
+        escapeCsv(l.phone ? maskPhone(l.phone) : ''),
         escapeCsv(formatDate(l.visitDate)),
         escapeCsv(l.projectName || ''),
         escapeCsv(l.requirement || ''),
@@ -408,13 +544,14 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
         </div>
       </div>
 
-      {/* ── SEGMENTED VIEW TABS ───────────────────────────────────────────────── */}
+      {/* ── SEGMENTED VIEW TABS (4 TABS) ────────────────────────────────────── */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
-        <div className="flex items-center gap-2 bg-slate-100/80 p-1 rounded-2xl border border-slate-200/80 shadow-2xs">
+        <div className="flex flex-wrap items-center gap-1.5 bg-slate-100/90 p-1 rounded-2xl border border-slate-200 shadow-2xs">
+          {/* Tab 1: Daily */}
           <button
             type="button"
             onClick={() => setActiveTab('daily')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
               activeTab === 'daily'
                 ? 'bg-white text-indigo-700 shadow-xs border border-indigo-200/60'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
@@ -433,10 +570,11 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
             </span>
           </button>
 
+          {/* Tab 2: All Scheduled */}
           <button
             type="button"
             onClick={() => setActiveTab('all-scheduled')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
               activeTab === 'all-scheduled'
                 ? 'bg-white text-emerald-800 shadow-xs border border-emerald-200/60'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
@@ -455,10 +593,34 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
             </span>
           </button>
 
+          {/* Tab 3: Visit Done */}
+          <button
+            type="button"
+            onClick={() => setActiveTab('all-done')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+              activeTab === 'all-done'
+                ? 'bg-white text-blue-800 shadow-xs border border-blue-200/60'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+            }`}
+          >
+            <CheckCircle2 size={14} className={activeTab === 'all-done' ? 'text-blue-600' : 'text-slate-400'} />
+            <span>Visit Done (By Executive)</span>
+            <span
+              className={`px-1.5 py-0.5 rounded-md text-[10.5px] font-mono font-bold ${
+                activeTab === 'all-done'
+                  ? 'bg-blue-50 text-blue-800 border border-blue-200'
+                  : 'bg-white/80 text-slate-600 border border-slate-200'
+              }`}
+            >
+              {portfolio?.totalDoneAll ?? 0}
+            </span>
+          </button>
+
+          {/* Tab 4: All Dropped */}
           <button
             type="button"
             onClick={() => setActiveTab('all-dropped')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
               activeTab === 'all-dropped'
                 ? 'bg-white text-rose-800 shadow-xs border border-rose-200/60'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
@@ -480,7 +642,6 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
 
         {/* Global Controls: Executive Filter + Excel Report Download */}
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* Executive Filter Dropdown */}
           <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 shadow-2xs">
             <Filter size={13} className="text-indigo-600 shrink-0" />
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider hidden sm:inline">
@@ -500,7 +661,6 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
             </select>
           </div>
 
-          {/* Excel Report Download Button */}
           <button
             type="button"
             onClick={exportToExcel}
@@ -512,8 +672,10 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
               {activeTab === 'daily'
                 ? 'Download Daily Report'
                 : activeTab === 'all-scheduled'
-                ? 'Export All Scheduled'
-                : 'Export All Dropped'}
+                ? 'Export Scheduled'
+                : activeTab === 'all-done'
+                ? 'Export Completed'
+                : 'Export Dropped'}
             </span>
           </button>
         </div>
@@ -714,12 +876,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                         </td>
                         <td className="py-3 px-3.5 whitespace-nowrap">
                           <div className="font-bold text-slate-900">{visit.name}</div>
-                          <a
-                            href={`tel:${visit.phone}`}
-                            className="text-[11px] text-indigo-600 hover:underline font-mono font-bold"
-                          >
-                            {visit.phone}
-                          </a>
+                          {renderMaskedPhone(visit.phone)}
                         </td>
                         <td className="py-3 px-3.5 whitespace-nowrap font-mono text-slate-700 text-xs">
                           {formatDate(visit.visitDate)}
@@ -828,44 +985,166 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
       )}
 
       {/* ────────────────────────────────────────────────────────────────────── */}
-      {/* TAB 2: ALL SCHEDULED VISITS (GROUPED BY AGENT)                        */}
+      {/* TAB 2: ALL SCHEDULED VISITS (GROUPED BY AGENT + DATE FILTER)          */}
       {/* ────────────────────────────────────────────────────────────────────── */}
       {activeTab === 'all-scheduled' && (
-        <div className="space-y-6">
-          {/* Summary Banner */}
-          <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 border border-emerald-200 p-5 rounded-2xl shadow-xs flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="p-1.5 bg-emerald-600 text-white rounded-lg shadow-2xs">
-                  <Users size={16} />
-                </span>
-                <h2 className="text-base font-black text-emerald-950">
-                  All Scheduled Visits Portfolio (Grouped By Executive)
-                </h2>
+        <div className="space-y-5">
+          {/* Summary Banner with Quick Date Filters */}
+          <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 border border-emerald-200 p-5 rounded-2xl shadow-xs space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 bg-emerald-600 text-white rounded-lg shadow-2xs">
+                    <Users size={16} />
+                  </span>
+                  <h2 className="text-base font-black text-emerald-950">
+                    All Scheduled Visits Portfolio (Grouped By Executive)
+                  </h2>
+                </div>
+                <p className="text-xs text-emerald-800 mt-1">
+                  Active &amp; upcoming client visits grouped agent-wise. Filter by Tomorrow, Week, or Month below.
+                </p>
               </div>
-              <p className="text-xs text-emerald-800 mt-1">
-                Showing all active &amp; upcoming client visits grouped agent-wise without mixing names.
-              </p>
+
+              <div className="flex items-center gap-6 bg-white/90 backdrop-blur-xs px-4 py-2.5 rounded-xl border border-emerald-200 shadow-2xs">
+                <div className="text-center">
+                  <p className="text-2xl font-black text-emerald-700">
+                    {totalFilteredScheduled}
+                  </p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-800">
+                    {scheduledDateFilter === 'all'
+                      ? 'Total Scheduled'
+                      : scheduledDateFilter === 'tomorrow'
+                      ? 'Tomorrow Visits'
+                      : scheduledDateFilter === 'today'
+                      ? 'Today Visits'
+                      : 'Filtered Visits'}
+                  </p>
+                </div>
+                <div className="w-px h-8 bg-emerald-200" />
+                <div className="text-center">
+                  <p className="text-2xl font-black text-slate-800">
+                    {activeScheduledExecutives.length}
+                  </p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    Active Executives
+                  </p>
+                </div>
+              </div>
             </div>
 
-            <div className="flex items-center gap-6 bg-white/80 backdrop-blur-xs px-4 py-2.5 rounded-xl border border-emerald-200/80 shadow-2xs">
-              <div className="text-center">
-                <p className="text-2xl font-black text-emerald-700">
-                  {portfolio?.totalScheduledAll ?? 0}
-                </p>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-800">
-                  Total Scheduled
-                </p>
+            {/* Quick Date Filters Toolbar */}
+            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-emerald-200/80">
+              <span className="text-[11px] font-extrabold text-emerald-900 uppercase tracking-wider">
+                Scheduled Date:
+              </span>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setScheduledDateFilter('all');
+                  setScheduledCustomDate('');
+                }}
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  scheduledDateFilter === 'all'
+                    ? 'bg-emerald-700 text-white shadow-2xs'
+                    : 'bg-white text-emerald-900 hover:bg-emerald-100/70 border border-emerald-200'
+                }`}
+              >
+                All Upcoming
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setScheduledDateFilter('today')}
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  scheduledDateFilter === 'today'
+                    ? 'bg-emerald-700 text-white shadow-2xs'
+                    : 'bg-white text-emerald-900 hover:bg-emerald-100/70 border border-emerald-200'
+                }`}
+              >
+                Today
+              </button>
+
+              {/* ⭐ TOMORROW BUTTON - KEY FEATURE */}
+              <button
+                type="button"
+                onClick={() => setScheduledDateFilter('tomorrow')}
+                className={`flex items-center gap-1.5 px-3.5 py-1 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                  scheduledDateFilter === 'tomorrow'
+                    ? 'bg-amber-600 text-white shadow-xs ring-2 ring-amber-500/40'
+                    : 'bg-amber-100 text-amber-900 hover:bg-amber-200 border border-amber-300'
+                }`}
+              >
+                <span>⭐ Tomorrow ({formatDisplayDDMMYY(addDays(todayStr, 1))})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setScheduledDateFilter('this-week')}
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  scheduledDateFilter === 'this-week'
+                    ? 'bg-emerald-700 text-white shadow-2xs'
+                    : 'bg-white text-emerald-900 hover:bg-emerald-100/70 border border-emerald-200'
+                }`}
+              >
+                This Week
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setScheduledDateFilter('this-month')}
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  scheduledDateFilter === 'this-month'
+                    ? 'bg-emerald-700 text-white shadow-2xs'
+                    : 'bg-white text-emerald-900 hover:bg-emerald-100/70 border border-emerald-200'
+                }`}
+              >
+                This Month
+              </button>
+
+              {/* Calendar Date Picker Overlay */}
+              <div className="relative inline-flex items-center ml-1">
+                <div
+                  className={`flex items-center gap-1.5 px-3 py-1 text-xs font-mono font-bold rounded-xl border transition-all cursor-pointer shadow-2xs ${
+                    scheduledDateFilter === 'custom' && scheduledCustomDate
+                      ? 'bg-emerald-800 text-white border-emerald-900 ring-2 ring-emerald-500/40'
+                      : 'bg-white border-emerald-200 text-emerald-900 hover:bg-emerald-100/60'
+                  }`}
+                >
+                  <Calendar size={13} className={scheduledDateFilter === 'custom' ? 'text-white' : 'text-emerald-700'} />
+                  <span>
+                    {scheduledDateFilter === 'custom' && scheduledCustomDate
+                      ? formatDisplayDDMMYY(scheduledCustomDate)
+                      : 'Pick Calendar Date'}
+                  </span>
+                </div>
+                <input
+                  type="date"
+                  value={scheduledCustomDate}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setScheduledCustomDate(e.target.value);
+                      setScheduledDateFilter('custom');
+                    }
+                  }}
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                  title="Filter by Calendar Date (dd/mmm/yy)"
+                />
               </div>
-              <div className="w-px h-8 bg-emerald-200" />
-              <div className="text-center">
-                <p className="text-2xl font-black text-slate-800">
-                  {activeScheduledExecutives.length}
-                </p>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                  Active Executives
-                </p>
-              </div>
+
+              {scheduledDateFilter !== 'all' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setScheduledDateFilter('all');
+                    setScheduledCustomDate('');
+                  }}
+                  className="ml-auto px-2.5 py-0.5 text-[11px] font-bold text-rose-700 hover:text-rose-900 hover:bg-rose-100/70 rounded-lg transition-colors cursor-pointer"
+                >
+                  ✕ Reset Filter
+                </button>
+              )}
             </div>
           </div>
 
@@ -878,12 +1157,27 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
             <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-500 shadow-xs">
               <Calendar size={44} className="mx-auto mb-3 text-slate-300" />
               <p className="text-base font-bold text-slate-800">
-                {selectedExecutive !== 'ALL'
-                  ? `No upcoming scheduled visits found for ${selectedExecutive}`
-                  : 'No upcoming scheduled visits found across all executives'}
+                {scheduledDateFilter === 'tomorrow'
+                  ? 'No visits scheduled for tomorrow across executives'
+                  : scheduledDateFilter === 'today'
+                  ? 'No visits scheduled for today across executives'
+                  : 'No scheduled visits match the selected filter'}
               </p>
               <p className="text-xs text-slate-400 mt-1">
-                Visits scheduled from calling forms will appear here grouped under their executive name.
+                {scheduledDateFilter !== 'all' ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setScheduledDateFilter('all');
+                      setScheduledCustomDate('');
+                    }}
+                    className="text-emerald-700 font-bold hover:underline cursor-pointer"
+                  >
+                    View all upcoming scheduled visits
+                  </button>
+                ) : (
+                  'Visits scheduled from calling forms will appear here grouped under their executive name.'
+                )}
               </p>
             </div>
           ) : (
@@ -910,15 +1204,21 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                           </span>
                         </div>
                         <p className="text-[11px] text-slate-300">
-                          {exec.totalScheduled} Total Scheduled Visits Assigned
+                          {exec.scheduledVisits.length} Scheduled Visits{' '}
+                          {scheduledDateFilter !== 'all' ? `(${scheduledDateFilter})` : ''}
                         </p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3">
                       <span className="text-xs font-mono font-bold bg-white/10 px-3 py-1 rounded-lg text-emerald-300 border border-emerald-400/20">
-                        {exec.totalScheduled} Scheduled
+                        {exec.scheduledVisits.length} Scheduled
                       </span>
+                      {exec.totalDone > 0 && (
+                        <span className="text-xs font-mono font-bold bg-white/10 px-3 py-1 rounded-lg text-blue-300 border border-blue-400/20">
+                          {exec.totalDone} Done
+                        </span>
+                      )}
                       {exec.totalDropped > 0 && (
                         <span className="text-xs font-mono font-bold bg-white/10 px-3 py-1 rounded-lg text-rose-300 border border-rose-400/20">
                           {exec.totalDropped} Dropped
@@ -947,14 +1247,10 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                             <td className="py-3 px-3.5 whitespace-nowrap">
                               {statusBadge(lead.visitStatus || 'SCHEDULED')}
                             </td>
+                            {/* Customer & Masked Mobile (5 digits + XXXXX) */}
                             <td className="py-3 px-3.5 whitespace-nowrap">
                               <div className="font-bold text-slate-900">{lead.name}</div>
-                              <a
-                                href={`tel:${lead.phone}`}
-                                className="text-[11px] text-indigo-600 hover:underline font-mono font-bold"
-                              >
-                                {lead.phone}
-                              </a>
+                              {renderMaskedPhone(lead.phone)}
                             </td>
                             <td className="py-3 px-3.5 whitespace-nowrap font-mono text-emerald-800 font-bold text-xs">
                               {formatDate(lead.visitDate)}
@@ -1061,7 +1357,286 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
       )}
 
       {/* ────────────────────────────────────────────────────────────────────── */}
-      {/* TAB 3: ALL DROPPED VISITS (GROUPED BY AGENT)                          */}
+      {/* TAB 3: VISIT DONE (COMPLETED VISITS GROUPED BY AGENT + DATE FILTER)   */}
+      {/* ────────────────────────────────────────────────────────────────────── */}
+      {activeTab === 'all-done' && (
+        <div className="space-y-5">
+          {/* Summary Banner with Date Filters */}
+          <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-blue-50 border border-blue-200 p-5 rounded-2xl shadow-xs space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 bg-blue-600 text-white rounded-lg shadow-2xs">
+                    <CheckCircle2 size={16} />
+                  </span>
+                  <h2 className="text-base font-black text-blue-950">
+                    All Completed Site Visits (Grouped By Executive)
+                  </h2>
+                </div>
+                <p className="text-xs text-blue-800 mt-1">
+                  Verified client visits completed on-ground. Grouped agent-wise without mixing names.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-6 bg-white/90 backdrop-blur-xs px-4 py-2.5 rounded-xl border border-blue-200 shadow-2xs">
+                <div className="text-center">
+                  <p className="text-2xl font-black text-blue-700">
+                    {totalFilteredDone}
+                  </p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-blue-800">
+                    {doneDateFilter === 'all'
+                      ? 'Total Completed'
+                      : doneDateFilter === 'today'
+                      ? 'Completed Today'
+                      : 'Filtered Done'}
+                  </p>
+                </div>
+                <div className="w-px h-8 bg-blue-200" />
+                <div className="text-center">
+                  <p className="text-2xl font-black text-slate-800">
+                    {activeDoneExecutives.length}
+                  </p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    Executives with Visits
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Date Filters Toolbar */}
+            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-blue-200/80">
+              <span className="text-[11px] font-extrabold text-blue-900 uppercase tracking-wider">
+                Completion Date:
+              </span>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setDoneDateFilter('all');
+                  setDoneCustomDate('');
+                }}
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  doneDateFilter === 'all'
+                    ? 'bg-blue-700 text-white shadow-2xs'
+                    : 'bg-white text-blue-900 hover:bg-blue-100/70 border border-blue-200'
+                }`}
+              >
+                All Completed
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setDoneDateFilter('today')}
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  doneDateFilter === 'today'
+                    ? 'bg-blue-700 text-white shadow-2xs'
+                    : 'bg-white text-blue-900 hover:bg-blue-100/70 border border-blue-200'
+                }`}
+              >
+                Today
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setDoneDateFilter('this-week')}
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  doneDateFilter === 'this-week'
+                    ? 'bg-blue-700 text-white shadow-2xs'
+                    : 'bg-white text-blue-900 hover:bg-blue-100/70 border border-blue-200'
+                }`}
+              >
+                This Week
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setDoneDateFilter('this-month')}
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  doneDateFilter === 'this-month'
+                    ? 'bg-blue-700 text-white shadow-2xs'
+                    : 'bg-white text-blue-900 hover:bg-blue-100/70 border border-blue-200'
+                }`}
+              >
+                This Month
+              </button>
+
+              {/* Calendar Date Picker Overlay */}
+              <div className="relative inline-flex items-center ml-1">
+                <div
+                  className={`flex items-center gap-1.5 px-3 py-1 text-xs font-mono font-bold rounded-xl border transition-all cursor-pointer shadow-2xs ${
+                    doneDateFilter === 'custom' && doneCustomDate
+                      ? 'bg-blue-800 text-white border-blue-900 ring-2 ring-blue-500/40'
+                      : 'bg-white border-blue-200 text-blue-900 hover:bg-blue-100/60'
+                  }`}
+                >
+                  <Calendar size={13} className={doneDateFilter === 'custom' ? 'text-white' : 'text-blue-700'} />
+                  <span>
+                    {doneDateFilter === 'custom' && doneCustomDate
+                      ? formatDisplayDDMMYY(doneCustomDate)
+                      : 'Pick Calendar Date'}
+                  </span>
+                </div>
+                <input
+                  type="date"
+                  value={doneCustomDate}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setDoneCustomDate(e.target.value);
+                      setDoneDateFilter('custom');
+                    }
+                  }}
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                  title="Filter by Calendar Date (dd/mmm/yy)"
+                />
+              </div>
+
+              {doneDateFilter !== 'all' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDoneDateFilter('all');
+                    setDoneCustomDate('');
+                  }}
+                  className="ml-auto px-2.5 py-0.5 text-[11px] font-bold text-rose-700 hover:text-rose-900 hover:bg-rose-100/70 rounded-lg transition-colors cursor-pointer"
+                >
+                  ✕ Reset Filter
+                </button>
+              )}
+            </div>
+          </div>
+
+          {portfolioLoading ? (
+            <div className="text-center py-16 text-slate-400">
+              <RefreshCcw size={28} className="animate-spin mx-auto mb-3 text-blue-600" />
+              Loading completed visits...
+            </div>
+          ) : activeDoneExecutives.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-500 shadow-xs">
+              <CheckCircle2 size={44} className="mx-auto mb-3 text-slate-300" />
+              <p className="text-base font-bold text-slate-800">
+                {doneDateFilter !== 'all'
+                  ? 'No completed visits match the selected date filter'
+                  : 'No completed visits recorded yet'}
+              </p>
+              <p className="text-xs text-slate-400 mt-1">
+                When site visits are confirmed by clicking &quot;Done&quot;, they will appear here grouped under each executive.
+              </p>
+            </div>
+          ) : (
+            /* RENDER AGENT BY AGENT SEPARATELY - NO MIXING */
+            <div className="space-y-6">
+              {activeDoneExecutives.map((exec) => (
+                <div
+                  key={exec.agentId}
+                  className="bg-white rounded-2xl border border-blue-200 shadow-xs overflow-hidden"
+                >
+                  {/* Executive Header Banner */}
+                  <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 px-4 py-3 flex items-center justify-between text-white">
+                    <div className="flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-500 text-slate-950 font-black text-sm flex items-center justify-center shadow-xs">
+                        {exec.agentName[0]}
+                      </span>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-extrabold text-sm tracking-tight text-white">
+                            {exec.agentName}
+                          </span>
+                          <span className="text-[10.5px] font-extrabold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30">
+                            Executive
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-300">
+                          {exec.doneVisits.length} Completed Visits
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-mono font-bold bg-white/10 px-3 py-1 rounded-lg text-blue-300 border border-blue-400/20">
+                        {exec.doneVisits.length} Completed
+                      </span>
+                      <span className="text-xs font-mono font-bold bg-white/10 px-3 py-1 rounded-lg text-emerald-300 border border-emerald-400/20">
+                        {exec.totalScheduled} Scheduled
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Executive Leads Table */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-slate-50 text-[10.5px] uppercase font-bold text-slate-600 border-b border-slate-200">
+                          <th className="py-2.5 px-3.5">Status</th>
+                          <th className="py-2.5 px-3.5">Customer &amp; Mobile</th>
+                          <th className="py-2.5 px-3.5">Visit Date</th>
+                          <th className="py-2.5 px-3.5">Project &amp; Config</th>
+                          <th className="py-2.5 px-3.5">Budget</th>
+                          <th className="py-2.5 px-3.5">Agent Notes / Remark</th>
+                          <th className="py-2.5 px-3.5 text-center">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {exec.doneVisits.map((lead) => (
+                          <tr key={lead.id} className="hover:bg-blue-50/30 transition-colors">
+                            <td className="py-3 px-3.5 whitespace-nowrap">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10.5px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                <Check size={11} className="text-emerald-700" /> Completed
+                              </span>
+                            </td>
+                            {/* Customer & Masked Mobile (5 digits + XXXXX) */}
+                            <td className="py-3 px-3.5 whitespace-nowrap">
+                              <div className="font-bold text-slate-900">{lead.name}</div>
+                              {renderMaskedPhone(lead.phone)}
+                            </td>
+                            <td className="py-3 px-3.5 whitespace-nowrap font-mono text-slate-700 font-bold text-xs">
+                              {formatDate(lead.visitDate || lead.updatedAt)}
+                            </td>
+                            <td className="py-3 px-3.5 whitespace-nowrap">
+                              <span className="font-bold text-slate-900">
+                                {lead.projectName || '—'}
+                              </span>
+                              {lead.requirement && (
+                                <span className="text-[11px] text-slate-500 block">
+                                  {lead.requirement}
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3 px-3.5 whitespace-nowrap font-medium text-slate-700">
+                              {lead.budget || '—'}
+                            </td>
+                            <td className="py-3 px-3.5 max-w-[260px]">
+                              <p
+                                className="text-[11px] text-slate-600 leading-tight"
+                                style={{
+                                  display: '-webkit-box',
+                                  WebkitLineClamp: 2,
+                                  WebkitBoxOrient: 'vertical',
+                                  overflow: 'hidden',
+                                }}
+                                title={lead.latestRemark || ''}
+                              >
+                                {lead.latestRemark || '—'}
+                              </p>
+                            </td>
+                            <td className="py-3 px-3.5 whitespace-nowrap text-center">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-emerald-700 bg-emerald-50 border border-emerald-200 text-xs font-bold">
+                                <CheckCircle2 size={13} /> Visit Done
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ────────────────────────────────────────────────────────────────────── */}
+      {/* TAB 4: ALL DROPPED VISITS (GROUPED BY AGENT)                          */}
       {/* ────────────────────────────────────────────────────────────────────── */}
       {activeTab === 'all-dropped' && (
         <div className="space-y-6">
@@ -1180,14 +1755,10 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                                 Dropped
                               </span>
                             </td>
+                            {/* Customer & Masked Mobile (5 digits + XXXXX) */}
                             <td className="py-3 px-3.5 whitespace-nowrap">
                               <div className="font-bold text-slate-900">{lead.name}</div>
-                              <a
-                                href={`tel:${lead.phone}`}
-                                className="text-[11px] text-indigo-600 hover:underline font-mono font-bold"
-                              >
-                                {lead.phone}
-                              </a>
+                              {renderMaskedPhone(lead.phone)}
                             </td>
                             <td className="py-3 px-3.5 whitespace-nowrap font-mono text-rose-700 font-bold text-xs">
                               {formatDate(lead.visitDate)}
