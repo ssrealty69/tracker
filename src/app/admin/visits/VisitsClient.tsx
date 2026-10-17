@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Fragment } from 'react';
 import { toast } from 'react-hot-toast';
 import * as XLSX from 'xlsx';
 import {
@@ -184,8 +184,21 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
   }, [visits, portfolio]);
 
   const filteredVisits = useMemo(() => {
-    if (selectedExecutive === 'ALL') return visits;
-    return visits.filter((v) => (v.assignedAgent?.name || 'Unassigned') === selectedExecutive);
+    let list = visits;
+    if (selectedExecutive !== 'ALL') {
+      list = visits.filter((v) => (v.assignedAgent?.name || 'Unassigned') === selectedExecutive);
+    }
+    // Sort strictly by executive name first, so each executive's visits appear together!
+    return [...list].sort((a, b) => {
+      const nameA = a.assignedAgent?.name || 'Unassigned';
+      const nameB = b.assignedAgent?.name || 'Unassigned';
+      const agentComp = nameA.localeCompare(nameB);
+      if (agentComp !== 0) return agentComp;
+      const dateA = a.visitDate ? new Date(a.visitDate).getTime() : 0;
+      const dateB = b.visitDate ? new Date(b.visitDate).getTime() : 0;
+      if (dateA !== dateB) return dateA - dateB;
+      return (a.name || '').localeCompare(b.name || '');
+    });
   }, [visits, selectedExecutive]);
 
   // Grouped Scheduled Executives (Filtered by Date & Selected Executive)
@@ -858,17 +871,46 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                   {filteredVisits.map((visit, idx) => {
                     const isDone = visit.visitStatus === 'VISIT_DONE';
                     const isRescheduled = visit.visitStatus === 'RESCHEDULED';
+                    const currentAgent = visit.assignedAgent?.name || 'Unassigned';
+                    const prevAgent = idx > 0 ? (filteredVisits[idx - 1].assignedAgent?.name || 'Unassigned') : null;
+                    const isNewAgentGroup = selectedExecutive === 'ALL' && (idx === 0 || currentAgent !== prevAgent);
+                    const agentVisitsCount = filteredVisits.filter(
+                      (v) => (v.assignedAgent?.name || 'Unassigned') === currentAgent
+                    ).length;
+
                     return (
-                      <tr
-                        key={visit.id}
-                        className={`transition-colors ${
-                          isDone
-                            ? 'bg-blue-50/20 border-l-4 border-l-blue-400 hover:bg-blue-50/40'
-                            : isRescheduled
-                            ? 'bg-amber-50/20 border-l-4 border-l-amber-400 hover:bg-amber-50/40'
-                            : 'bg-white border-l-4 border-l-emerald-500 hover:bg-slate-50/80'
-                        }`}
-                      >
+                      <Fragment key={visit.id}>
+                        {isNewAgentGroup && (
+                          <tr className="bg-gradient-to-r from-slate-100 via-indigo-50/50 to-slate-100 border-y border-slate-200">
+                            <td colSpan={9} className="py-2 px-3.5">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-5 h-5 rounded-full bg-gradient-to-tr from-indigo-700 to-indigo-500 text-white font-black text-[11px] inline-flex items-center justify-center shadow-2xs">
+                                    {currentAgent[0]}
+                                  </span>
+                                  <span className="font-extrabold text-slate-900 text-xs tracking-tight">
+                                    {currentAgent}
+                                  </span>
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200">
+                                    Executive
+                                  </span>
+                                </div>
+                                <span className="text-[11px] font-mono font-bold text-slate-500">
+                                  {agentVisitsCount} {agentVisitsCount === 1 ? 'Visit' : 'Visits'}
+                                </span>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                        <tr
+                          className={`transition-colors ${
+                            isDone
+                              ? 'bg-blue-50/20 border-l-4 border-l-blue-400 hover:bg-blue-50/40'
+                              : isRescheduled
+                              ? 'bg-amber-50/20 border-l-4 border-l-amber-400 hover:bg-amber-50/40'
+                              : 'bg-white border-l-4 border-l-emerald-500 hover:bg-slate-50/80'
+                          }`}
+                        >
                         <td className="py-3 px-3 text-center font-mono font-bold text-slate-500 text-xs">
                           {idx + 1}
                         </td>
@@ -984,9 +1026,10 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                           )}
                         </td>
                       </tr>
-                    );
-                  })}
-                </tbody>
+                    </Fragment>
+                  );
+                })}
+              </tbody>
               </table>
             </div>
           )}

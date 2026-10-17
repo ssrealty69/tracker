@@ -1260,7 +1260,10 @@ export async function getVisitsForDate(dateInput: Date | string) {
           },
         },
         include: { assignedAgent: { select: { name: true, id: true } } },
-        orderBy: { visitDate: 'asc' },
+        orderBy: [
+          { assignedAgent: { name: 'asc' } },
+          { name: 'asc' },
+        ],
       });
     } catch {
       // quiet
@@ -1295,7 +1298,13 @@ export async function getVisitsForDate(dateInput: Date | string) {
         assignedAgent: agent ? { id: agent.id, name: agent.name } : null,
       };
     })
-    .sort((a, b) => (new Date(a.visitDate!).getTime() - new Date(b.visitDate!).getTime()));
+    .sort((a, b) => {
+      const nameA = a.assignedAgent?.name || 'Unassigned';
+      const nameB = b.assignedAgent?.name || 'Unassigned';
+      const comp = nameA.localeCompare(nameB);
+      if (comp !== 0) return comp;
+      return (a.name || '').localeCompare(b.name || '');
+    });
 }
 
 export interface AdminLeadItem {
