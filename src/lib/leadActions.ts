@@ -13,6 +13,7 @@ import {
   type ActivityLog,
 } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
+import { getISTDateString } from '@/lib/utils';
 
 export interface LeadFormData {
   agentId: string;
@@ -1228,11 +1229,17 @@ export async function getDashboardStats(startDate?: Date, endDate?: Date): Promi
 }
 
 // ─── GET VISITS FOR DATE ──────────────────────────────────────────────────────
-export async function getVisitsForDate(date: Date) {
-  const startOfDay = new Date(date);
-  startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date(date);
-  endOfDay.setHours(23, 59, 59, 999);
+export async function getVisitsForDate(dateInput: Date | string) {
+  let dateStr = '';
+  if (typeof dateInput === 'string') {
+    dateStr = dateInput.slice(0, 10);
+  } else {
+    dateStr = getISTDateString(dateInput);
+  }
+  const [y, m, d] = dateStr.split('-').map(Number);
+  // IST is UTC+5:30. Start of IST day = UTC date 00:00 - 5h30m = 18:30 prev day
+  const startOfDay = new Date(Date.UTC(y, m - 1, d, 0, 0, 0) - (5.5 * 3600 * 1000));
+  const endOfDay = new Date(Date.UTC(y, m - 1, d, 23, 59, 59, 999) - (5.5 * 3600 * 1000));
 
   if (await isDbLive()) {
     try {

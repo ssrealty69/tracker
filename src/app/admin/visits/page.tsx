@@ -6,11 +6,11 @@ export const dynamic = 'force-dynamic';
 
 export default async function VisitsPage() {
   const today = new Date();
+  const istDateStr = getISTDateString(today);
   const [visits, portfolio] = await Promise.all([
-    getVisitsForDate(today),
+    getVisitsForDate(istDateStr),
     getAllExecutiveVisitsGrouped(),
   ]);
-  const istDateStr = getISTDateString(today);
   return (
     <VisitsClient
       initialVisits={visits}

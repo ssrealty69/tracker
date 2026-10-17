@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
+import * as XLSX from 'xlsx';
 import {
   TableProperties,
   Search,
@@ -202,18 +203,27 @@ export default function LeadsGridClient({ initialLeads, agents }: Props) {
       l.latestRemark || '',
     ]);
 
-    const csvContent = [headers, ...rows]
-      .map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
-      .join('\n');
-
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `SS_Realty_Leads_Report_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success(`Exported ${filteredLeads.length} leads to Excel successfully`);
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws['!cols'] = [
+      { wch: 8 },  // S.No
+      { wch: 22 }, // Date & Time
+      { wch: 16 }, // Agent
+      { wch: 22 }, // Customer Name
+      { wch: 16 }, // Phone
+      { wch: 10 }, // Interactions
+      { wch: 22 }, // Disposition
+      { wch: 18 }, // Project
+      { wch: 18 }, // Requirement
+      { wch: 16 }, // Budget
+      { wch: 16 }, // Visit Date
+      { wch: 16 }, // Visit Status
+      { wch: 16 }, // Follow-up Date
+      { wch: 38 }, // Remark
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Leads Report');
+    XLSX.writeFile(wb, `SS_Realty_Leads_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+    toast.success(`Exported ${filteredLeads.length} leads to Excel (.xlsx) successfully`);
   };
 
   const dispositionBadge = (

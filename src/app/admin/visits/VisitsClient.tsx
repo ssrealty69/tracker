@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
+import * as XLSX from 'xlsx';
 import {
   MapPin,
   Calendar,
@@ -253,8 +254,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
     setSelectedDate(dateStr);
     if (!isSilent) setLoading(true);
     try {
-      const d = new Date(dateStr + 'T00:00:00');
-      const data = await getVisitsForDate(d);
+      const data = await getVisitsForDate(dateStr);
       setVisits(data);
     } finally {
       if (!isSilent) setLoading(false);
@@ -361,14 +361,8 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
     );
   };
 
-  // Excel Export Handler
+  // Excel (.xlsx) Export Handler
   const exportToExcel = () => {
-    const escapeCsv = (val: string | null | undefined) => {
-      if (!val) return '""';
-      const s = String(val).replace(/"/g, '""');
-      return `"${s}"`;
-    };
-
     const headers = [
       'S.No',
       'Status',
@@ -382,7 +376,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
       'Agent Notes / Remark',
     ];
 
-    let rows: string[] = [];
+    let dataRows: (string | number)[][] = [];
     let fileNameSuffix = '';
 
     if (activeTab === 'daily') {
@@ -391,7 +385,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
         return;
       }
       fileNameSuffix = `Daily_${selectedExecutive === 'ALL' ? 'All_Executives' : selectedExecutive.replace(/\s+/g, '_')}_${selectedDate}`;
-      rows = filteredVisits.map((v, idx) => {
+      dataRows = filteredVisits.map((v, idx) => {
         const statusText =
           v.visitStatus === 'VISIT_DONE'
             ? 'Completed'
@@ -400,17 +394,17 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
             : 'Scheduled';
         const execName = v.assignedAgent?.name || 'Unassigned';
         return [
-          String(idx + 1),
-          escapeCsv(statusText),
-          escapeCsv(execName),
-          escapeCsv(v.name),
-          escapeCsv(v.phone ? maskPhone(v.phone) : ''),
-          escapeCsv(formatDate(v.visitDate)),
-          escapeCsv(((v as any).projectName as string) || ''),
-          escapeCsv(v.requirement ? (REQUIREMENT_LABELS[v.requirement] || String(v.requirement)) : ''),
-          escapeCsv(v.budget ? (BUDGET_LABELS[v.budget] || String(v.budget)) : ''),
-          escapeCsv(v.latestRemark || ''),
-        ].join(',');
+          idx + 1,
+          statusText,
+          execName,
+          v.name || '',
+          v.phone ? maskPhone(v.phone) : '',
+          formatDate(v.visitDate),
+          ((v as any).projectName as string) || '',
+          v.requirement ? (REQUIREMENT_LABELS[v.requirement] || String(v.requirement)) : '',
+          v.budget ? (BUDGET_LABELS[v.budget] || String(v.budget)) : '',
+          v.latestRemark || '',
+        ];
       });
     } else if (activeTab === 'all-scheduled') {
       const list = activeScheduledExecutives.flatMap((e) => e.scheduledVisits);
@@ -419,18 +413,18 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
         return;
       }
       fileNameSuffix = `All_Scheduled_${selectedExecutive === 'ALL' ? 'All_Executives' : selectedExecutive.replace(/\s+/g, '_')}_${getISTDateString()}`;
-      rows = list.map((l, idx) => [
-        String(idx + 1),
-        escapeCsv(l.visitStatus || 'Scheduled'),
-        escapeCsv(l.agentName),
-        escapeCsv(l.name),
-        escapeCsv(l.phone ? maskPhone(l.phone) : ''),
-        escapeCsv(formatDate(l.visitDate)),
-        escapeCsv(l.projectName || ''),
-        escapeCsv(l.requirement || ''),
-        escapeCsv(l.budget || ''),
-        escapeCsv(l.latestRemark || ''),
-      ].join(','));
+      dataRows = list.map((l, idx) => [
+        idx + 1,
+        l.visitStatus || 'Scheduled',
+        l.agentName,
+        l.name || '',
+        l.phone ? maskPhone(l.phone) : '',
+        formatDate(l.visitDate),
+        l.projectName || '',
+        l.requirement || '',
+        l.budget || '',
+        l.latestRemark || '',
+      ]);
     } else if (activeTab === 'all-done') {
       const list = activeDoneExecutives.flatMap((e) => e.doneVisits);
       if (list.length === 0) {
@@ -438,18 +432,18 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
         return;
       }
       fileNameSuffix = `All_Done_${selectedExecutive === 'ALL' ? 'All_Executives' : selectedExecutive.replace(/\s+/g, '_')}_${getISTDateString()}`;
-      rows = list.map((l, idx) => [
-        String(idx + 1),
-        escapeCsv('Completed'),
-        escapeCsv(l.agentName),
-        escapeCsv(l.name),
-        escapeCsv(l.phone ? maskPhone(l.phone) : ''),
-        escapeCsv(formatDate(l.visitDate || l.updatedAt)),
-        escapeCsv(l.projectName || ''),
-        escapeCsv(l.requirement || ''),
-        escapeCsv(l.budget || ''),
-        escapeCsv(l.latestRemark || ''),
-      ].join(','));
+      dataRows = list.map((l, idx) => [
+        idx + 1,
+        'Completed',
+        l.agentName,
+        l.name || '',
+        l.phone ? maskPhone(l.phone) : '',
+        formatDate(l.visitDate || l.updatedAt),
+        l.projectName || '',
+        l.requirement || '',
+        l.budget || '',
+        l.latestRemark || '',
+      ]);
     } else {
       const list = activeDroppedExecutives.flatMap((e) => e.droppedVisits);
       if (list.length === 0) {
@@ -457,31 +451,37 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
         return;
       }
       fileNameSuffix = `All_Dropped_${selectedExecutive === 'ALL' ? 'All_Executives' : selectedExecutive.replace(/\s+/g, '_')}_${getISTDateString()}`;
-      rows = list.map((l, idx) => [
-        String(idx + 1),
-        escapeCsv('Dropped'),
-        escapeCsv(l.agentName),
-        escapeCsv(l.name),
-        escapeCsv(l.phone ? maskPhone(l.phone) : ''),
-        escapeCsv(formatDate(l.visitDate)),
-        escapeCsv(l.projectName || ''),
-        escapeCsv(l.requirement || ''),
-        escapeCsv(l.budget || ''),
-        escapeCsv(l.latestRemark || ''),
-      ].join(','));
+      dataRows = list.map((l, idx) => [
+        idx + 1,
+        'Dropped',
+        l.agentName,
+        l.name || '',
+        l.phone ? maskPhone(l.phone) : '',
+        formatDate(l.visitDate),
+        l.projectName || '',
+        l.requirement || '',
+        l.budget || '',
+        l.latestRemark || '',
+      ]);
     }
 
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `Site_Visits_${fileNameSuffix}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    toast.success('Excel report downloaded successfully!');
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
+    ws['!cols'] = [
+      { wch: 8 },  // S.No
+      { wch: 14 }, // Status
+      { wch: 16 }, // Executive
+      { wch: 22 }, // Customer Name
+      { wch: 18 }, // Mobile Number (Masked)
+      { wch: 22 }, // Scheduled Visit Date
+      { wch: 18 }, // Project
+      { wch: 18 }, // Configuration
+      { wch: 16 }, // Budget
+      { wch: 38 }, // Agent Notes / Remark
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Visits Report');
+    XLSX.writeFile(wb, `Site_Visits_${fileNameSuffix}.xlsx`);
+    toast.success('Excel workbook (.xlsx) downloaded successfully!');
   };
 
   const done = filteredVisits.filter((v) => v.visitStatus === 'VISIT_DONE').length;
