@@ -870,7 +870,7 @@ export default function DashboardClient({ initialStats }: Props) {
                                     </div>
                                   ) : (
                                     <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-xs">
-                                      <table className="w-full text-left border-collapse text-xs">
+                                      <table suppressHydrationWarning className="w-full text-left border-collapse text-xs">
                                         <thead>
                                           <tr className="bg-slate-100/90 text-[10.5px] uppercase font-bold text-slate-600 border-b border-slate-200">
                                             <th className="py-2.5 px-3 text-center w-12 font-mono">S.No</th>

@@ -840,7 +840,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
             </div>
           ) : (
             <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-xs">
-              <table className="w-full text-left border-collapse text-xs">
+              <table suppressHydrationWarning className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-slate-100/90 text-[10.5px] uppercase font-bold text-slate-600 border-b border-slate-200">
                     <th className="py-3 px-3 text-center w-12 font-mono">S.No</th>
@@ -1238,7 +1238,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
 
                   {/* Executive Leads Table */}
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse text-xs">
+                    <table suppressHydrationWarning className="w-full text-left border-collapse text-xs">
                       <thead>
                         <tr className="bg-slate-50 text-[10.5px] uppercase font-bold text-slate-600 border-b border-slate-200">
                           <th className="py-2.5 px-3 text-center w-12 font-mono">S.No</th>
@@ -1576,7 +1576,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
 
                   {/* Executive Leads Table */}
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse text-xs">
+                    <table suppressHydrationWarning className="w-full text-left border-collapse text-xs">
                       <thead>
                         <tr className="bg-slate-50 text-[10.5px] uppercase font-bold text-slate-600 border-b border-slate-200">
                           <th className="py-2.5 px-3 text-center w-12 font-mono">S.No</th>
@@ -1752,7 +1752,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
 
                   {/* Executive Leads Table */}
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse text-xs">
+                    <table suppressHydrationWarning className="w-full text-left border-collapse text-xs">
                       <thead>
                         <tr className="bg-rose-50/50 text-[10.5px] uppercase font-bold text-rose-900 border-b border-rose-100">
                           <th className="py-2.5 px-3 text-center w-12 font-mono">S.No</th>
