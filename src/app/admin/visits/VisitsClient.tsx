@@ -22,6 +22,8 @@ import {
   AlertTriangle,
   Clock,
   Sparkles,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import {
   getVisitsForDate,
@@ -170,6 +172,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
   const [rescheduleId, setRescheduleId] = useState<string | null>(null);
   const [newDate, setNewDate] = useState('');
   const [selectedExecutive, setSelectedExecutive] = useState<string>('ALL');
+  const [showPhoneNumbers, setShowPhoneNumbers] = useState(false);
 
   // Date filters for Scheduled, Done, and Dropped tabs
   const [scheduledDateFilter, setScheduledDateFilter] = useState<DateFilterOption>('all');
@@ -433,9 +436,22 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
     }
   };
 
-  // Mask Phone helper: first 5 digits visible, ending 5 digits masked as XXXXX
+  // Mask Phone helper: first 5 digits visible, ending 5 digits masked as XXXXX (or full when unmasked)
   const renderMaskedPhone = (phone: string | null | undefined) => {
     if (!phone) return <span className="text-[11px] text-slate-400 font-mono">—</span>;
+    if (showPhoneNumbers) {
+      const cleanDigits = phone.replace(/\D/g, '');
+      return (
+        <a
+          href={`tel:${cleanDigits}`}
+          onClick={(e) => e.stopPropagation()}
+          className="text-[11px] font-mono font-bold text-indigo-700 hover:text-indigo-900 tracking-tight hover:underline transition-colors inline-flex items-center gap-1"
+          title={`Call ${phone}`}
+        >
+          {phone}
+        </a>
+      );
+    }
     const cleanDigits = phone.replace(/\D/g, '');
     if (cleanDigits.length >= 10) {
       const first5 = cleanDigits.slice(0, 5);
@@ -462,7 +478,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
       'Status',
       'Executive',
       'Customer Name',
-      'Mobile Number (Masked)',
+      showPhoneNumbers ? 'Mobile Number' : 'Mobile Number (Masked)',
       'Scheduled Visit Date',
       'Project',
       'Configuration',
@@ -492,7 +508,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
           statusText,
           execName,
           v.name || '',
-          v.phone ? maskPhone(v.phone) : '',
+          v.phone ? (showPhoneNumbers ? v.phone : maskPhone(v.phone)) : '',
           formatDate(v.visitDate),
           ((v as any).projectName as string) || '',
           v.requirement ? (REQUIREMENT_LABELS[v.requirement] || String(v.requirement)) : '',
@@ -511,7 +527,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
         l.visitStatus || 'Scheduled',
         l.agentName,
         l.name || '',
-        l.phone ? maskPhone(l.phone) : '',
+        l.phone ? (showPhoneNumbers ? l.phone : maskPhone(l.phone)) : '',
         formatDate(l.visitDate),
         l.projectName || '',
         l.requirement ? (REQUIREMENT_LABELS[l.requirement] || String(l.requirement)) : '',
@@ -529,7 +545,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
         'Completed',
         l.agentName,
         l.name || '',
-        l.phone ? maskPhone(l.phone) : '',
+        l.phone ? (showPhoneNumbers ? l.phone : maskPhone(l.phone)) : '',
         formatDate(l.visitDate || l.updatedAt),
         l.projectName || '',
         l.requirement ? (REQUIREMENT_LABELS[l.requirement] || String(l.requirement)) : '',
@@ -547,7 +563,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
         'Dropped',
         l.agentName,
         l.name || '',
-        l.phone ? maskPhone(l.phone) : '',
+        l.phone ? (showPhoneNumbers ? l.phone : maskPhone(l.phone)) : '',
         formatDate(l.visitDate),
         l.projectName || '',
         l.requirement ? (REQUIREMENT_LABELS[l.requirement] || String(l.requirement)) : '',
@@ -611,9 +627,27 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600 shadow-2xs">
-              <MapPin size={20} />
-            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const nextVal = !showPhoneNumbers;
+                setShowPhoneNumbers(nextVal);
+                if (nextVal) {
+                  toast.success('Client contact numbers revealed', { id: 'phone-mask-toggle', duration: 2000 });
+                } else {
+                  toast('Client contact numbers masked', { id: 'phone-mask-toggle', icon: '🔒', duration: 2000 });
+                }
+              }}
+              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer shadow-2xs active:scale-95 border ${
+                showPhoneNumbers
+                  ? 'bg-indigo-600 border-indigo-600 text-white shadow-indigo-200'
+                  : 'bg-indigo-50 border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300 text-indigo-600'
+              }`}
+              title={showPhoneNumbers ? 'Click to hide client mobile numbers' : 'Click to show client mobile numbers'}
+              aria-label="Toggle client mobile numbers visibility"
+            >
+              {showPhoneNumbers ? <EyeOff size={19} /> : <Eye size={19} />}
+            </button>
             <div>
               <h1 className="text-xl font-black tracking-tight text-slate-900">
                 Site Visit Operations Center
