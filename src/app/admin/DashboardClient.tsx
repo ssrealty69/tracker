@@ -873,6 +873,7 @@ export default function DashboardClient({ initialStats }: Props) {
                                       <table className="w-full text-left border-collapse text-xs">
                                         <thead>
                                           <tr className="bg-slate-100/90 text-[10.5px] uppercase font-bold text-slate-600 border-b border-slate-200">
+                                            <th className="py-2.5 px-3 text-center w-12 font-mono">S.No</th>
                                             <th className="py-2.5 px-3">Call / Visit Status</th>
                                             <th className="py-2.5 px-3">Customer &amp; Mobile</th>
                                             <th className="py-2.5 px-3">Action Date</th>
@@ -884,7 +885,7 @@ export default function DashboardClient({ initialStats }: Props) {
                                           </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100">
-                                          {displayLeads.map((vLead) => {
+                                          {displayLeads.map((vLead, idx) => {
                                             const hasVisit = !!vLead.visitDate || vLead.visitStatus === 'SCHEDULED' || vLead.visitStatus === 'RESCHEDULED' || vLead.visitStatus === 'VISIT_DONE';
                                             return (
                                               <tr
@@ -901,6 +902,7 @@ export default function DashboardClient({ initialStats }: Props) {
                                                     : 'bg-white border-l-4 border-l-slate-300 hover:bg-slate-50'
                                                 }`}
                                               >
+                                                <td className="py-2.5 px-3 text-center font-mono font-bold text-slate-500 text-xs">{idx + 1}</td>
                                                 {/* Status Badge */}
                                                 <td className="py-2.5 px-3 whitespace-nowrap">
                                                   {vLead.isDropped ? (

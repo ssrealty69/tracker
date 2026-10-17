@@ -370,6 +370,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
     };
 
     const headers = [
+      'S.No',
       'Status',
       'Executive',
       'Customer Name',
@@ -390,7 +391,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
         return;
       }
       fileNameSuffix = `Daily_${selectedExecutive === 'ALL' ? 'All_Executives' : selectedExecutive.replace(/\s+/g, '_')}_${selectedDate}`;
-      rows = filteredVisits.map((v) => {
+      rows = filteredVisits.map((v, idx) => {
         const statusText =
           v.visitStatus === 'VISIT_DONE'
             ? 'Completed'
@@ -399,6 +400,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
             : 'Scheduled';
         const execName = v.assignedAgent?.name || 'Unassigned';
         return [
+          String(idx + 1),
           escapeCsv(statusText),
           escapeCsv(execName),
           escapeCsv(v.name),
@@ -417,7 +419,8 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
         return;
       }
       fileNameSuffix = `All_Scheduled_${selectedExecutive === 'ALL' ? 'All_Executives' : selectedExecutive.replace(/\s+/g, '_')}_${getISTDateString()}`;
-      rows = list.map((l) => [
+      rows = list.map((l, idx) => [
+        String(idx + 1),
         escapeCsv(l.visitStatus || 'Scheduled'),
         escapeCsv(l.agentName),
         escapeCsv(l.name),
@@ -435,7 +438,8 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
         return;
       }
       fileNameSuffix = `All_Done_${selectedExecutive === 'ALL' ? 'All_Executives' : selectedExecutive.replace(/\s+/g, '_')}_${getISTDateString()}`;
-      rows = list.map((l) => [
+      rows = list.map((l, idx) => [
+        String(idx + 1),
         escapeCsv('Completed'),
         escapeCsv(l.agentName),
         escapeCsv(l.name),
@@ -453,7 +457,8 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
         return;
       }
       fileNameSuffix = `All_Dropped_${selectedExecutive === 'ALL' ? 'All_Executives' : selectedExecutive.replace(/\s+/g, '_')}_${getISTDateString()}`;
-      rows = list.map((l) => [
+      rows = list.map((l, idx) => [
+        String(idx + 1),
         escapeCsv('Dropped'),
         escapeCsv(l.agentName),
         escapeCsv(l.name),
@@ -838,6 +843,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-slate-100/90 text-[10.5px] uppercase font-bold text-slate-600 border-b border-slate-200">
+                    <th className="py-3 px-3 text-center w-12 font-mono">S.No</th>
                     <th className="py-3 px-3.5">Status</th>
                     <th className="py-3 px-3.5">Executive</th>
                     <th className="py-3 px-3.5">Customer &amp; Mobile</th>
@@ -849,7 +855,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filteredVisits.map((visit) => {
+                  {filteredVisits.map((visit, idx) => {
                     const isDone = visit.visitStatus === 'VISIT_DONE';
                     const isRescheduled = visit.visitStatus === 'RESCHEDULED';
                     return (
@@ -863,6 +869,9 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                             : 'bg-white border-l-4 border-l-emerald-500 hover:bg-slate-50/80'
                         }`}
                       >
+                        <td className="py-3 px-3 text-center font-mono font-bold text-slate-500 text-xs">
+                          {idx + 1}
+                        </td>
                         <td className="py-3 px-3.5 whitespace-nowrap">{statusBadge(visit.visitStatus)}</td>
                         <td className="py-3 px-3.5 whitespace-nowrap">
                           <div className="flex items-center gap-2">
@@ -1232,6 +1241,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
                         <tr className="bg-slate-50 text-[10.5px] uppercase font-bold text-slate-600 border-b border-slate-200">
+                          <th className="py-2.5 px-3 text-center w-12 font-mono">S.No</th>
                           <th className="py-2.5 px-3.5">Status</th>
                           <th className="py-2.5 px-3.5">Customer &amp; Mobile</th>
                           <th className="py-2.5 px-3.5">Scheduled Visit Date</th>
@@ -1242,8 +1252,11 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {exec.scheduledVisits.map((lead) => (
+                        {exec.scheduledVisits.map((lead, idx) => (
                           <tr key={lead.id} className="hover:bg-slate-50/80 transition-colors">
+                            <td className="py-3 px-3 text-center font-mono font-bold text-slate-500 text-xs">
+                              {idx + 1}
+                            </td>
                             <td className="py-3 px-3.5 whitespace-nowrap">
                               {statusBadge(lead.visitStatus || 'SCHEDULED')}
                             </td>
@@ -1566,6 +1579,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
                         <tr className="bg-slate-50 text-[10.5px] uppercase font-bold text-slate-600 border-b border-slate-200">
+                          <th className="py-2.5 px-3 text-center w-12 font-mono">S.No</th>
                           <th className="py-2.5 px-3.5">Status</th>
                           <th className="py-2.5 px-3.5">Customer &amp; Mobile</th>
                           <th className="py-2.5 px-3.5">Visit Date</th>
@@ -1576,8 +1590,11 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {exec.doneVisits.map((lead) => (
+                        {exec.doneVisits.map((lead, idx) => (
                           <tr key={lead.id} className="hover:bg-blue-50/30 transition-colors">
+                            <td className="py-3 px-3 text-center font-mono font-bold text-slate-500 text-xs">
+                              {idx + 1}
+                            </td>
                             <td className="py-3 px-3.5 whitespace-nowrap">
                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10.5px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
                                 <Check size={11} className="text-emerald-700" /> Completed
@@ -1738,6 +1755,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
                         <tr className="bg-rose-50/50 text-[10.5px] uppercase font-bold text-rose-900 border-b border-rose-100">
+                          <th className="py-2.5 px-3 text-center w-12 font-mono">S.No</th>
                           <th className="py-2.5 px-3.5">Status</th>
                           <th className="py-2.5 px-3.5">Customer &amp; Mobile</th>
                           <th className="py-2.5 px-3.5">Past Scheduled Date</th>
@@ -1748,8 +1766,11 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {exec.droppedVisits.map((lead) => (
+                        {exec.droppedVisits.map((lead, idx) => (
                           <tr key={lead.id} className="hover:bg-rose-50/30 transition-colors">
+                            <td className="py-3 px-3 text-center font-mono font-bold text-slate-500 text-xs">
+                              {idx + 1}
+                            </td>
                             <td className="py-3 px-3.5 whitespace-nowrap">
                               <span className="inline-flex items-center px-2 py-0.5 rounded text-[10.5px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
                                 Dropped

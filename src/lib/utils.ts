@@ -40,7 +40,8 @@ export function formatDate(date: Date | string | null | undefined): string {
     }).formatToParts(d);
     const get = (type: string) => parts.find((p) => p.type === type)?.value || '';
     const day = get('day');
-    const month = get('month');
+    const rawMonth = get('month');
+    const month = rawMonth ? rawMonth.charAt(0).toUpperCase() + rawMonth.slice(1).toLowerCase() : '';
     const year = get('year');
     return `${day}/${month}/${year}`;
   } catch {
@@ -65,7 +66,8 @@ export function formatDateTime(date: Date | string | null | undefined): string {
 
     const get = (type: string) => parts.find((p) => p.type === type)?.value || '';
     const day = get('day');
-    const month = get('month');
+    const rawMonth = get('month');
+    const month = rawMonth ? rawMonth.charAt(0).toUpperCase() + rawMonth.slice(1).toLowerCase() : '';
     const year = get('year');
     const hour = get('hour');
     const minute = get('minute');
