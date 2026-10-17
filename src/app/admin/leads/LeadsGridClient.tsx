@@ -17,8 +17,6 @@ import {
   Clock,
   ArrowUpDown,
   Building,
-  Copy,
-  Check,
 } from 'lucide-react';
 import { getAllLeads, getActiveAgents } from '@/lib/leadActions';
 import {
@@ -86,14 +84,9 @@ export default function LeadsGridClient({ initialLeads, agents }: Props) {
 
     const triggerSuccess = () => {
       setCopiedPhone(phone);
-      toast.success(`Copied ${cleanDigits}`, {
-        id: 'copy-phone',
-        duration: 1800,
-        icon: '📋',
-      });
       setTimeout(() => {
         setCopiedPhone((curr) => (curr === phone ? null : curr));
-      }, 1800);
+      }, 1000);
     };
 
     if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
@@ -119,11 +112,9 @@ export default function LeadsGridClient({ initialLeads, agents }: Props) {
       document.body.removeChild(textArea);
       if (successful) {
         onSuccess();
-      } else {
-        toast.error('Unable to copy');
       }
     } catch {
-      toast.error('Unable to copy');
+      // silent
     }
   };
 
@@ -563,29 +554,19 @@ export default function LeadsGridClient({ initialLeads, agents }: Props) {
                       <span className="font-bold text-slate-900 text-sm block whitespace-nowrap">{lead.name}</span>
                     </td>
 
-                    {/* 4. Mobile (Click to copy) */}
+                    {/* 4. Mobile (Normal copy on click) */}
                     <td>
                       <button
                         type="button"
                         onClick={(e) => copyToClipboard(lead.phone, e)}
-                        className={`group/copy relative font-mono text-xs font-bold px-2 py-1 -mx-2 rounded-lg transition-all duration-150 inline-flex items-center gap-1.5 cursor-pointer active:scale-95 text-left ${
+                        className={`font-mono text-xs font-bold transition-colors whitespace-nowrap cursor-pointer text-left select-all ${
                           copiedPhone === lead.phone
-                            ? 'bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300'
-                            : 'text-slate-800 hover:text-indigo-600 hover:bg-indigo-50/80'
+                            ? 'text-emerald-600'
+                            : 'text-slate-800 hover:text-indigo-600'
                         }`}
-                        title="Click to copy number"
+                        title="Click to copy"
                       >
-                        <span>{lead.phone}</span>
-                        {copiedPhone === lead.phone ? (
-                          <span className="inline-flex items-center gap-0.5 text-[10px] font-sans font-bold text-emerald-700 bg-emerald-200/70 px-1 py-0.2 rounded">
-                            <Check size={11} className="text-emerald-700" /> Copied
-                          </span>
-                        ) : (
-                          <Copy
-                            size={11}
-                            className="text-slate-400 opacity-40 group-hover/copy:opacity-100 group-hover/copy:text-indigo-600 transition-opacity"
-                          />
-                        )}
+                        {lead.phone}
                       </button>
                     </td>
 

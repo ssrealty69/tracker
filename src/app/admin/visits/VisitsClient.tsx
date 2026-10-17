@@ -24,7 +24,6 @@ import {
   Sparkles,
   Eye,
   EyeOff,
-  Copy,
 } from 'lucide-react';
 import {
   getVisitsForDate,
@@ -185,14 +184,9 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
 
     const triggerSuccess = () => {
       setCopiedPhone(phone);
-      toast.success(`Copied ${cleanDigits}`, {
-        id: 'copy-phone',
-        duration: 1800,
-        icon: '📋',
-      });
       setTimeout(() => {
         setCopiedPhone((curr) => (curr === phone ? null : curr));
-      }, 1800);
+      }, 1000);
     };
 
     if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
@@ -218,11 +212,9 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
       document.body.removeChild(textArea);
       if (successful) {
         onSuccess();
-      } else {
-        toast.error('Unable to copy');
       }
     } catch {
-      toast.error('Unable to copy');
+      // silent
     }
   };
 
@@ -492,7 +484,6 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
   const renderMaskedPhone = (phone: string | null | undefined) => {
     if (!phone) return <span className="text-[11px] text-slate-400 font-mono">—</span>;
     if (showPhoneNumbers) {
-      const cleanDigits = phone.replace(/\D/g, '') || phone;
       const isCopied = copiedPhone === phone;
       return (
         <button
@@ -501,19 +492,14 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
             e.stopPropagation();
             copyToClipboard(phone, e);
           }}
-          className={`text-[11px] font-mono font-bold tracking-tight inline-flex items-center gap-1 px-1.5 py-0.5 rounded transition-all cursor-pointer ${
+          className={`text-[11px] font-mono font-bold tracking-tight transition-colors cursor-pointer select-all ${
             isCopied
-              ? 'bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300'
-              : 'text-indigo-700 hover:text-indigo-950 hover:bg-indigo-50/80 active:scale-95'
+              ? 'text-emerald-600'
+              : 'text-indigo-700 hover:text-indigo-950'
           }`}
-          title="Click to copy number"
+          title="Click to copy"
         >
-          <span>{phone}</span>
-          {isCopied ? (
-            <Check size={11} className="text-emerald-700" />
-          ) : (
-            <Copy size={11} className="opacity-40 hover:opacity-100 text-indigo-500" />
-          )}
+          {phone}
         </button>
       );
     }
