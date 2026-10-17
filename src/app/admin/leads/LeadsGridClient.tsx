@@ -17,6 +17,8 @@ import {
   Clock,
   ArrowUpDown,
   Building,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { getAllLeads, getActiveAgents } from '@/lib/leadActions';
 import {
@@ -73,6 +75,57 @@ export default function LeadsGridClient({ initialLeads, agents }: Props) {
   const [loading, setLoading] = useState(false);
   const [sortField, setSortField] = useState<'updatedAt' | 'createdAt' | 'totalInteractions' | 'name' | 'agent'>('updatedAt');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [copiedPhone, setCopiedPhone] = useState<string | null>(null);
+
+  const copyToClipboard = (phone: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    const cleanDigits = phone.replace(/\D/g, '') || phone;
+
+    const triggerSuccess = () => {
+      setCopiedPhone(phone);
+      toast.success(`Copied ${cleanDigits}`, {
+        id: 'copy-phone',
+        duration: 1800,
+        icon: '📋',
+      });
+      setTimeout(() => {
+        setCopiedPhone((curr) => (curr === phone ? null : curr));
+      }, 1800);
+    };
+
+    if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(cleanDigits).then(triggerSuccess).catch(() => {
+        fallbackCopyText(cleanDigits, triggerSuccess);
+      });
+    } else {
+      fallbackCopyText(cleanDigits, triggerSuccess);
+    }
+  };
+
+  const fallbackCopyText = (text: string, onSuccess: () => void) => {
+    try {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-9999px';
+      textArea.style.top = '0';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      const successful = document.execCommand('copy');
+      document.body.removeChild(textArea);
+      if (successful) {
+        onSuccess();
+      } else {
+        toast.error('Unable to copy');
+      }
+    } catch {
+      toast.error('Unable to copy');
+    }
+  };
 
   const refreshLeads = useCallback(async (isSilent = false) => {
     if (!isSilent) setLoading(true);
@@ -415,7 +468,9 @@ export default function LeadsGridClient({ initialLeads, agents }: Props) {
 
                 {/* 4. Mobile */}
                 <th>
-                  <span className="flex items-center gap-1 whitespace-nowrap"><Phone size={11} /> Mobile</span>
+                  <span className="flex items-center gap-1 whitespace-nowrap" title="Click any number to copy instantly">
+                    <Phone size={11} /> Mobile
+                  </span>
                 </th>
 
                 {/* 5. Touches */}
@@ -508,15 +563,30 @@ export default function LeadsGridClient({ initialLeads, agents }: Props) {
                       <span className="font-bold text-slate-900 text-sm block whitespace-nowrap">{lead.name}</span>
                     </td>
 
-                    {/* 4. Mobile (Full unmasked with dial link) */}
+                    {/* 4. Mobile (Click to copy) */}
                     <td>
-                      <a
-                        href={`tel:${lead.phone}`}
-                        className="font-mono text-slate-800 text-xs font-bold hover:text-indigo-600 transition-colors whitespace-nowrap inline-flex items-center gap-1"
-                        title="Click to dial"
+                      <button
+                        type="button"
+                        onClick={(e) => copyToClipboard(lead.phone, e)}
+                        className={`group/copy relative font-mono text-xs font-bold px-2 py-1 -mx-2 rounded-lg transition-all duration-150 inline-flex items-center gap-1.5 cursor-pointer active:scale-95 text-left ${
+                          copiedPhone === lead.phone
+                            ? 'bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300'
+                            : 'text-slate-800 hover:text-indigo-600 hover:bg-indigo-50/80'
+                        }`}
+                        title="Click to copy number"
                       >
-                        {lead.phone}
-                      </a>
+                        <span>{lead.phone}</span>
+                        {copiedPhone === lead.phone ? (
+                          <span className="inline-flex items-center gap-0.5 text-[10px] font-sans font-bold text-emerald-700 bg-emerald-200/70 px-1 py-0.2 rounded">
+                            <Check size={11} className="text-emerald-700" /> Copied
+                          </span>
+                        ) : (
+                          <Copy
+                            size={11}
+                            className="text-slate-400 opacity-40 group-hover/copy:opacity-100 group-hover/copy:text-indigo-600 transition-opacity"
+                          />
+                        )}
+                      </button>
                     </td>
 
                     {/* 5. Touches */}

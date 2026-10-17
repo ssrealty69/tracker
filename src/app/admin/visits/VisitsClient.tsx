@@ -24,6 +24,7 @@ import {
   Sparkles,
   Eye,
   EyeOff,
+  Copy,
 } from 'lucide-react';
 import {
   getVisitsForDate,
@@ -173,6 +174,57 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
   const [newDate, setNewDate] = useState('');
   const [selectedExecutive, setSelectedExecutive] = useState<string>('ALL');
   const [showPhoneNumbers, setShowPhoneNumbers] = useState(false);
+  const [copiedPhone, setCopiedPhone] = useState<string | null>(null);
+
+  const copyToClipboard = (phone: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    const cleanDigits = phone.replace(/\D/g, '') || phone;
+
+    const triggerSuccess = () => {
+      setCopiedPhone(phone);
+      toast.success(`Copied ${cleanDigits}`, {
+        id: 'copy-phone',
+        duration: 1800,
+        icon: '📋',
+      });
+      setTimeout(() => {
+        setCopiedPhone((curr) => (curr === phone ? null : curr));
+      }, 1800);
+    };
+
+    if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(cleanDigits).then(triggerSuccess).catch(() => {
+        fallbackCopyText(cleanDigits, triggerSuccess);
+      });
+    } else {
+      fallbackCopyText(cleanDigits, triggerSuccess);
+    }
+  };
+
+  const fallbackCopyText = (text: string, onSuccess: () => void) => {
+    try {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-9999px';
+      textArea.style.top = '0';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      const successful = document.execCommand('copy');
+      document.body.removeChild(textArea);
+      if (successful) {
+        onSuccess();
+      } else {
+        toast.error('Unable to copy');
+      }
+    } catch {
+      toast.error('Unable to copy');
+    }
+  };
 
   // Date filters for Scheduled, Done, and Dropped tabs
   const [scheduledDateFilter, setScheduledDateFilter] = useState<DateFilterOption>('all');
@@ -440,16 +492,29 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
   const renderMaskedPhone = (phone: string | null | undefined) => {
     if (!phone) return <span className="text-[11px] text-slate-400 font-mono">—</span>;
     if (showPhoneNumbers) {
-      const cleanDigits = phone.replace(/\D/g, '');
+      const cleanDigits = phone.replace(/\D/g, '') || phone;
+      const isCopied = copiedPhone === phone;
       return (
-        <a
-          href={`tel:${cleanDigits}`}
-          onClick={(e) => e.stopPropagation()}
-          className="text-[11px] font-mono font-bold text-indigo-700 hover:text-indigo-900 tracking-tight hover:underline transition-colors inline-flex items-center gap-1"
-          title={`Call ${phone}`}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            copyToClipboard(phone, e);
+          }}
+          className={`text-[11px] font-mono font-bold tracking-tight inline-flex items-center gap-1 px-1.5 py-0.5 rounded transition-all cursor-pointer ${
+            isCopied
+              ? 'bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300'
+              : 'text-indigo-700 hover:text-indigo-950 hover:bg-indigo-50/80 active:scale-95'
+          }`}
+          title="Click to copy number"
         >
-          {phone}
-        </a>
+          <span>{phone}</span>
+          {isCopied ? (
+            <Check size={11} className="text-emerald-700" />
+          ) : (
+            <Copy size={11} className="opacity-40 hover:opacity-100 text-indigo-500" />
+          )}
+        </button>
       );
     }
     const cleanDigits = phone.replace(/\D/g, '');
