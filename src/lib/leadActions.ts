@@ -895,7 +895,9 @@ export async function getDashboardStats(startDate?: Date, endDate?: Date): Promi
       : {};
 
   const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+  const todayISTStr = getISTDateString(now);
+  const [ty, tm, td] = todayISTStr.split('-').map(Number);
+  const todayStart = new Date(Date.UTC(ty, tm - 1, td, 0, 0, 0) - (5.5 * 3600 * 1000));
 
   if (await isDbLive()) {
     try {
@@ -1247,7 +1249,7 @@ export async function getVisitsForDate(dateInput: Date | string) {
         where: {
           visitDate: { gte: startOfDay, lte: endOfDay },
           visitStatus: {
-            in: [VisitStatus.SCHEDULED, VisitStatus.RESCHEDULED, VisitStatus.VISIT_DONE],
+            in: [VisitStatus.SCHEDULED, VisitStatus.RESCHEDULED],
           },
           disposition: {
             notIn: [
@@ -1287,8 +1289,7 @@ export async function getVisitsForDate(dateInput: Date | string) {
         v <= endOfDay &&
         !isOtherDisp &&
         (l.visitStatus === VisitStatus.SCHEDULED ||
-          l.visitStatus === VisitStatus.RESCHEDULED ||
-          l.visitStatus === VisitStatus.VISIT_DONE)
+          l.visitStatus === VisitStatus.RESCHEDULED)
       );
     })
     .map((l) => {

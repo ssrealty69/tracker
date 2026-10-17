@@ -97,7 +97,7 @@ function friendlyDateLabel(dateStr: string): string {
 }
 
 type ViewTab = 'daily' | 'all-scheduled' | 'all-done' | 'all-dropped';
-type DateFilterOption = 'all' | 'today' | 'tomorrow' | 'this-week' | 'this-month' | 'custom';
+type DateFilterOption = 'all' | 'today' | 'tomorrow' | 'yesterday' | 'next-sunday' | 'this-week' | 'this-month' | 'custom';
 
 function matchesDateFilter(
   dateInput: string | Date | null | undefined,
@@ -113,12 +113,20 @@ function matchesDateFilter(
 
   const todayIST = getISTDateString();
   const tomorrowIST = addDays(todayIST, 1);
+  const yesterdayIST = addDays(todayIST, -1);
+  const nextSundayIST = nextSundayStr();
 
   if (filter === 'today') {
     return leadDateIST === todayIST;
   }
   if (filter === 'tomorrow') {
     return leadDateIST === tomorrowIST;
+  }
+  if (filter === 'yesterday') {
+    return leadDateIST === yesterdayIST;
+  }
+  if (filter === 'next-sunday') {
+    return leadDateIST === nextSundayIST;
   }
   if (filter === 'custom') {
     return customDate ? leadDateIST === customDate : true;
@@ -163,12 +171,36 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
   const [newDate, setNewDate] = useState('');
   const [selectedExecutive, setSelectedExecutive] = useState<string>('ALL');
 
-  // Date filters for Scheduled and Done tabs
+  // Date filters for Scheduled, Done, and Dropped tabs
   const [scheduledDateFilter, setScheduledDateFilter] = useState<DateFilterOption>('all');
   const [scheduledCustomDate, setScheduledCustomDate] = useState<string>('');
 
   const [doneDateFilter, setDoneDateFilter] = useState<DateFilterOption>('all');
   const [doneCustomDate, setDoneCustomDate] = useState<string>('');
+
+  const [droppedDateFilter, setDroppedDateFilter] = useState<DateFilterOption>('all');
+  const [droppedCustomDate, setDroppedCustomDate] = useState<string>('');
+
+  const stepScheduledDate = (days: number) => {
+    const base = scheduledCustomDate || todayStr;
+    const next = addDays(base, days);
+    setScheduledCustomDate(next);
+    setScheduledDateFilter('custom');
+  };
+
+  const stepDoneDate = (days: number) => {
+    const base = doneCustomDate || todayStr;
+    const next = addDays(base, days);
+    setDoneCustomDate(next);
+    setDoneDateFilter('custom');
+  };
+
+  const stepDroppedDate = (days: number) => {
+    const base = droppedCustomDate || todayStr;
+    const next = addDays(base, days);
+    setDroppedCustomDate(next);
+    setDroppedDateFilter('custom');
+  };
 
   const allExecutiveNames = useMemo(() => {
     const set = new Set<string>(KNOWN_EXECUTIVES);
@@ -223,10 +255,6 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
     return list;
   }, [portfolio, scheduledDateFilter, scheduledCustomDate, selectedExecutive]);
 
-  const totalFilteredScheduled = useMemo(() => {
-    return activeScheduledExecutives.reduce((sum, e) => sum + e.filteredCount, 0);
-  }, [activeScheduledExecutives]);
-
   // Grouped Done Executives (Filtered by Date & Selected Executive)
   const activeDoneExecutives = useMemo(() => {
     if (!portfolio?.executives) return [];
@@ -249,19 +277,72 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
     return list;
   }, [portfolio, doneDateFilter, doneCustomDate, selectedExecutive]);
 
-  const totalFilteredDone = useMemo(() => {
-    return activeDoneExecutives.reduce((sum, e) => sum + e.filteredCount, 0);
-  }, [activeDoneExecutives]);
-
-  // Grouped Dropped Executives
+  // Grouped Dropped Executives (Filtered by Date & Selected Executive)
   const activeDroppedExecutives = useMemo(() => {
     if (!portfolio?.executives) return [];
-    let list = portfolio.executives.filter((e) => e.totalDropped > 0);
+    let list = portfolio.executives
+      .map((e) => {
+        const filteredLeads = (e.droppedVisits || []).filter((l) =>
+          matchesDateFilter(l.visitDate, droppedDateFilter, droppedCustomDate)
+        );
+        return {
+          ...e,
+          droppedVisits: filteredLeads,
+          filteredCount: filteredLeads.length,
+        };
+      })
+      .filter((e) => e.filteredCount > 0);
+
     if (selectedExecutive !== 'ALL') {
       list = list.filter((e) => e.agentName === selectedExecutive);
     }
     return list;
-  }, [portfolio, selectedExecutive]);
+  }, [portfolio, droppedDateFilter, droppedCustomDate, selectedExecutive]);
+
+  const filteredScheduledLeads = useMemo(() => {
+    const list = activeScheduledExecutives.flatMap((e) => e.scheduledVisits || []);
+    return list.sort((a, b) => {
+      const comp = (a.agentName || 'Unassigned').localeCompare(b.agentName || 'Unassigned');
+      if (comp !== 0) return comp;
+      const da = a.visitDate ? new Date(a.visitDate).getTime() : 0;
+      const db = b.visitDate ? new Date(b.visitDate).getTime() : 0;
+      if (da !== db) return da - db;
+      return (a.name || '').localeCompare(b.name || '');
+    });
+  }, [activeScheduledExecutives]);
+
+  const filteredDoneLeads = useMemo(() => {
+    const list = activeDoneExecutives.flatMap((e) => e.doneVisits || []);
+    return list.sort((a, b) => {
+      const comp = (a.agentName || 'Unassigned').localeCompare(b.agentName || 'Unassigned');
+      if (comp !== 0) return comp;
+      const da = a.visitDate ? new Date(a.visitDate).getTime() : 0;
+      const db = b.visitDate ? new Date(b.visitDate).getTime() : 0;
+      if (da !== db) return db - da;
+      return (a.name || '').localeCompare(b.name || '');
+    });
+  }, [activeDoneExecutives]);
+
+  const filteredDroppedLeads = useMemo(() => {
+    const list = activeDroppedExecutives.flatMap((e) => e.droppedVisits || []);
+    return list.sort((a, b) => {
+      const comp = (a.agentName || 'Unassigned').localeCompare(b.agentName || 'Unassigned');
+      if (comp !== 0) return comp;
+      const da = a.visitDate ? new Date(a.visitDate).getTime() : 0;
+      const db = b.visitDate ? new Date(b.visitDate).getTime() : 0;
+      if (da !== db) return db - da;
+      return (a.name || '').localeCompare(b.name || '');
+    });
+  }, [activeDroppedExecutives]);
+
+  const completedForSelectedDate = useMemo(() => {
+    if (!portfolio?.executives) return 0;
+    let allDone = portfolio.executives.flatMap((e) => e.doneVisits || []);
+    if (selectedExecutive !== 'ALL') {
+      allDone = allDone.filter((l) => l.agentName === selectedExecutive);
+    }
+    return allDone.filter((l) => matchesDateFilter(l.visitDate || l.updatedAt, 'custom', selectedDate)).length;
+  }, [portfolio, selectedExecutive, selectedDate]);
 
   const loadDate = async (dateStr: string, isSilent = false) => {
     setSelectedDate(dateStr);
@@ -420,13 +501,12 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
         ];
       });
     } else if (activeTab === 'all-scheduled') {
-      const list = activeScheduledExecutives.flatMap((e) => e.scheduledVisits);
-      if (list.length === 0) {
+      if (filteredScheduledLeads.length === 0) {
         toast.error('No scheduled visits to export');
         return;
       }
       fileNameSuffix = `All_Scheduled_${selectedExecutive === 'ALL' ? 'All_Executives' : selectedExecutive.replace(/\s+/g, '_')}_${getISTDateString()}`;
-      dataRows = list.map((l, idx) => [
+      dataRows = filteredScheduledLeads.map((l, idx) => [
         idx + 1,
         l.visitStatus || 'Scheduled',
         l.agentName,
@@ -434,18 +514,17 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
         l.phone ? maskPhone(l.phone) : '',
         formatDate(l.visitDate),
         l.projectName || '',
-        l.requirement || '',
-        l.budget || '',
+        l.requirement ? (REQUIREMENT_LABELS[l.requirement] || String(l.requirement)) : '',
+        l.budget ? (BUDGET_LABELS[l.budget] || String(l.budget)) : '',
         l.latestRemark || '',
       ]);
     } else if (activeTab === 'all-done') {
-      const list = activeDoneExecutives.flatMap((e) => e.doneVisits);
-      if (list.length === 0) {
+      if (filteredDoneLeads.length === 0) {
         toast.error('No completed visits to export');
         return;
       }
       fileNameSuffix = `All_Done_${selectedExecutive === 'ALL' ? 'All_Executives' : selectedExecutive.replace(/\s+/g, '_')}_${getISTDateString()}`;
-      dataRows = list.map((l, idx) => [
+      dataRows = filteredDoneLeads.map((l, idx) => [
         idx + 1,
         'Completed',
         l.agentName,
@@ -453,18 +532,17 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
         l.phone ? maskPhone(l.phone) : '',
         formatDate(l.visitDate || l.updatedAt),
         l.projectName || '',
-        l.requirement || '',
-        l.budget || '',
+        l.requirement ? (REQUIREMENT_LABELS[l.requirement] || String(l.requirement)) : '',
+        l.budget ? (BUDGET_LABELS[l.budget] || String(l.budget)) : '',
         l.latestRemark || '',
       ]);
     } else {
-      const list = activeDroppedExecutives.flatMap((e) => e.droppedVisits);
-      if (list.length === 0) {
+      if (filteredDroppedLeads.length === 0) {
         toast.error('No dropped visits to export');
         return;
       }
       fileNameSuffix = `All_Dropped_${selectedExecutive === 'ALL' ? 'All_Executives' : selectedExecutive.replace(/\s+/g, '_')}_${getISTDateString()}`;
-      dataRows = list.map((l, idx) => [
+      dataRows = filteredDroppedLeads.map((l, idx) => [
         idx + 1,
         'Dropped',
         l.agentName,
@@ -472,8 +550,8 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
         l.phone ? maskPhone(l.phone) : '',
         formatDate(l.visitDate),
         l.projectName || '',
-        l.requirement || '',
-        l.budget || '',
+        l.requirement ? (REQUIREMENT_LABELS[l.requirement] || String(l.requirement)) : '',
+        l.budget ? (BUDGET_LABELS[l.budget] || String(l.budget)) : '',
         l.latestRemark || '',
       ]);
     }
@@ -496,9 +574,6 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
     XLSX.writeFile(wb, `Site_Visits_${fileNameSuffix}.xlsx`);
     toast.success('Excel workbook (.xlsx) downloaded successfully!');
   };
-
-  const done = filteredVisits.filter((v) => v.visitStatus === 'VISIT_DONE').length;
-  const pending = filteredVisits.filter((v) => v.visitStatus !== 'VISIT_DONE').length;
 
   const statusBadge = (status: string) => {
     switch (status) {
@@ -607,7 +682,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                   : 'bg-white/80 text-slate-600 border border-slate-200'
               }`}
             >
-              {portfolio?.totalScheduledAll ?? 0}
+              {filteredScheduledLeads.length}
             </span>
           </button>
 
@@ -630,7 +705,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                   : 'bg-white/80 text-slate-600 border border-slate-200'
               }`}
             >
-              {portfolio?.totalDoneAll ?? 0}
+              {filteredDoneLeads.length}
             </span>
           </button>
 
@@ -653,7 +728,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                   : 'bg-white/80 text-slate-600 border border-slate-200'
               }`}
             >
-              {portfolio?.totalDroppedAll ?? 0}
+              {filteredDroppedLeads.length}
             </span>
           </button>
         </div>
@@ -807,17 +882,17 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
             </div>
             <div className="flex items-center gap-6">
               <div className="text-center">
-                <p className="text-2xl font-black text-slate-900">{filteredVisits.length}</p>
+                <p className="text-2xl font-black text-slate-900">{filteredVisits.length + completedForSelectedDate}</p>
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Scheduled</p>
               </div>
               <div className="w-px h-8 bg-slate-200" />
               <div className="text-center">
-                <p className="text-2xl font-black text-emerald-600">{done}</p>
+                <p className="text-2xl font-black text-emerald-600">{completedForSelectedDate}</p>
                 <p className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider">Visited</p>
               </div>
               <div className="w-px h-8 bg-slate-200" />
               <div className="text-center">
-                <p className="text-2xl font-black text-amber-600">{pending}</p>
+                <p className="text-2xl font-black text-amber-600">{filteredVisits.length}</p>
                 <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wider">Pending</p>
               </div>
             </div>
@@ -1037,152 +1112,124 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
       )}
 
       {/* ────────────────────────────────────────────────────────────────────── */}
-      {/* TAB 2: ALL SCHEDULED VISITS (GROUPED BY AGENT + DATE FILTER)          */}
+      {/* TAB 2: ALL SCHEDULED VISITS (DATE FILTER + UNIFIED TABLE)             */}
       {/* ────────────────────────────────────────────────────────────────────── */}
       {activeTab === 'all-scheduled' && (
-        <div className="space-y-5">
-          {/* Summary Banner with Quick Date Filters */}
-          <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 border border-emerald-200 p-5 rounded-2xl shadow-xs space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="p-1.5 bg-emerald-600 text-white rounded-lg shadow-2xs">
-                    <Users size={16} />
-                  </span>
-                  <h2 className="text-base font-black text-emerald-950">
-                    All Scheduled Visits Portfolio (Grouped By Executive)
-                  </h2>
-                </div>
-                <p className="text-xs text-emerald-800 mt-1">
-                  Active &amp; upcoming client visits grouped agent-wise. Filter by Tomorrow, Week, or Month below.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-6 bg-white/90 backdrop-blur-xs px-4 py-2.5 rounded-xl border border-emerald-200 shadow-2xs">
-                <div className="text-center">
-                  <p className="text-2xl font-black text-emerald-700">
-                    {totalFilteredScheduled}
-                  </p>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-800">
-                    {scheduledDateFilter === 'all'
-                      ? 'Total Scheduled'
-                      : scheduledDateFilter === 'tomorrow'
-                      ? 'Tomorrow Visits'
-                      : scheduledDateFilter === 'today'
-                      ? 'Today Visits'
-                      : 'Filtered Visits'}
-                  </p>
-                </div>
-                <div className="w-px h-8 bg-emerald-200" />
-                <div className="text-center">
-                  <p className="text-2xl font-black text-slate-800">
-                    {activeScheduledExecutives.length}
-                  </p>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                    Active Executives
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Date Filters Toolbar */}
-            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-emerald-200/80">
-              <span className="text-[11px] font-extrabold text-emerald-900 uppercase tracking-wider">
-                Scheduled Date:
-              </span>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setScheduledDateFilter('all');
-                  setScheduledCustomDate('');
-                }}
-                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  scheduledDateFilter === 'all'
-                    ? 'bg-emerald-700 text-white shadow-2xs'
-                    : 'bg-white text-emerald-900 hover:bg-emerald-100/70 border border-emerald-200'
-                }`}
-              >
-                All Upcoming
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setScheduledDateFilter('today')}
-                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  scheduledDateFilter === 'today'
-                    ? 'bg-emerald-700 text-white shadow-2xs'
-                    : 'bg-white text-emerald-900 hover:bg-emerald-100/70 border border-emerald-200'
-                }`}
-              >
-                Today
-              </button>
-
-              {/* ⭐ TOMORROW BUTTON - KEY FEATURE */}
-              <button
-                type="button"
-                onClick={() => setScheduledDateFilter('tomorrow')}
-                className={`flex items-center gap-1.5 px-3.5 py-1 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                  scheduledDateFilter === 'tomorrow'
-                    ? 'bg-amber-600 text-white shadow-xs ring-2 ring-amber-500/40'
-                    : 'bg-amber-100 text-amber-900 hover:bg-amber-200 border border-amber-300'
-                }`}
-              >
-                <span>⭐ Tomorrow ({formatDisplayDDMMYY(addDays(todayStr, 1))})</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setScheduledDateFilter('this-week')}
-                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  scheduledDateFilter === 'this-week'
-                    ? 'bg-emerald-700 text-white shadow-2xs'
-                    : 'bg-white text-emerald-900 hover:bg-emerald-100/70 border border-emerald-200'
-                }`}
-              >
-                This Week
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setScheduledDateFilter('this-month')}
-                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  scheduledDateFilter === 'this-month'
-                    ? 'bg-emerald-700 text-white shadow-2xs'
-                    : 'bg-white text-emerald-900 hover:bg-emerald-100/70 border border-emerald-200'
-                }`}
-              >
-                This Month
-              </button>
-
-              {/* Calendar Date Picker Overlay */}
-              <div className="relative inline-flex items-center ml-1">
-                <div
-                  className={`flex items-center gap-1.5 px-3 py-1 text-xs font-mono font-bold rounded-xl border transition-all cursor-pointer shadow-2xs ${
-                    scheduledDateFilter === 'custom' && scheduledCustomDate
-                      ? 'bg-emerald-800 text-white border-emerald-900 ring-2 ring-emerald-500/40'
-                      : 'bg-white border-emerald-200 text-emerald-900 hover:bg-emerald-100/60'
+        <div className="space-y-4">
+          {/* Date Navigation & Controls Bar (Identical style to Daily Schedule) */}
+          <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setScheduledDateFilter('all');
+                    setScheduledCustomDate('');
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    scheduledDateFilter === 'all'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                   }`}
                 >
-                  <Calendar size={13} className={scheduledDateFilter === 'custom' ? 'text-white' : 'text-emerald-700'} />
-                  <span>
-                    {scheduledDateFilter === 'custom' && scheduledCustomDate
-                      ? formatDisplayDDMMYY(scheduledCustomDate)
-                      : 'Pick Calendar Date'}
-                  </span>
-                </div>
-                <input
-                  type="date"
-                  value={scheduledCustomDate}
-                  onChange={(e) => {
-                    if (e.target.value) {
-                      setScheduledCustomDate(e.target.value);
-                      setScheduledDateFilter('custom');
-                    }
+                  All Upcoming
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setScheduledDateFilter('today');
+                    setScheduledCustomDate(todayStr);
                   }}
-                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                  title="Filter by Calendar Date (dd/mmm/yy)"
-                />
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    scheduledDateFilter === 'today'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  Today
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setScheduledDateFilter('tomorrow');
+                    setScheduledCustomDate(addDays(todayStr, 1));
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    scheduledDateFilter === 'tomorrow'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  Tomorrow
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setScheduledDateFilter('next-sunday');
+                    setScheduledCustomDate(nextSundayStr());
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    scheduledDateFilter === 'next-sunday'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  Next Sunday
+                </button>
+              </div>
+
+              {/* Date picker with arrows */}
+              <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl px-1.5 py-0.5">
+                <button
+                  type="button"
+                  onClick={() => stepScheduledDate(-1)}
+                  className="p-1 rounded-lg text-slate-600 hover:bg-slate-200 transition-all cursor-pointer"
+                  title="Previous Day"
+                >
+                  <ChevronLeft size={15} />
+                </button>
+                <div className="relative inline-flex items-center">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-bold text-slate-800 bg-white border border-slate-200 rounded-lg shadow-2xs cursor-pointer">
+                    <Calendar size={13} className="text-emerald-600 shrink-0" />
+                    <span>
+                      {scheduledDateFilter === 'custom' && scheduledCustomDate
+                        ? formatDisplayDDMMYY(scheduledCustomDate)
+                        : scheduledDateFilter === 'all'
+                        ? 'Pick Date'
+                        : scheduledDateFilter === 'tomorrow'
+                        ? formatDisplayDDMMYY(addDays(todayStr, 1))
+                        : formatDisplayDDMMYY(todayStr)}
+                    </span>
+                  </div>
+                  <input
+                    type="date"
+                    value={scheduledCustomDate}
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        setScheduledCustomDate(e.target.value);
+                        setScheduledDateFilter('custom');
+                      }
+                    }}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                    title="Select Date (dd/mmm/yy)"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => stepScheduledDate(1)}
+                  className="p-1 rounded-lg text-slate-600 hover:bg-slate-200 transition-all cursor-pointer"
+                  title="Next Day"
+                >
+                  <ChevronRight size={15} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => loadPortfolio()}
+                  className="p-1 rounded-lg text-slate-600 hover:bg-slate-200 transition-all cursor-pointer ml-0.5"
+                  title="Refresh"
+                >
+                  <RefreshCcw size={13} className={portfolioLoading ? 'animate-spin text-emerald-600' : ''} />
+                </button>
               </div>
 
               {scheduledDateFilter !== 'all' && (
@@ -1192,28 +1239,80 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                     setScheduledDateFilter('all');
                     setScheduledCustomDate('');
                   }}
-                  className="ml-auto px-2.5 py-0.5 text-[11px] font-bold text-rose-700 hover:text-rose-900 hover:bg-rose-100/70 rounded-lg transition-colors cursor-pointer"
+                  className="px-2.5 py-1 rounded-lg text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100 transition-all cursor-pointer"
                 >
-                  ✕ Reset Filter
+                  ✕ Clear Date Filter
                 </button>
+              )}
+            </div>
+
+            <div className="text-xs text-slate-500 font-medium">
+              Showing {filteredScheduledLeads.length} scheduled {filteredScheduledLeads.length === 1 ? 'visit' : 'visits'}
+              {scheduledDateFilter === 'all' ? (
+                <> across <strong className="text-slate-800 font-bold">{activeScheduledExecutives.length} executives</strong></>
+              ) : (
+                <> for <strong className="text-slate-800 font-bold">{scheduledCustomDate ? formatDisplayDDMMYY(scheduledCustomDate) : scheduledDateFilter}</strong></>
               )}
             </div>
           </div>
 
+          {/* Stats Bar */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-extrabold text-slate-900">
+                  {scheduledDateFilter === 'all'
+                    ? 'All Upcoming Scheduled Visits'
+                    : scheduledDateFilter === 'today'
+                    ? "Today's Scheduled Visits"
+                    : scheduledDateFilter === 'tomorrow'
+                    ? "Tomorrow's Scheduled Visits"
+                    : scheduledDateFilter === 'next-sunday'
+                    ? "Next Sunday's Scheduled Visits"
+                    : scheduledCustomDate
+                    ? `Scheduled Visits for ${formatDisplayDDMMYY(scheduledCustomDate)}`
+                    : 'Filtered Scheduled Visits'}
+                </h2>
+                {selectedExecutive !== 'ALL' && (
+                  <span className="text-[11px] bg-emerald-50 border border-emerald-200 text-emerald-700 px-2 py-0.5 rounded-md font-bold">
+                    Filtered: {selectedExecutive}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                {scheduledDateFilter === 'all'
+                  ? 'All future & active client visits grouped agent-wise without mixing names'
+                  : scheduledCustomDate
+                  ? `${new Date(scheduledCustomDate + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'long' })} • ${formatDisplayDDMMYY(scheduledCustomDate)}`
+                  : 'Filtered view across all executives'}
+              </p>
+            </div>
+            <div className="flex items-center gap-6">
+              <div className="text-center">
+                <p className="text-2xl font-black text-emerald-600">{filteredScheduledLeads.length}</p>
+                <p className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider">Scheduled</p>
+              </div>
+              <div className="w-px h-8 bg-slate-200" />
+              <div className="text-center">
+                <p className="text-2xl font-black text-slate-800">{activeScheduledExecutives.length}</p>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Executives</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Unified Single Table */}
           {portfolioLoading ? (
             <div className="text-center py-16 text-slate-400">
               <RefreshCcw size={28} className="animate-spin mx-auto mb-3 text-emerald-600" />
-              Loading executive scheduled visits...
+              Loading scheduled visits...
             </div>
-          ) : activeScheduledExecutives.length === 0 ? (
+          ) : filteredScheduledLeads.length === 0 ? (
             <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-500 shadow-xs">
               <Calendar size={44} className="mx-auto mb-3 text-slate-300" />
               <p className="text-base font-bold text-slate-800">
-                {scheduledDateFilter === 'tomorrow'
-                  ? 'No visits scheduled for tomorrow across executives'
-                  : scheduledDateFilter === 'today'
-                  ? 'No visits scheduled for today across executives'
-                  : 'No scheduled visits match the selected filter'}
+                {scheduledDateFilter !== 'all'
+                  ? 'No scheduled visits found for this date filter'
+                  : 'No scheduled visits found'}
               </p>
               <p className="text-xs text-slate-400 mt-1">
                 {scheduledDateFilter !== 'all' ? (
@@ -1223,7 +1322,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                       setScheduledDateFilter('all');
                       setScheduledCustomDate('');
                     }}
-                    className="text-emerald-700 font-bold hover:underline cursor-pointer"
+                    className="text-emerald-600 font-bold hover:underline cursor-pointer"
                   >
                     View all upcoming scheduled visits
                   </button>
@@ -1233,317 +1332,295 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
               </p>
             </div>
           ) : (
-            /* RENDER AGENT BY AGENT SEPARATELY - NO MIXING */
-            <div className="space-y-6">
-              {activeScheduledExecutives.map((exec) => (
-                <div
-                  key={exec.agentId}
-                  className="bg-white rounded-2xl border border-emerald-200 shadow-xs overflow-hidden"
-                >
-                  {/* Executive Header Banner */}
-                  <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 px-4 py-3 flex items-center justify-between text-white">
-                    <div className="flex items-center gap-3">
-                      <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 text-slate-950 font-black text-sm flex items-center justify-center shadow-xs">
-                        {exec.agentName[0]}
-                      </span>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-extrabold text-sm tracking-tight text-white">
-                            {exec.agentName}
-                          </span>
-                          <span className="text-[10.5px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
-                            Executive
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-300">
-                          {exec.scheduledVisits.length} Scheduled Visits{' '}
-                          {scheduledDateFilter !== 'all' ? `(${scheduledDateFilter})` : ''}
-                        </p>
-                      </div>
-                    </div>
+            <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-xs">
+              <table suppressHydrationWarning className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-100/90 text-[10.5px] uppercase font-bold text-slate-600 border-b border-slate-200">
+                    <th className="py-3 px-3 text-center w-12 font-mono">S.No</th>
+                    <th className="py-3 px-3.5">Status</th>
+                    <th className="py-3 px-3.5">Executive</th>
+                    <th className="py-3 px-3.5">Customer &amp; Mobile</th>
+                    <th className="py-3 px-3.5">Scheduled Visit Date</th>
+                    <th className="py-3 px-3.5">Project &amp; Config</th>
+                    <th className="py-3 px-3.5">Budget</th>
+                    <th className="py-3 px-3.5">Agent Notes / Remark</th>
+                    <th className="py-3 px-3.5 text-center">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredScheduledLeads.map((lead, idx) => {
+                    const currentAgent = lead.agentName || 'Unassigned';
+                    const prevAgent = idx > 0 ? (filteredScheduledLeads[idx - 1].agentName || 'Unassigned') : null;
+                    const isNewAgentGroup = selectedExecutive === 'ALL' && (idx === 0 || currentAgent !== prevAgent);
+                    const agentVisitsCount = filteredScheduledLeads.filter(
+                      (l) => (l.agentName || 'Unassigned') === currentAgent
+                    ).length;
 
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-mono font-bold bg-white/10 px-3 py-1 rounded-lg text-emerald-300 border border-emerald-400/20">
-                        {exec.scheduledVisits.length} Scheduled
-                      </span>
-                      {exec.totalDone > 0 && (
-                        <span className="text-xs font-mono font-bold bg-white/10 px-3 py-1 rounded-lg text-blue-300 border border-blue-400/20">
-                          {exec.totalDone} Done
-                        </span>
-                      )}
-                      {exec.totalDropped > 0 && (
-                        <span className="text-xs font-mono font-bold bg-white/10 px-3 py-1 rounded-lg text-rose-300 border border-rose-400/20">
-                          {exec.totalDropped} Dropped
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Executive Leads Table */}
-                  <div className="overflow-x-auto">
-                    <table suppressHydrationWarning className="w-full text-left border-collapse text-xs">
-                      <thead>
-                        <tr className="bg-slate-50 text-[10.5px] uppercase font-bold text-slate-600 border-b border-slate-200">
-                          <th className="py-2.5 px-3 text-center w-12 font-mono">S.No</th>
-                          <th className="py-2.5 px-3.5">Status</th>
-                          <th className="py-2.5 px-3.5">Customer &amp; Mobile</th>
-                          <th className="py-2.5 px-3.5">Scheduled Visit Date</th>
-                          <th className="py-2.5 px-3.5">Project &amp; Config</th>
-                          <th className="py-2.5 px-3.5">Budget</th>
-                          <th className="py-2.5 px-3.5">Agent Notes / Remark</th>
-                          <th className="py-2.5 px-3.5 text-center">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {exec.scheduledVisits.map((lead, idx) => (
-                          <tr key={lead.id} className="hover:bg-slate-50/80 transition-colors">
-                            <td className="py-3 px-3 text-center font-mono font-bold text-slate-500 text-xs">
-                              {idx + 1}
-                            </td>
-                            <td className="py-3 px-3.5 whitespace-nowrap">
-                              {statusBadge(lead.visitStatus || 'SCHEDULED')}
-                            </td>
-                            {/* Customer & Masked Mobile (5 digits + XXXXX) */}
-                            <td className="py-3 px-3.5 whitespace-nowrap">
-                              <div className="font-bold text-slate-900">{lead.name}</div>
-                              {renderMaskedPhone(lead.phone)}
-                            </td>
-                            <td className="py-3 px-3.5 whitespace-nowrap font-mono text-emerald-800 font-bold text-xs">
-                              {formatDate(lead.visitDate)}
-                            </td>
-                            <td className="py-3 px-3.5 whitespace-nowrap">
-                              <span className="font-bold text-slate-900">
-                                {lead.projectName || '—'}
-                              </span>
-                              {lead.requirement && (
-                                <span className="text-[11px] text-slate-500 block">
-                                  {lead.requirement}
+                    return (
+                      <Fragment key={lead.id}>
+                        {isNewAgentGroup && (
+                          <tr className="bg-gradient-to-r from-slate-100 via-emerald-50/50 to-slate-100 border-y border-slate-200">
+                            <td colSpan={9} className="py-2 px-3.5">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-5 h-5 rounded-full bg-gradient-to-tr from-emerald-700 to-teal-600 text-white font-black text-[11px] inline-flex items-center justify-center shadow-2xs">
+                                    {currentAgent[0]}
+                                  </span>
+                                  <span className="font-extrabold text-slate-900 text-xs tracking-tight">
+                                    {currentAgent}
+                                  </span>
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                    Executive
+                                  </span>
+                                </div>
+                                <span className="text-[11px] font-mono font-bold text-slate-500">
+                                  {agentVisitsCount} {agentVisitsCount === 1 ? 'Visit' : 'Visits'}
                                 </span>
-                              )}
-                            </td>
-                            <td className="py-3 px-3.5 whitespace-nowrap font-medium text-slate-700">
-                              {lead.budget || '—'}
-                            </td>
-                            <td className="py-3 px-3.5 max-w-[260px]">
-                              <p
-                                className="text-[11px] text-slate-600 leading-tight"
-                                style={{
-                                  display: '-webkit-box',
-                                  WebkitLineClamp: 2,
-                                  WebkitBoxOrient: 'vertical',
-                                  overflow: 'hidden',
-                                }}
-                                title={lead.latestRemark || ''}
-                              >
-                                {lead.latestRemark || '—'}
-                              </p>
-                            </td>
-                            <td className="py-3 px-3.5 whitespace-nowrap text-center">
-                              {rescheduleId === lead.id ? (
-                                <div className="flex items-center justify-center gap-1.5 animate-fade-in-up">
-                                  <div className="relative inline-flex items-center">
-                                    <div className="flex items-center gap-1 px-2 py-1 text-xs font-mono font-bold bg-white border border-slate-300 rounded-lg text-slate-800 shadow-2xs">
-                                      <Calendar size={12} className="text-amber-600 shrink-0" />
-                                      <span className={newDate ? 'text-slate-900 font-extrabold' : 'text-slate-400 font-medium'}>
-                                        {newDate ? formatDisplayDDMMYY(newDate) : 'dd/mmm/yy'}
-                                      </span>
-                                    </div>
-                                    <input
-                                      type="date"
-                                      value={newDate}
-                                      min={todayStr}
-                                      onChange={(e) => setNewDate(e.target.value)}
-                                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                                      title="Select Reschedule Date (dd/mmm/yy)"
-                                    />
-                                  </div>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleReschedule(lead.id)}
-                                    disabled={!newDate}
-                                    className="px-2.5 py-1 rounded-lg bg-amber-600 text-white text-xs font-bold hover:bg-amber-700 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
-                                  >
-                                    Save
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setRescheduleId(null);
-                                      setNewDate('');
-                                    }}
-                                    className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 text-xs font-semibold hover:bg-slate-200 transition-all cursor-pointer"
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
-                              ) : (
-                                <div className="flex items-center justify-center gap-1.5">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleMarkDone(lead.id)}
-                                    className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
-                                    title="Mark visit completed"
-                                  >
-                                    <Check size={12} className="text-emerald-700" /> Done
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setRescheduleId(lead.id);
-                                      setNewDate('');
-                                    }}
-                                    className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
-                                    title="Reschedule visit"
-                                  >
-                                    <RotateCcw size={12} className="text-amber-700" /> Reschedule
-                                  </button>
-                                </div>
-                              )}
+                              </div>
                             </td>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              ))}
+                        )}
+                        <tr className="bg-white border-l-4 border-l-emerald-500 hover:bg-slate-50/80 transition-colors">
+                          <td className="py-3 px-3 text-center font-mono font-bold text-slate-500 text-xs">
+                            {idx + 1}
+                          </td>
+                          <td className="py-3 px-3.5 whitespace-nowrap">{statusBadge(lead.visitStatus || 'SCHEDULED')}</td>
+                          <td className="py-3 px-3.5 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <span className="w-6 h-6 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-bold text-[10px] inline-flex items-center justify-center shadow-2xs">
+                                {currentAgent[0]}
+                              </span>
+                              <span className="font-bold text-slate-900 text-xs">
+                                {currentAgent}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3.5 whitespace-nowrap">
+                            <div className="font-bold text-slate-900">{lead.name}</div>
+                            {renderMaskedPhone(lead.phone)}
+                          </td>
+                          <td className="py-3 px-3.5 whitespace-nowrap font-mono text-emerald-800 font-bold text-xs">
+                            {formatDate(lead.visitDate)}
+                          </td>
+                          <td className="py-3 px-3.5 whitespace-nowrap">
+                            <span className="font-bold text-slate-900">
+                              {lead.projectName || '—'}
+                            </span>
+                            {lead.requirement && (
+                              <span className="text-[11px] text-slate-500 block">
+                                {REQUIREMENT_LABELS[lead.requirement] || lead.requirement}
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-3.5 whitespace-nowrap font-medium text-slate-700">
+                            {lead.budget ? BUDGET_LABELS[lead.budget] || String(lead.budget) : '—'}
+                          </td>
+                          <td className="py-3 px-3.5 max-w-[220px]">
+                            <p
+                              className="text-[11px] text-slate-600 leading-tight"
+                              style={{
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                              }}
+                              title={lead.latestRemark || ''}
+                            >
+                              {lead.latestRemark || '—'}
+                            </p>
+                          </td>
+                          <td className="py-3 px-3.5 whitespace-nowrap text-center">
+                            {rescheduleId === lead.id ? (
+                              <div className="flex items-center justify-center gap-1.5 animate-fade-in-up">
+                                <div className="relative inline-flex items-center">
+                                  <div className="flex items-center gap-1 px-2 py-1 text-xs font-mono font-bold bg-white border border-slate-300 rounded-lg text-slate-800 shadow-2xs">
+                                    <Calendar size={12} className="text-amber-600 shrink-0" />
+                                    <span className={newDate ? 'text-slate-900 font-extrabold' : 'text-slate-400 font-medium'}>
+                                      {newDate ? formatDisplayDDMMYY(newDate) : 'dd/mmm/yy'}
+                                    </span>
+                                  </div>
+                                  <input
+                                    type="date"
+                                    value={newDate}
+                                    min={todayStr}
+                                    onChange={(e) => setNewDate(e.target.value)}
+                                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                    title="Select Reschedule Date (dd/mmm/yy)"
+                                  />
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleReschedule(lead.id)}
+                                  disabled={!newDate}
+                                  className="px-2.5 py-1 rounded-lg bg-amber-600 text-white text-xs font-bold hover:bg-amber-700 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setRescheduleId(null);
+                                    setNewDate('');
+                                  }}
+                                  className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 text-xs font-semibold hover:bg-slate-200 transition-all cursor-pointer"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleMarkDone(lead.id)}
+                                  className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
+                                  title="Mark visit completed (moves to Visit Done)"
+                                >
+                                  <Check size={12} className="text-emerald-700" /> Done
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setRescheduleId(lead.id);
+                                    setNewDate('');
+                                  }}
+                                  className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
+                                  title="Reschedule visit"
+                                >
+                                  <RotateCcw size={12} className="text-amber-700" /> Reschedule
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      </Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
       )}
 
       {/* ────────────────────────────────────────────────────────────────────── */}
-      {/* TAB 3: VISIT DONE (COMPLETED VISITS GROUPED BY AGENT + DATE FILTER)   */}
+      {/* TAB 3: VISIT DONE (COMPLETED VISITS - DATE FILTER + UNIFIED TABLE)    */}
       {/* ────────────────────────────────────────────────────────────────────── */}
       {activeTab === 'all-done' && (
-        <div className="space-y-5">
-          {/* Summary Banner with Date Filters */}
-          <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-blue-50 border border-blue-200 p-5 rounded-2xl shadow-xs space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="p-1.5 bg-blue-600 text-white rounded-lg shadow-2xs">
-                    <CheckCircle2 size={16} />
-                  </span>
-                  <h2 className="text-base font-black text-blue-950">
-                    All Completed Site Visits (Grouped By Executive)
-                  </h2>
-                </div>
-                <p className="text-xs text-blue-800 mt-1">
-                  Verified client visits completed on-ground. Grouped agent-wise without mixing names.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-6 bg-white/90 backdrop-blur-xs px-4 py-2.5 rounded-xl border border-blue-200 shadow-2xs">
-                <div className="text-center">
-                  <p className="text-2xl font-black text-blue-700">
-                    {totalFilteredDone}
-                  </p>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-blue-800">
-                    {doneDateFilter === 'all'
-                      ? 'Total Completed'
-                      : doneDateFilter === 'today'
-                      ? 'Completed Today'
-                      : 'Filtered Done'}
-                  </p>
-                </div>
-                <div className="w-px h-8 bg-blue-200" />
-                <div className="text-center">
-                  <p className="text-2xl font-black text-slate-800">
-                    {activeDoneExecutives.length}
-                  </p>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                    Executives with Visits
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Date Filters Toolbar */}
-            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-blue-200/80">
-              <span className="text-[11px] font-extrabold text-blue-900 uppercase tracking-wider">
-                Completion Date:
-              </span>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setDoneDateFilter('all');
-                  setDoneCustomDate('');
-                }}
-                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  doneDateFilter === 'all'
-                    ? 'bg-blue-700 text-white shadow-2xs'
-                    : 'bg-white text-blue-900 hover:bg-blue-100/70 border border-blue-200'
-                }`}
-              >
-                All Completed
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setDoneDateFilter('today')}
-                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  doneDateFilter === 'today'
-                    ? 'bg-blue-700 text-white shadow-2xs'
-                    : 'bg-white text-blue-900 hover:bg-blue-100/70 border border-blue-200'
-                }`}
-              >
-                Today
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setDoneDateFilter('this-week')}
-                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  doneDateFilter === 'this-week'
-                    ? 'bg-blue-700 text-white shadow-2xs'
-                    : 'bg-white text-blue-900 hover:bg-blue-100/70 border border-blue-200'
-                }`}
-              >
-                This Week
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setDoneDateFilter('this-month')}
-                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  doneDateFilter === 'this-month'
-                    ? 'bg-blue-700 text-white shadow-2xs'
-                    : 'bg-white text-blue-900 hover:bg-blue-100/70 border border-blue-200'
-                }`}
-              >
-                This Month
-              </button>
-
-              {/* Calendar Date Picker Overlay */}
-              <div className="relative inline-flex items-center ml-1">
-                <div
-                  className={`flex items-center gap-1.5 px-3 py-1 text-xs font-mono font-bold rounded-xl border transition-all cursor-pointer shadow-2xs ${
-                    doneDateFilter === 'custom' && doneCustomDate
-                      ? 'bg-blue-800 text-white border-blue-900 ring-2 ring-blue-500/40'
-                      : 'bg-white border-blue-200 text-blue-900 hover:bg-blue-100/60'
+        <div className="space-y-4">
+          {/* Date Navigation & Controls Bar (Identical style to Daily Schedule) */}
+          <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDoneDateFilter('all');
+                    setDoneCustomDate('');
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    doneDateFilter === 'all'
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                   }`}
                 >
-                  <Calendar size={13} className={doneDateFilter === 'custom' ? 'text-white' : 'text-blue-700'} />
-                  <span>
-                    {doneDateFilter === 'custom' && doneCustomDate
-                      ? formatDisplayDDMMYY(doneCustomDate)
-                      : 'Pick Calendar Date'}
-                  </span>
-                </div>
-                <input
-                  type="date"
-                  value={doneCustomDate}
-                  onChange={(e) => {
-                    if (e.target.value) {
-                      setDoneCustomDate(e.target.value);
-                      setDoneDateFilter('custom');
-                    }
+                  All Completed
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDoneDateFilter('today');
+                    setDoneCustomDate(todayStr);
                   }}
-                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                  title="Filter by Calendar Date (dd/mmm/yy)"
-                />
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    doneDateFilter === 'today'
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  Today
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDoneDateFilter('this-week');
+                    setDoneCustomDate('');
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    doneDateFilter === 'this-week'
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  This Week
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDoneDateFilter('this-month');
+                    setDoneCustomDate('');
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    doneDateFilter === 'this-month'
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  This Month
+                </button>
+              </div>
+
+              {/* Date picker with arrows */}
+              <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl px-1.5 py-0.5">
+                <button
+                  type="button"
+                  onClick={() => stepDoneDate(-1)}
+                  className="p-1 rounded-lg text-slate-600 hover:bg-slate-200 transition-all cursor-pointer"
+                  title="Previous Day"
+                >
+                  <ChevronLeft size={15} />
+                </button>
+                <div className="relative inline-flex items-center">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-bold text-slate-800 bg-white border border-slate-200 rounded-lg shadow-2xs cursor-pointer">
+                    <Calendar size={13} className="text-blue-600 shrink-0" />
+                    <span>
+                      {doneDateFilter === 'custom' && doneCustomDate
+                        ? formatDisplayDDMMYY(doneCustomDate)
+                        : doneDateFilter === 'today'
+                        ? formatDisplayDDMMYY(todayStr)
+                        : doneDateFilter === 'all'
+                        ? 'Pick Date'
+                        : doneDateFilter}
+                    </span>
+                  </div>
+                  <input
+                    type="date"
+                    value={doneCustomDate}
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        setDoneCustomDate(e.target.value);
+                        setDoneDateFilter('custom');
+                      }
+                    }}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                    title="Select Date (dd/mmm/yy)"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => stepDoneDate(1)}
+                  className="p-1 rounded-lg text-slate-600 hover:bg-slate-200 transition-all cursor-pointer"
+                  title="Next Day"
+                >
+                  <ChevronRight size={15} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => loadPortfolio()}
+                  className="p-1 rounded-lg text-slate-600 hover:bg-slate-200 transition-all cursor-pointer ml-0.5"
+                  title="Refresh"
+                >
+                  <RefreshCcw size={13} className={portfolioLoading ? 'animate-spin text-blue-600' : ''} />
+                </button>
               </div>
 
               {doneDateFilter !== 'all' && (
@@ -1553,20 +1630,74 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                     setDoneDateFilter('all');
                     setDoneCustomDate('');
                   }}
-                  className="ml-auto px-2.5 py-0.5 text-[11px] font-bold text-rose-700 hover:text-rose-900 hover:bg-rose-100/70 rounded-lg transition-colors cursor-pointer"
+                  className="px-2.5 py-1 rounded-lg text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100 transition-all cursor-pointer"
                 >
-                  ✕ Reset Filter
+                  ✕ Clear Date Filter
                 </button>
+              )}
+            </div>
+
+            <div className="text-xs text-slate-500 font-medium">
+              Showing {filteredDoneLeads.length} completed {filteredDoneLeads.length === 1 ? 'visit' : 'visits'}
+              {doneDateFilter === 'all' ? (
+                <> across <strong className="text-slate-800 font-bold">{activeDoneExecutives.length} executives</strong></>
+              ) : (
+                <> for <strong className="text-slate-800 font-bold">{doneCustomDate ? formatDisplayDDMMYY(doneCustomDate) : doneDateFilter}</strong></>
               )}
             </div>
           </div>
 
+          {/* Stats Bar */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-extrabold text-slate-900">
+                  {doneDateFilter === 'all'
+                    ? 'All Completed Site Visits'
+                    : doneDateFilter === 'today'
+                    ? "Today's Completed Visits"
+                    : doneDateFilter === 'this-week'
+                    ? "This Week's Completed Visits"
+                    : doneDateFilter === 'this-month'
+                    ? "This Month's Completed Visits"
+                    : doneCustomDate
+                    ? `Completed Visits for ${formatDisplayDDMMYY(doneCustomDate)}`
+                    : 'Filtered Completed Visits'}
+                </h2>
+                {selectedExecutive !== 'ALL' && (
+                  <span className="text-[11px] bg-blue-50 border border-blue-200 text-blue-700 px-2 py-0.5 rounded-md font-bold">
+                    Filtered: {selectedExecutive}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                {doneDateFilter === 'all'
+                  ? 'Verified on-ground completed visits grouped agent-wise without mixing names'
+                  : doneCustomDate
+                  ? `${new Date(doneCustomDate + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'long' })} • ${formatDisplayDDMMYY(doneCustomDate)}`
+                  : 'Filtered completion history across all executives'}
+              </p>
+            </div>
+            <div className="flex items-center gap-6">
+              <div className="text-center">
+                <p className="text-2xl font-black text-blue-600">{filteredDoneLeads.length}</p>
+                <p className="text-[10px] text-blue-700 font-bold uppercase tracking-wider">Completed</p>
+              </div>
+              <div className="w-px h-8 bg-slate-200" />
+              <div className="text-center">
+                <p className="text-2xl font-black text-slate-800">{activeDoneExecutives.length}</p>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Executives</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Unified Single Table */}
           {portfolioLoading ? (
             <div className="text-center py-16 text-slate-400">
               <RefreshCcw size={28} className="animate-spin mx-auto mb-3 text-blue-600" />
               Loading completed visits...
             </div>
-          ) : activeDoneExecutives.length === 0 ? (
+          ) : filteredDoneLeads.length === 0 ? (
             <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-500 shadow-xs">
               <CheckCircle2 size={44} className="mx-auto mb-3 text-slate-300" />
               <p className="text-base font-bold text-slate-800">
@@ -1575,354 +1706,500 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                   : 'No completed visits recorded yet'}
               </p>
               <p className="text-xs text-slate-400 mt-1">
-                When site visits are confirmed by clicking &quot;Done&quot;, they will appear here grouped under each executive.
+                When site visits are confirmed by clicking &quot;Done&quot;, they will automatically shift here under each executive.
               </p>
             </div>
           ) : (
-            /* RENDER AGENT BY AGENT SEPARATELY - NO MIXING */
-            <div className="space-y-6">
-              {activeDoneExecutives.map((exec) => (
-                <div
-                  key={exec.agentId}
-                  className="bg-white rounded-2xl border border-blue-200 shadow-xs overflow-hidden"
-                >
-                  {/* Executive Header Banner */}
-                  <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 px-4 py-3 flex items-center justify-between text-white">
-                    <div className="flex items-center gap-3">
-                      <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-500 text-slate-950 font-black text-sm flex items-center justify-center shadow-xs">
-                        {exec.agentName[0]}
-                      </span>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-extrabold text-sm tracking-tight text-white">
-                            {exec.agentName}
-                          </span>
-                          <span className="text-[10.5px] font-extrabold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30">
-                            Executive
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-300">
-                          {exec.doneVisits.length} Completed Visits
-                        </p>
-                      </div>
-                    </div>
+            <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-xs">
+              <table suppressHydrationWarning className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-100/90 text-[10.5px] uppercase font-bold text-slate-600 border-b border-slate-200">
+                    <th className="py-3 px-3 text-center w-12 font-mono">S.No</th>
+                    <th className="py-3 px-3.5">Status</th>
+                    <th className="py-3 px-3.5">Executive</th>
+                    <th className="py-3 px-3.5">Customer &amp; Mobile</th>
+                    <th className="py-3 px-3.5">Visit Date</th>
+                    <th className="py-3 px-3.5">Project &amp; Config</th>
+                    <th className="py-3 px-3.5">Budget</th>
+                    <th className="py-3 px-3.5">Agent Notes / Remark</th>
+                    <th className="py-3 px-3.5 text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredDoneLeads.map((lead, idx) => {
+                    const currentAgent = lead.agentName || 'Unassigned';
+                    const prevAgent = idx > 0 ? (filteredDoneLeads[idx - 1].agentName || 'Unassigned') : null;
+                    const isNewAgentGroup = selectedExecutive === 'ALL' && (idx === 0 || currentAgent !== prevAgent);
+                    const agentVisitsCount = filteredDoneLeads.filter(
+                      (l) => (l.agentName || 'Unassigned') === currentAgent
+                    ).length;
 
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-mono font-bold bg-white/10 px-3 py-1 rounded-lg text-blue-300 border border-blue-400/20">
-                        {exec.doneVisits.length} Completed
-                      </span>
-                      <span className="text-xs font-mono font-bold bg-white/10 px-3 py-1 rounded-lg text-emerald-300 border border-emerald-400/20">
-                        {exec.totalScheduled} Scheduled
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Executive Leads Table */}
-                  <div className="overflow-x-auto">
-                    <table suppressHydrationWarning className="w-full text-left border-collapse text-xs">
-                      <thead>
-                        <tr className="bg-slate-50 text-[10.5px] uppercase font-bold text-slate-600 border-b border-slate-200">
-                          <th className="py-2.5 px-3 text-center w-12 font-mono">S.No</th>
-                          <th className="py-2.5 px-3.5">Status</th>
-                          <th className="py-2.5 px-3.5">Customer &amp; Mobile</th>
-                          <th className="py-2.5 px-3.5">Visit Date</th>
-                          <th className="py-2.5 px-3.5">Project &amp; Config</th>
-                          <th className="py-2.5 px-3.5">Budget</th>
-                          <th className="py-2.5 px-3.5">Agent Notes / Remark</th>
-                          <th className="py-2.5 px-3.5 text-center">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {exec.doneVisits.map((lead, idx) => (
-                          <tr key={lead.id} className="hover:bg-blue-50/30 transition-colors">
-                            <td className="py-3 px-3 text-center font-mono font-bold text-slate-500 text-xs">
-                              {idx + 1}
-                            </td>
-                            <td className="py-3 px-3.5 whitespace-nowrap">
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10.5px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                <Check size={11} className="text-emerald-700" /> Completed
-                              </span>
-                            </td>
-                            {/* Customer & Masked Mobile (5 digits + XXXXX) */}
-                            <td className="py-3 px-3.5 whitespace-nowrap">
-                              <div className="font-bold text-slate-900">{lead.name}</div>
-                              {renderMaskedPhone(lead.phone)}
-                            </td>
-                            <td className="py-3 px-3.5 whitespace-nowrap font-mono text-slate-700 font-bold text-xs">
-                              {formatDate(lead.visitDate || lead.updatedAt)}
-                            </td>
-                            <td className="py-3 px-3.5 whitespace-nowrap">
-                              <span className="font-bold text-slate-900">
-                                {lead.projectName || '—'}
-                              </span>
-                              {lead.requirement && (
-                                <span className="text-[11px] text-slate-500 block">
-                                  {lead.requirement}
+                    return (
+                      <Fragment key={lead.id}>
+                        {isNewAgentGroup && (
+                          <tr className="bg-gradient-to-r from-slate-100 via-blue-50/50 to-slate-100 border-y border-slate-200">
+                            <td colSpan={9} className="py-2 px-3.5">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-5 h-5 rounded-full bg-gradient-to-tr from-blue-700 to-indigo-600 text-white font-black text-[11px] inline-flex items-center justify-center shadow-2xs">
+                                    {currentAgent[0]}
+                                  </span>
+                                  <span className="font-extrabold text-slate-900 text-xs tracking-tight">
+                                    {currentAgent}
+                                  </span>
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                                    Executive
+                                  </span>
+                                </div>
+                                <span className="text-[11px] font-mono font-bold text-slate-500">
+                                  {agentVisitsCount} {agentVisitsCount === 1 ? 'Visit' : 'Visits'}
                                 </span>
-                              )}
-                            </td>
-                            <td className="py-3 px-3.5 whitespace-nowrap font-medium text-slate-700">
-                              {lead.budget || '—'}
-                            </td>
-                            <td className="py-3 px-3.5 max-w-[260px]">
-                              <p
-                                className="text-[11px] text-slate-600 leading-tight"
-                                style={{
-                                  display: '-webkit-box',
-                                  WebkitLineClamp: 2,
-                                  WebkitBoxOrient: 'vertical',
-                                  overflow: 'hidden',
-                                }}
-                                title={lead.latestRemark || ''}
-                              >
-                                {lead.latestRemark || '—'}
-                              </p>
-                            </td>
-                            <td className="py-3 px-3.5 whitespace-nowrap text-center">
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-emerald-700 bg-emerald-50 border border-emerald-200 text-xs font-bold">
-                                <CheckCircle2 size={13} /> Visit Done
-                              </span>
+                              </div>
                             </td>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              ))}
+                        )}
+                        <tr className="bg-white border-l-4 border-l-blue-500 hover:bg-blue-50/30 transition-colors">
+                          <td className="py-3 px-3 text-center font-mono font-bold text-slate-500 text-xs">
+                            {idx + 1}
+                          </td>
+                          <td className="py-3 px-3.5 whitespace-nowrap">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10.5px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                              Completed
+                            </span>
+                          </td>
+                          <td className="py-3 px-3.5 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <span className="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 text-white font-bold text-[10px] inline-flex items-center justify-center shadow-2xs">
+                                {currentAgent[0]}
+                              </span>
+                              <span className="font-bold text-slate-900 text-xs">
+                                {currentAgent}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3.5 whitespace-nowrap">
+                            <div className="font-bold text-slate-900">{lead.name}</div>
+                            {renderMaskedPhone(lead.phone)}
+                          </td>
+                          <td className="py-3 px-3.5 whitespace-nowrap font-mono text-slate-700 font-bold text-xs">
+                            {formatDate(lead.visitDate || lead.updatedAt)}
+                          </td>
+                          <td className="py-3 px-3.5 whitespace-nowrap">
+                            <span className="font-bold text-slate-900">
+                              {lead.projectName || '—'}
+                            </span>
+                            {lead.requirement && (
+                              <span className="text-[11px] text-slate-500 block">
+                                {REQUIREMENT_LABELS[lead.requirement] || lead.requirement}
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-3.5 whitespace-nowrap font-medium text-slate-700">
+                            {lead.budget ? BUDGET_LABELS[lead.budget] || String(lead.budget) : '—'}
+                          </td>
+                          <td className="py-3 px-3.5 max-w-[220px]">
+                            <p
+                              className="text-[11px] text-slate-600 leading-tight"
+                              style={{
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                              }}
+                              title={lead.latestRemark || ''}
+                            >
+                              {lead.latestRemark || '—'}
+                            </p>
+                          </td>
+                          <td className="py-3 px-3.5 whitespace-nowrap text-center">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-emerald-800 bg-emerald-50 border border-emerald-200 text-xs font-bold">
+                              <CheckCircle2 size={13} className="text-emerald-600" /> Completed
+                            </span>
+                          </td>
+                        </tr>
+                      </Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
       )}
 
       {/* ────────────────────────────────────────────────────────────────────── */}
-      {/* TAB 4: ALL DROPPED VISITS (GROUPED BY AGENT)                          */}
+      {/* TAB 4: ALL DROPPED VISITS (DATE FILTER + UNIFIED TABLE)               */}
       {/* ────────────────────────────────────────────────────────────────────── */}
       {activeTab === 'all-dropped' && (
-        <div className="space-y-6">
-          {/* Summary Banner */}
-          <div className="bg-gradient-to-r from-rose-50 via-amber-50 to-rose-50 border border-rose-200 p-5 rounded-2xl shadow-xs flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="p-1.5 bg-rose-600 text-white rounded-lg shadow-2xs">
-                  <AlertTriangle size={16} />
-                </span>
-                <h2 className="text-base font-black text-rose-950">
-                  All Dropped Visits Analysis (Grouped By Executive)
-                </h2>
+        <div className="space-y-4">
+          {/* Date Navigation & Controls Bar (Identical style to Daily Schedule) */}
+          <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDroppedDateFilter('all');
+                    setDroppedCustomDate('');
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    droppedDateFilter === 'all'
+                      ? 'bg-rose-600 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  All Dropped
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDroppedDateFilter('yesterday');
+                    setDroppedCustomDate(addDays(todayStr, -1));
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    droppedDateFilter === 'yesterday'
+                      ? 'bg-rose-600 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  Yesterday
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDroppedDateFilter('this-week');
+                    setDroppedCustomDate('');
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    droppedDateFilter === 'this-week'
+                      ? 'bg-rose-600 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  This Week
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDroppedDateFilter('this-month');
+                    setDroppedCustomDate('');
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    droppedDateFilter === 'this-month'
+                      ? 'bg-rose-600 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  This Month
+                </button>
               </div>
-              <p className="text-xs text-rose-800 mt-1">
-                Clients whose scheduled visit date has passed without confirmation. Grouped agent-wise for fast re-dialing &amp; rescheduling.
-              </p>
+
+              {/* Date picker with arrows */}
+              <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl px-1.5 py-0.5">
+                <button
+                  type="button"
+                  onClick={() => stepDroppedDate(-1)}
+                  className="p-1 rounded-lg text-slate-600 hover:bg-slate-200 transition-all cursor-pointer"
+                  title="Previous Day"
+                >
+                  <ChevronLeft size={15} />
+                </button>
+                <div className="relative inline-flex items-center">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-bold text-slate-800 bg-white border border-slate-200 rounded-lg shadow-2xs cursor-pointer">
+                    <Calendar size={13} className="text-rose-600 shrink-0" />
+                    <span>
+                      {droppedDateFilter === 'custom' && droppedCustomDate
+                        ? formatDisplayDDMMYY(droppedCustomDate)
+                        : droppedDateFilter === 'yesterday'
+                        ? formatDisplayDDMMYY(addDays(todayStr, -1))
+                        : droppedDateFilter === 'all'
+                        ? 'Pick Date'
+                        : droppedDateFilter}
+                    </span>
+                  </div>
+                  <input
+                    type="date"
+                    value={droppedCustomDate}
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        setDroppedCustomDate(e.target.value);
+                        setDroppedDateFilter('custom');
+                      }
+                    }}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                    title="Select Date (dd/mmm/yy)"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => stepDroppedDate(1)}
+                  className="p-1 rounded-lg text-slate-600 hover:bg-slate-200 transition-all cursor-pointer"
+                  title="Next Day"
+                >
+                  <ChevronRight size={15} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => loadPortfolio()}
+                  className="p-1 rounded-lg text-slate-600 hover:bg-slate-200 transition-all cursor-pointer ml-0.5"
+                  title="Refresh"
+                >
+                  <RefreshCcw size={13} className={portfolioLoading ? 'animate-spin text-rose-600' : ''} />
+                </button>
+              </div>
+
+              {droppedDateFilter !== 'all' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDroppedDateFilter('all');
+                    setDroppedCustomDate('');
+                  }}
+                  className="px-2.5 py-1 rounded-lg text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100 transition-all cursor-pointer"
+                >
+                  ✕ Clear Date Filter
+                </button>
+              )}
             </div>
 
-            <div className="flex items-center gap-6 bg-white/80 backdrop-blur-xs px-4 py-2.5 rounded-xl border border-rose-200/80 shadow-2xs">
-              <div className="text-center">
-                <p className="text-2xl font-black text-rose-700">
-                  {portfolio?.totalDroppedAll ?? 0}
-                </p>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-rose-800">
-                  Total Dropped
-                </p>
+            <div className="text-xs text-slate-500 font-medium">
+              Showing {filteredDroppedLeads.length} dropped {filteredDroppedLeads.length === 1 ? 'visit' : 'visits'}
+              {droppedDateFilter === 'all' ? (
+                <> across <strong className="text-slate-800 font-bold">{activeDroppedExecutives.length} executives</strong></>
+              ) : (
+                <> for <strong className="text-slate-800 font-bold">{droppedCustomDate ? formatDisplayDDMMYY(droppedCustomDate) : droppedDateFilter}</strong></>
+              )}
+            </div>
+          </div>
+
+          {/* Stats Bar */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-extrabold text-slate-900">
+                  {droppedDateFilter === 'all'
+                    ? 'All Dropped Visits Analysis'
+                    : droppedDateFilter === 'yesterday'
+                    ? "Yesterday's Dropped Visits"
+                    : droppedDateFilter === 'this-week'
+                    ? "This Week's Dropped Visits"
+                    : droppedDateFilter === 'this-month'
+                    ? "This Month's Dropped Visits"
+                    : droppedCustomDate
+                    ? `Dropped Visits for ${formatDisplayDDMMYY(droppedCustomDate)}`
+                    : 'Filtered Dropped Visits'}
+                </h2>
+                {selectedExecutive !== 'ALL' && (
+                  <span className="text-[11px] bg-rose-50 border border-rose-200 text-rose-700 px-2 py-0.5 rounded-md font-bold">
+                    Filtered: {selectedExecutive}
+                  </span>
+                )}
               </div>
-              <div className="w-px h-8 bg-rose-200" />
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                Past scheduled visits without confirmation. Grouped agent-wise for re-dialing &amp; rescheduling.
+              </p>
+            </div>
+            <div className="flex items-center gap-6">
               <div className="text-center">
-                <p className="text-2xl font-black text-slate-800">
-                  {activeDroppedExecutives.length}
-                </p>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                  Executives Affected
-                </p>
+                <p className="text-2xl font-black text-rose-600">{filteredDroppedLeads.length}</p>
+                <p className="text-[10px] text-rose-700 font-bold uppercase tracking-wider">Dropped</p>
+              </div>
+              <div className="w-px h-8 bg-slate-200" />
+              <div className="text-center">
+                <p className="text-2xl font-black text-slate-800">{activeDroppedExecutives.length}</p>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Executives</p>
               </div>
             </div>
           </div>
 
+          {/* Unified Single Table */}
           {portfolioLoading ? (
             <div className="text-center py-16 text-slate-400">
               <RefreshCcw size={28} className="animate-spin mx-auto mb-3 text-rose-600" />
               Loading dropped visits...
             </div>
-          ) : activeDroppedExecutives.length === 0 ? (
+          ) : filteredDroppedLeads.length === 0 ? (
             <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-500 shadow-xs">
               <CheckCircle2 size={44} className="mx-auto mb-3 text-emerald-400" />
               <p className="text-base font-bold text-slate-800">
                 {selectedExecutive !== 'ALL'
                   ? `Zero dropped visits for ${selectedExecutive}!`
-                  : 'Zero dropped visits across all executives!'}
+                  : 'Zero dropped visits found!'}
               </p>
               <p className="text-xs text-slate-400 mt-1">
                 All scheduled visits are on track or have been marked completed.
               </p>
             </div>
           ) : (
-            /* RENDER AGENT BY AGENT SEPARATELY - NO MIXING */
-            <div className="space-y-6">
-              {activeDroppedExecutives.map((exec) => (
-                <div
-                  key={exec.agentId}
-                  className="bg-white rounded-2xl border border-rose-200 shadow-xs overflow-hidden"
-                >
-                  {/* Executive Header Banner */}
-                  <div className="bg-gradient-to-r from-slate-900 via-rose-950 to-slate-900 px-4 py-3 flex items-center justify-between text-white">
-                    <div className="flex items-center gap-3">
-                      <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-rose-500 to-amber-500 text-white font-black text-sm flex items-center justify-center shadow-xs">
-                        {exec.agentName[0]}
-                      </span>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-extrabold text-sm tracking-tight text-white">
-                            {exec.agentName}
-                          </span>
-                          <span className="text-[10.5px] font-extrabold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-400/30">
-                            Executive
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-300">
-                          {exec.totalDropped} Dropped / Missed Visits
-                        </p>
-                      </div>
-                    </div>
+            <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-xs">
+              <table suppressHydrationWarning className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-100/90 text-[10.5px] uppercase font-bold text-slate-600 border-b border-slate-200">
+                    <th className="py-3 px-3 text-center w-12 font-mono">S.No</th>
+                    <th className="py-3 px-3.5">Status</th>
+                    <th className="py-3 px-3.5">Executive</th>
+                    <th className="py-3 px-3.5">Customer &amp; Mobile</th>
+                    <th className="py-3 px-3.5">Past Scheduled Date</th>
+                    <th className="py-3 px-3.5">Project &amp; Config</th>
+                    <th className="py-3 px-3.5">Budget</th>
+                    <th className="py-3 px-3.5">Agent Notes / Remark</th>
+                    <th className="py-3 px-3.5 text-center">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredDroppedLeads.map((lead, idx) => {
+                    const currentAgent = lead.agentName || 'Unassigned';
+                    const prevAgent = idx > 0 ? (filteredDroppedLeads[idx - 1].agentName || 'Unassigned') : null;
+                    const isNewAgentGroup = selectedExecutive === 'ALL' && (idx === 0 || currentAgent !== prevAgent);
+                    const agentVisitsCount = filteredDroppedLeads.filter(
+                      (l) => (l.agentName || 'Unassigned') === currentAgent
+                    ).length;
 
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-mono font-bold bg-white/10 px-3 py-1 rounded-lg text-rose-300 border border-rose-400/20">
-                        {exec.totalDropped} Dropped
-                      </span>
-                      <span className="text-xs font-mono font-bold bg-white/10 px-3 py-1 rounded-lg text-emerald-300 border border-emerald-400/20">
-                        {exec.totalScheduled} Scheduled
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Executive Leads Table */}
-                  <div className="overflow-x-auto">
-                    <table suppressHydrationWarning className="w-full text-left border-collapse text-xs">
-                      <thead>
-                        <tr className="bg-rose-50/50 text-[10.5px] uppercase font-bold text-rose-900 border-b border-rose-100">
-                          <th className="py-2.5 px-3 text-center w-12 font-mono">S.No</th>
-                          <th className="py-2.5 px-3.5">Status</th>
-                          <th className="py-2.5 px-3.5">Customer &amp; Mobile</th>
-                          <th className="py-2.5 px-3.5">Past Scheduled Date</th>
-                          <th className="py-2.5 px-3.5">Project &amp; Config</th>
-                          <th className="py-2.5 px-3.5">Budget</th>
-                          <th className="py-2.5 px-3.5">Agent Notes / Remark</th>
-                          <th className="py-2.5 px-3.5 text-center">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {exec.droppedVisits.map((lead, idx) => (
-                          <tr key={lead.id} className="hover:bg-rose-50/30 transition-colors">
-                            <td className="py-3 px-3 text-center font-mono font-bold text-slate-500 text-xs">
-                              {idx + 1}
-                            </td>
-                            <td className="py-3 px-3.5 whitespace-nowrap">
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10.5px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
-                                Dropped
-                              </span>
-                            </td>
-                            {/* Customer & Masked Mobile (5 digits + XXXXX) */}
-                            <td className="py-3 px-3.5 whitespace-nowrap">
-                              <div className="font-bold text-slate-900">{lead.name}</div>
-                              {renderMaskedPhone(lead.phone)}
-                            </td>
-                            <td className="py-3 px-3.5 whitespace-nowrap font-mono text-rose-700 font-bold text-xs">
-                              {formatDate(lead.visitDate)}
-                            </td>
-                            <td className="py-3 px-3.5 whitespace-nowrap">
-                              <span className="font-bold text-slate-900">
-                                {lead.projectName || '—'}
-                              </span>
-                              {lead.requirement && (
-                                <span className="text-[11px] text-slate-500 block">
-                                  {lead.requirement}
+                    return (
+                      <Fragment key={lead.id}>
+                        {isNewAgentGroup && (
+                          <tr className="bg-gradient-to-r from-slate-100 via-rose-50/50 to-slate-100 border-y border-slate-200">
+                            <td colSpan={9} className="py-2 px-3.5">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-5 h-5 rounded-full bg-gradient-to-tr from-rose-700 to-amber-600 text-white font-black text-[11px] inline-flex items-center justify-center shadow-2xs">
+                                    {currentAgent[0]}
+                                  </span>
+                                  <span className="font-extrabold text-slate-900 text-xs tracking-tight">
+                                    {currentAgent}
+                                  </span>
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-200">
+                                    Executive
+                                  </span>
+                                </div>
+                                <span className="text-[11px] font-mono font-bold text-slate-500">
+                                  {agentVisitsCount} {agentVisitsCount === 1 ? 'Visit' : 'Visits'}
                                 </span>
-                              )}
-                            </td>
-                            <td className="py-3 px-3.5 whitespace-nowrap font-medium text-slate-700">
-                              {lead.budget || '—'}
-                            </td>
-                            <td className="py-3 px-3.5 max-w-[260px]">
-                              <p
-                                className="text-[11px] text-slate-600 leading-tight"
-                                style={{
-                                  display: '-webkit-box',
-                                  WebkitLineClamp: 2,
-                                  WebkitBoxOrient: 'vertical',
-                                  overflow: 'hidden',
-                                }}
-                                title={lead.latestRemark || ''}
-                              >
-                                {lead.latestRemark || '—'}
-                              </p>
-                            </td>
-                            <td className="py-3 px-3.5 whitespace-nowrap text-center">
-                              {rescheduleId === lead.id ? (
-                                <div className="flex items-center justify-center gap-1.5 animate-fade-in-up">
-                                  <div className="relative inline-flex items-center">
-                                    <div className="flex items-center gap-1 px-2 py-1 text-xs font-mono font-bold bg-white border border-slate-300 rounded-lg text-slate-800 shadow-2xs">
-                                      <Calendar size={12} className="text-amber-600 shrink-0" />
-                                      <span className={newDate ? 'text-slate-900 font-extrabold' : 'text-slate-400 font-medium'}>
-                                        {newDate ? formatDisplayDDMMYY(newDate) : 'dd/mmm/yy'}
-                                      </span>
-                                    </div>
-                                    <input
-                                      type="date"
-                                      value={newDate}
-                                      min={todayStr}
-                                      onChange={(e) => setNewDate(e.target.value)}
-                                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                                      title="Select Reschedule Date (dd/mmm/yy)"
-                                    />
-                                  </div>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleReschedule(lead.id)}
-                                    disabled={!newDate}
-                                    className="px-2.5 py-1 rounded-lg bg-amber-600 text-white text-xs font-bold hover:bg-amber-700 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
-                                  >
-                                    Save &amp; Revive
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setRescheduleId(null);
-                                      setNewDate('');
-                                    }}
-                                    className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 text-xs font-semibold hover:bg-slate-200 transition-all cursor-pointer"
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
-                              ) : (
-                                <div className="flex items-center justify-center gap-1.5">
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setRescheduleId(lead.id);
-                                      setNewDate('');
-                                    }}
-                                    className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
-                                    title="Reschedule and revive visit to scheduled"
-                                  >
-                                    <RotateCcw size={12} /> Reschedule Date
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleMarkDone(lead.id)}
-                                    className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer"
-                                    title="Mark completed if visit was done"
-                                  >
-                                    <Check size={12} /> Done
-                                  </button>
-                                </div>
-                              )}
+                              </div>
                             </td>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              ))}
+                        )}
+                        <tr className="bg-white border-l-4 border-l-rose-500 hover:bg-rose-50/30 transition-colors">
+                          <td className="py-3 px-3 text-center font-mono font-bold text-slate-500 text-xs">
+                            {idx + 1}
+                          </td>
+                          <td className="py-3 px-3.5 whitespace-nowrap">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10.5px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                              Dropped
+                            </span>
+                          </td>
+                          <td className="py-3 px-3.5 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <span className="w-6 h-6 rounded-full bg-gradient-to-tr from-rose-600 to-amber-500 text-white font-bold text-[10px] inline-flex items-center justify-center shadow-2xs">
+                                {currentAgent[0]}
+                              </span>
+                              <span className="font-bold text-slate-900 text-xs">
+                                {currentAgent}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3.5 whitespace-nowrap">
+                            <div className="font-bold text-slate-900">{lead.name}</div>
+                            {renderMaskedPhone(lead.phone)}
+                          </td>
+                          <td className="py-3 px-3.5 whitespace-nowrap font-mono text-rose-700 font-bold text-xs">
+                            {formatDate(lead.visitDate)}
+                          </td>
+                          <td className="py-3 px-3.5 whitespace-nowrap">
+                            <span className="font-bold text-slate-900">
+                              {lead.projectName || '—'}
+                            </span>
+                            {lead.requirement && (
+                              <span className="text-[11px] text-slate-500 block">
+                                {REQUIREMENT_LABELS[lead.requirement] || lead.requirement}
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-3.5 whitespace-nowrap font-medium text-slate-700">
+                            {lead.budget ? BUDGET_LABELS[lead.budget] || String(lead.budget) : '—'}
+                          </td>
+                          <td className="py-3 px-3.5 max-w-[220px]">
+                            <p
+                              className="text-[11px] text-slate-600 leading-tight"
+                              style={{
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                              }}
+                              title={lead.latestRemark || ''}
+                            >
+                              {lead.latestRemark || '—'}
+                            </p>
+                          </td>
+                          <td className="py-3 px-3.5 whitespace-nowrap text-center">
+                            {rescheduleId === lead.id ? (
+                              <div className="flex items-center justify-center gap-1.5 animate-fade-in-up">
+                                <div className="relative inline-flex items-center">
+                                  <div className="flex items-center gap-1 px-2 py-1 text-xs font-mono font-bold bg-white border border-slate-300 rounded-lg text-slate-800 shadow-2xs">
+                                    <Calendar size={12} className="text-amber-600 shrink-0" />
+                                    <span className={newDate ? 'text-slate-900 font-extrabold' : 'text-slate-400 font-medium'}>
+                                      {newDate ? formatDisplayDDMMYY(newDate) : 'dd/mmm/yy'}
+                                    </span>
+                                  </div>
+                                  <input
+                                    type="date"
+                                    value={newDate}
+                                    min={todayStr}
+                                    onChange={(e) => setNewDate(e.target.value)}
+                                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                    title="Select Reschedule Date (dd/mmm/yy)"
+                                  />
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleReschedule(lead.id)}
+                                  disabled={!newDate}
+                                  className="px-2.5 py-1 rounded-lg bg-amber-600 text-white text-xs font-bold hover:bg-amber-700 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+                                >
+                                  Save &amp; Revive
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setRescheduleId(null);
+                                    setNewDate('');
+                                  }}
+                                  className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 text-xs font-semibold hover:bg-slate-200 transition-all cursor-pointer"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setRescheduleId(lead.id);
+                                    setNewDate('');
+                                  }}
+                                  className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
+                                  title="Reschedule and revive visit to scheduled"
+                                >
+                                  <RotateCcw size={12} className="text-amber-700" /> Reschedule Date
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleMarkDone(lead.id)}
+                                  className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
+                                  title="Mark visit completed"
+                                >
+                                  <Check size={12} className="text-emerald-700" /> Done
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      </Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
