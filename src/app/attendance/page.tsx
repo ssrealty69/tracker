@@ -196,8 +196,8 @@ export default function AttendancePage() {
     });
   };
 
-  // Open Camera Handler: Direct front camera launch without location barriers
-  const handleOpenFrontCamera = async () => {
+  // Open Camera Handler: Direct in-page front camera launch
+  const handleOpenFrontCamera = async (overrideFacingMode?: 'user' | 'environment') => {
     // 0. Project and Employee Selection Validation
     if (!effectiveProject) {
       toast.error('Kripya pehle 1. Project / Site select karein!');
@@ -208,10 +208,10 @@ export default function AttendancePage() {
       return;
     }
 
-    const isSecure = typeof window !== 'undefined' && (window.isSecureContext || window.location.hostname === 'localhost');
-    const hasMediaDevices = typeof navigator !== 'undefined' && !!navigator.mediaDevices && !!navigator.mediaDevices.getUserMedia;
+    const mode = overrideFacingMode || facingMode;
+    const hasMediaDevices = typeof navigator !== 'undefined' && !!navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function';
 
-    if (isSecure && hasMediaDevices) {
+    if (hasMediaDevices) {
       try {
         if (streamRef.current) {
           streamRef.current.getTracks().forEach((t) => t.stop());
@@ -220,26 +220,40 @@ export default function AttendancePage() {
         setCapturedImage(null);
 
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: facingMode }, width: { ideal: 720 }, height: { ideal: 720 } },
+          video: {
+            facingMode: { ideal: mode },
+            width: { ideal: 720 },
+            height: { ideal: 720 },
+          },
           audio: false,
         });
         streamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
-          videoRef.current.play();
+          videoRef.current.play().catch(() => {});
         }
         return;
-      } catch (err) {
-        console.warn('Live stream camera failed, falling back to native camera input:', err);
+      } catch (err: unknown) {
+        console.warn('In-page camera stream failed, falling back to native camera input:', err);
         setCameraActive(false);
       }
     }
 
-    // Direct Native Front-Camera Launch (Works 100% on Android & iOS even over HTTP IP)
+    // Direct Native Front-Camera Launch (Fallback for unencrypted HTTP IP on iOS)
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
+
+  // Sync video element with active stream on render
+  useEffect(() => {
+    if (cameraActive && videoRef.current && streamRef.current) {
+      if (videoRef.current.srcObject !== streamRef.current) {
+        videoRef.current.srcObject = streamRef.current;
+        videoRef.current.play().catch(() => {});
+      }
+    }
+  }, [cameraActive]);
 
   // Handle native camera capture from file input
   const handleNativeCameraCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -747,7 +761,7 @@ export default function AttendancePage() {
                     </div>
                     <button
                       type="button"
-                      onClick={handleOpenFrontCamera}
+                      onClick={() => handleOpenFrontCamera()}
                       className="absolute bottom-3 right-3 bg-slate-900/90 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg text-xs font-semibold border border-white/20 shadow-md flex items-center gap-1.5 cursor-pointer"
                     >
                       <RotateCcw className="w-3.5 h-3.5" /> Retake Selfie
@@ -761,6 +775,7 @@ export default function AttendancePage() {
                       playsInline
                       muted
                       autoPlay
+                      {...({ 'webkit-playsinline': 'true' } as any)}
                       className={`w-full aspect-square object-cover ${facingMode === 'user' ? 'scale-x-[-1]' : ''}`}
                     />
 
@@ -784,7 +799,7 @@ export default function AttendancePage() {
                       onClick={() => {
                         const next = facingMode === 'user' ? 'environment' : 'user';
                         setFacingMode(next);
-                        handleOpenFrontCamera();
+                        handleOpenFrontCamera(next);
                       }}
                       title="Switch Front/Back Camera"
                       className="absolute top-3 right-3 bg-black/60 hover:bg-black/80 text-white p-2 rounded-full border border-white/20 backdrop-blur-md cursor-pointer transition-all"
@@ -824,7 +839,7 @@ export default function AttendancePage() {
                     </p>
                     <button
                       type="button"
-                      onClick={handleOpenFrontCamera}
+                      onClick={() => handleOpenFrontCamera()}
                       className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 active:scale-[0.99] text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition-all cursor-pointer min-h-[48px]"
                     >
                       <Camera className="w-4 h-4" />
