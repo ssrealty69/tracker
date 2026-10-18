@@ -223,3 +223,90 @@ export async function saveSelfieImage(base64Data: string, id: string): Promise<s
     return `data:image/jpeg;base64,${base64Data}`;
   }
 }
+
+export async function updateAttendanceRecord(params: {
+  id?: string;
+  employeeName: string;
+  projectName?: string;
+  punchType: 'PUNCH_IN' | 'PUNCH_OUT';
+  formattedDate: string;
+  formattedTime: string;
+  photoUrl?: string;
+  timestamp?: string;
+}): Promise<AttendanceRecord> {
+  const all = await getAttendanceRecordsAsync();
+  let existing = params.id ? all.find((r) => r.id === params.id) : undefined;
+  if (!existing) {
+    existing = all.find(
+      (r) =>
+        r.employeeName.trim().toLowerCase() === params.employeeName.trim().toLowerCase() &&
+        r.formattedDate === params.formattedDate &&
+        r.punchType === params.punchType
+    );
+  }
+
+  const recordId = existing?.id || params.id || `att_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  const projectName = params.projectName || existing?.projectName || 'Nivasa II (Site 1)';
+
+  // Compute timestamp in ISO string from formattedDate + formattedTime if not provided
+  let timestamp = params.timestamp;
+  if (!timestamp) {
+    try {
+      const parts = params.formattedDate.split(' '); // e.g. ["15", "Oct", "2026"]
+      if (parts.length === 3) {
+        const day = parseInt(parts[0], 10);
+        const monthNames = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+        const mIdx = monthNames.indexOf(parts[1].toLowerCase());
+        const year = parseInt(parts[2], 10);
+
+        let hours = 9, minutes = 30, seconds = 0;
+        const tm = params.formattedTime.match(/(\d+):(\d+):?(\d+)?\s*(AM|PM)?/i);
+        if (tm) {
+          hours = parseInt(tm[1], 10);
+          minutes = parseInt(tm[2], 10);
+          seconds = tm[3] ? parseInt(tm[3], 10) : 0;
+          const ampm = tm[4] ? tm[4].toUpperCase() : '';
+          if (ampm === 'PM' && hours < 12) hours += 12;
+          if (ampm === 'AM' && hours === 12) hours = 0;
+        }
+        // Asia/Kolkata is UTC+5:30
+        const utcMs = Date.UTC(year, mIdx, day, hours - 5, minutes - 30, seconds);
+        timestamp = new Date(utcMs).toISOString();
+      }
+    } catch {
+      timestamp = existing?.timestamp || new Date().toISOString();
+    }
+  }
+
+  // Handle photoUrl
+  let finalPhotoUrl = existing?.photoUrl || '';
+  if (params.photoUrl) {
+    if (params.photoUrl.startsWith('data:image/')) {
+      finalPhotoUrl = await saveSelfieImage(params.photoUrl, recordId);
+    } else {
+      finalPhotoUrl = params.photoUrl;
+    }
+  }
+
+  const updatedRecord: AttendanceRecord = {
+    id: recordId,
+    employeeName: params.employeeName.trim(),
+    projectName: projectName.trim(),
+    punchType: params.punchType,
+    timestamp: timestamp || new Date().toISOString(),
+    formattedDate: params.formattedDate,
+    formattedTime: params.formattedTime,
+    latitude: existing?.latitude ?? TARGET_SITE_CONFIG.latitude,
+    longitude: existing?.longitude ?? TARGET_SITE_CONFIG.longitude,
+    distanceMeters: existing?.distanceMeters ?? 0,
+    isWithinRadius: true,
+    siteLatitude: TARGET_SITE_CONFIG.latitude,
+    siteLongitude: TARGET_SITE_CONFIG.longitude,
+    allowedRadiusMeters: TARGET_SITE_CONFIG.radiusMeters,
+    photoUrl: finalPhotoUrl,
+    createdAt: existing?.createdAt || new Date().toISOString(),
+  };
+
+  await saveAttendanceRecord(updatedRecord);
+  return updatedRecord;
+}

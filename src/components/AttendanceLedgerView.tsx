@@ -24,7 +24,10 @@ import {
   Filter,
   User,
   Layers,
+  Pencil,
+  Check,
 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 import type { AttendanceRecord } from '@/lib/attendanceConfig';
 import SiteTaskViewerModal from '@/components/SiteTaskViewerModal';
@@ -64,6 +67,78 @@ interface PhotoModalState {
   date: string;
   employeeName: string;
   distance?: number;
+}
+
+interface EditPunchModalState {
+  recordId?: string;
+  employeeName: string;
+  projectName: string;
+  formattedDate: string;
+  punchType: 'PUNCH_IN' | 'PUNCH_OUT';
+  time: string;
+  photoUrl?: string;
+  distance?: number;
+}
+
+async function stampWatermarkOnPhoto(
+  originalPhotoUrl: string,
+  params: {
+    punchType: 'PUNCH_IN' | 'PUNCH_OUT';
+    employeeName: string;
+    projectName: string;
+    dateStr: string;
+    timeStr: string;
+  }
+): Promise<string> {
+  if (!originalPhotoUrl) return '';
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth || img.width || 640;
+        canvas.height = img.naturalHeight || img.height || 480;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(originalPhotoUrl);
+          return;
+        }
+
+        // 1. Draw base photo
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        // 2. Watermark Bar at Bottom (identical to attendance punch watermark)
+        const barHeight = Math.max(54, canvas.height * 0.14);
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+        ctx.fillRect(0, canvas.height - barHeight, canvas.width, barHeight);
+
+        // 3. Header text: SS REALTY • PUNCH IN (ENTRY) or PUNCH OUT (EXIT)
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `bold ${Math.round(canvas.width * 0.035)}px sans-serif`;
+        const punchLabel = params.punchType === 'PUNCH_IN' ? 'PUNCH IN (ENTRY)' : 'PUNCH OUT (EXIT)';
+        ctx.fillText(`SS REALTY • ${punchLabel}`, 18, canvas.height - barHeight + 24);
+
+        // 4. Subtitle: Employee | Project | Date Time
+        ctx.font = `${Math.round(canvas.width * 0.026)}px sans-serif`;
+        ctx.fillStyle = '#cbd5e1';
+        ctx.fillText(
+          `${params.employeeName || 'Staff'} | ${params.projectName || 'Project Site'} | ${params.dateStr} ${params.timeStr}`,
+          18,
+          canvas.height - 12
+        );
+
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      } catch (err) {
+        console.warn('Canvas watermark re-stamp notice:', err);
+        resolve(originalPhotoUrl);
+      }
+    };
+    img.onerror = () => {
+      resolve(originalPhotoUrl);
+    };
+    img.src = originalPhotoUrl;
+  });
 }
 
 const MONTH_NAMES = [
@@ -134,6 +209,105 @@ export default function AttendanceLedgerView({
 
   // Active Site Staff List (dynamically loaded from siteConfig)
   const [activeStaffList, setActiveStaffList] = useState<string[]>(KNOWN_STAFF);
+
+  // Secret Admin Edit Mode (only available when isAdmin === true)
+  const [secretAdminEditMode, setSecretAdminEditMode] = useState(false);
+  const [editPunchModal, setEditPunchModal] = useState<EditPunchModalState | null>(null);
+  const [editHour, setEditHour] = useState('09');
+  const [editMinute, setEditMinute] = useState('30');
+  const [editSecond, setEditSecond] = useState('00');
+  const [editAmPm, setEditAmPm] = useState<'AM' | 'PM'>('AM');
+  const [editDate, setEditDate] = useState('');
+  const [editPunchType, setEditPunchType] = useState<'PUNCH_IN' | 'PUNCH_OUT'>('PUNCH_IN');
+  const [updateWatermark, setUpdateWatermark] = useState(true);
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const openEditModal = (params: {
+    recordId?: string;
+    employeeName: string;
+    projectName?: string;
+    formattedDate: string;
+    punchType: 'PUNCH_IN' | 'PUNCH_OUT';
+    time?: string;
+    photoUrl?: string;
+    distance?: number;
+  }) => {
+    const rawTime = params.time || (params.punchType === 'PUNCH_IN' ? '09:30:00 AM' : '06:30:00 PM');
+    const match = rawTime.match(/(\d+):(\d+):?(\d+)?\s*(AM|PM)?/i);
+    if (match) {
+      setEditHour(String(parseInt(match[1], 10)).padStart(2, '0'));
+      setEditMinute(String(parseInt(match[2], 10)).padStart(2, '0'));
+      setEditSecond(match[3] ? String(parseInt(match[3], 10)).padStart(2, '0') : '00');
+      setEditAmPm((match[4]?.toUpperCase() as 'AM' | 'PM') || (parseInt(match[1], 10) >= 12 ? 'PM' : 'AM'));
+    } else {
+      setEditHour('09');
+      setEditMinute('30');
+      setEditSecond('00');
+      setEditAmPm(params.punchType === 'PUNCH_IN' ? 'AM' : 'PM');
+    }
+    setEditDate(params.formattedDate);
+    setEditPunchType(params.punchType);
+    setUpdateWatermark(true);
+    setEditPunchModal({
+      recordId: params.recordId,
+      employeeName: params.employeeName,
+      projectName: params.projectName || 'Nivasa II (Site 1)',
+      formattedDate: params.formattedDate,
+      punchType: params.punchType,
+      time: rawTime,
+      photoUrl: params.photoUrl,
+      distance: params.distance,
+    });
+  };
+
+  const handleSaveEditPunch = async () => {
+    if (!editPunchModal) return;
+    setSavingEdit(true);
+    try {
+      const formattedTime = `${editHour}:${editMinute}:${editSecond} ${editAmPm}`;
+      let finalPhotoUrl = editPunchModal.photoUrl || '';
+
+      if (updateWatermark && finalPhotoUrl) {
+        finalPhotoUrl = await stampWatermarkOnPhoto(finalPhotoUrl, {
+          punchType: editPunchType,
+          employeeName: editPunchModal.employeeName,
+          projectName: editPunchModal.projectName,
+          dateStr: editDate,
+          timeStr: formattedTime,
+        });
+      }
+
+      const res = await fetch('/api/attendance/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editPunchModal.recordId,
+          employeeName: editPunchModal.employeeName,
+          projectName: editPunchModal.projectName,
+          punchType: editPunchType,
+          formattedDate: editDate,
+          formattedTime,
+          photoUrl: finalPhotoUrl,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast.success(
+          `Updated ${editPunchModal.employeeName}'s ${editPunchType === 'PUNCH_IN' ? 'Punch In' : 'Punch Out'} to ${formattedTime}!`,
+          { id: 'edit-punch-toast', duration: 2500 }
+        );
+        setEditPunchModal(null);
+        await fetchRecords();
+      } else {
+        toast.error(data.message || 'Failed to update attendance');
+      }
+    } catch (err) {
+      toast.error('Network error updating attendance');
+    } finally {
+      setSavingEdit(false);
+    }
+  };
 
   const fetchRecords = async () => {
     setLoading(true);
@@ -557,8 +731,8 @@ export default function AttendanceLedgerView({
       employeeName: string;
       projectName: string;
       status: 'PRESENT' | 'ON_SITE' | 'ABSENT';
-      punchIn?: { time: string; photoUrl: string; distance: number };
-      punchOut?: { time: string; photoUrl: string; distance: number };
+      punchIn?: { id?: string; time: string; photoUrl: string; distance: number };
+      punchOut?: { id?: string; time: string; photoUrl: string; distance: number };
       duration: string;
     }[] = [];
 
@@ -589,6 +763,7 @@ export default function AttendanceLedgerView({
             status: 'PRESENT',
             punchIn: sr.row.punchIn
               ? {
+                  id: sr.row.punchIn.id,
                   time: sr.row.punchIn.time,
                   photoUrl: sr.row.punchIn.photoUrl,
                   distance: sr.row.punchIn.distance,
@@ -596,6 +771,7 @@ export default function AttendanceLedgerView({
               : undefined,
             punchOut: sr.row.punchOut
               ? {
+                  id: sr.row.punchOut.id,
                   time: sr.row.punchOut.time,
                   photoUrl: sr.row.punchOut.photoUrl,
                   distance: sr.row.punchOut.distance,
@@ -614,6 +790,7 @@ export default function AttendanceLedgerView({
             status: 'ON_SITE',
             punchIn: sr.row.punchIn
               ? {
+                  id: sr.row.punchIn.id,
                   time: sr.row.punchIn.time,
                   photoUrl: sr.row.punchIn.photoUrl,
                   distance: sr.row.punchIn.distance,
@@ -637,7 +814,7 @@ export default function AttendanceLedgerView({
     });
 
     return list;
-  }, [calendarDays, selectedDayDetail, selectedStaff, selectedYear, selectedMonth]);
+  }, [calendarDays, selectedDayDetail, selectedStaff, selectedYear, selectedMonth, activeStaffList]);
 
   const displayedMonthlyRows = useMemo(() => {
     return monthlyTableRows.filter((r) => {
@@ -720,9 +897,33 @@ export default function AttendanceLedgerView({
             </button>
           </div>
 
-          <div className="text-xs font-medium text-slate-500 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>Live Attendance Tracking</span>
+          <div className="text-xs font-medium text-slate-500 flex items-center gap-2 select-none">
+            {isAdmin ? (
+              <button
+                type="button"
+                onClick={() => {
+                  const nextVal = !secretAdminEditMode;
+                  setSecretAdminEditMode(nextVal);
+                  if (nextVal) {
+                    toast('Admin Edit Mode Enabled', { icon: '⚡', id: 'admin-mode', duration: 1600 });
+                  } else {
+                    toast('Admin Edit Mode Disabled', { icon: '🔒', id: 'admin-mode', duration: 1600 });
+                  }
+                }}
+                className={`transition-all duration-300 cursor-pointer ${
+                  secretAdminEditMode
+                    ? 'w-3 h-3 rounded-full bg-emerald-400 ring-4 ring-emerald-400/60 shadow-[0_0_14px_rgba(52,211,153,1)] scale-125 animate-pulse'
+                    : 'w-2 h-2 rounded-full bg-emerald-500 hover:scale-125'
+                }`}
+                title={secretAdminEditMode ? 'Admin Edit Mode Active (Click to turn off)' : 'System Status: Online'}
+                aria-label="Toggle secret admin edit mode"
+              />
+            ) : (
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            )}
+            <span className={secretAdminEditMode ? 'font-bold text-emerald-700 transition-colors' : 'transition-colors'}>
+              Live Attendance Tracking
+            </span>
           </div>
         </div>
 
@@ -1309,8 +1510,33 @@ export default function AttendanceLedgerView({
                           }`}
                         >
                           {/* Date & Day */}
-                          <td className="py-3 px-4 whitespace-nowrap">
-                            <div className="font-bold text-slate-900">{row.date}</div>
+                          <td
+                            onClick={() => {
+                              if (secretAdminEditMode) {
+                                openEditModal({
+                                  recordId: row.punchIn?.id || row.punchOut?.id,
+                                  employeeName: row.employeeName,
+                                  projectName: row.projectName,
+                                  formattedDate: row.date,
+                                  punchType: row.punchIn ? 'PUNCH_IN' : 'PUNCH_OUT',
+                                  time: row.punchIn?.time || row.punchOut?.time,
+                                  photoUrl: row.punchIn?.photoUrl || row.punchOut?.photoUrl,
+                                });
+                              }
+                            }}
+                            className={`py-3 px-4 whitespace-nowrap ${
+                              secretAdminEditMode
+                                ? 'cursor-pointer hover:bg-emerald-50/70 transition-colors'
+                                : ''
+                            }`}
+                            title={secretAdminEditMode ? 'Click to edit date/punch' : undefined}
+                          >
+                            <div className="font-bold text-slate-900 flex items-center gap-1">
+                              <span>{row.date}</span>
+                              {secretAdminEditMode && (
+                                <Pencil className="w-2.5 h-2.5 text-emerald-600 opacity-60" />
+                              )}
+                            </div>
                             <span className="text-[11px] font-medium text-slate-400">
                               {row.dayOfWeek}
                             </span>
@@ -1348,17 +1574,30 @@ export default function AttendanceLedgerView({
                               <div className="flex items-center gap-3">
                                 <button
                                   type="button"
-                                  onClick={() =>
-                                    setActivePhotoModal({
-                                      url: row.punchIn!.photoUrl,
-                                      title: `Morning Punch In - ${row.date}`,
-                                      type: 'PUNCH_IN',
-                                      time: row.punchIn!.time,
-                                      date: row.date,
-                                      employeeName: row.employeeName,
-                                      distance: row.punchIn!.distance,
-                                    })
-                                  }
+                                  onClick={() => {
+                                    if (secretAdminEditMode) {
+                                      openEditModal({
+                                        recordId: row.punchIn!.id,
+                                        employeeName: row.employeeName,
+                                        projectName: row.projectName,
+                                        formattedDate: row.date,
+                                        punchType: 'PUNCH_IN',
+                                        time: row.punchIn!.time,
+                                        photoUrl: row.punchIn!.photoUrl,
+                                        distance: row.punchIn!.distance,
+                                      });
+                                    } else {
+                                      setActivePhotoModal({
+                                        url: row.punchIn!.photoUrl,
+                                        title: `Morning Punch In - ${row.date}`,
+                                        type: 'PUNCH_IN',
+                                        time: row.punchIn!.time,
+                                        date: row.date,
+                                        employeeName: row.employeeName,
+                                        distance: row.punchIn!.distance,
+                                      });
+                                    }
+                                  }}
                                   className="group relative w-11 h-11 rounded-xl overflow-hidden border-2 border-emerald-400 bg-slate-900 shadow-2xs hover:ring-2 hover:ring-emerald-500 transition-all cursor-pointer shrink-0"
                                 >
                                   <img
@@ -1367,19 +1606,63 @@ export default function AttendanceLedgerView({
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                                   />
                                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
-                                    <Eye className="w-4 h-4" />
+                                    {secretAdminEditMode ? (
+                                      <Pencil className="w-4 h-4 text-emerald-300" />
+                                    ) : (
+                                      <Eye className="w-4 h-4" />
+                                    )}
                                   </div>
                                 </button>
-                                <div>
+                                <div
+                                  onClick={() => {
+                                    if (secretAdminEditMode) {
+                                      openEditModal({
+                                        recordId: row.punchIn!.id,
+                                        employeeName: row.employeeName,
+                                        projectName: row.projectName,
+                                        formattedDate: row.date,
+                                        punchType: 'PUNCH_IN',
+                                        time: row.punchIn!.time,
+                                        photoUrl: row.punchIn!.photoUrl,
+                                        distance: row.punchIn!.distance,
+                                      });
+                                    }
+                                  }}
+                                  className={
+                                    secretAdminEditMode
+                                      ? 'cursor-pointer hover:bg-emerald-50 p-1 -m-1 rounded-lg transition-all group/in'
+                                      : ''
+                                  }
+                                  title={secretAdminEditMode ? 'Click to edit Punch In time' : undefined}
+                                >
                                   <div className="flex items-center gap-1.5 font-bold text-slate-900 text-xs font-mono">
                                     <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                                     <span>In: {row.punchIn.time}</span>
+                                    {secretAdminEditMode && (
+                                      <Pencil className="w-2.5 h-2.5 text-emerald-600 opacity-60 group-hover/in:opacity-100" />
+                                    )}
                                   </div>
                                   <span className="text-[10px] text-emerald-700 font-semibold block">
                                     Verified at Site ({row.punchIn.distance}m)
                                   </span>
                                 </div>
                               </div>
+                            ) : secretAdminEditMode ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  openEditModal({
+                                    employeeName: row.employeeName,
+                                    projectName: row.projectName,
+                                    formattedDate: row.date,
+                                    punchType: 'PUNCH_IN',
+                                    time: '09:30:00 AM',
+                                  });
+                                }}
+                                className="text-[11px] font-semibold text-emerald-700 hover:text-emerald-800 hover:underline cursor-pointer flex items-center gap-1 px-2 py-1 rounded bg-emerald-50 border border-emerald-200"
+                              >
+                                <Pencil className="w-2.5 h-2.5" /> + Set Punch In
+                              </button>
                             ) : (
                               <span className="text-slate-400 font-mono text-[11px]">—</span>
                             )}
@@ -1391,17 +1674,30 @@ export default function AttendanceLedgerView({
                               <div className="flex items-center gap-3">
                                 <button
                                   type="button"
-                                  onClick={() =>
-                                    setActivePhotoModal({
-                                      url: row.punchOut!.photoUrl,
-                                      title: `Evening Punch Out - ${row.date}`,
-                                      type: 'PUNCH_OUT',
-                                      time: row.punchOut!.time,
-                                      date: row.date,
-                                      employeeName: row.employeeName,
-                                      distance: row.punchOut!.distance,
-                                    })
-                                  }
+                                  onClick={() => {
+                                    if (secretAdminEditMode) {
+                                      openEditModal({
+                                        recordId: row.punchOut!.id,
+                                        employeeName: row.employeeName,
+                                        projectName: row.projectName,
+                                        formattedDate: row.date,
+                                        punchType: 'PUNCH_OUT',
+                                        time: row.punchOut!.time,
+                                        photoUrl: row.punchOut!.photoUrl,
+                                        distance: row.punchOut!.distance,
+                                      });
+                                    } else {
+                                      setActivePhotoModal({
+                                        url: row.punchOut!.photoUrl,
+                                        title: `Evening Punch Out - ${row.date}`,
+                                        type: 'PUNCH_OUT',
+                                        time: row.punchOut!.time,
+                                        date: row.date,
+                                        employeeName: row.employeeName,
+                                        distance: row.punchOut!.distance,
+                                      });
+                                    }
+                                  }}
                                   className="group relative w-11 h-11 rounded-xl overflow-hidden border-2 border-rose-400 bg-slate-900 shadow-2xs hover:ring-2 hover:ring-rose-500 transition-all cursor-pointer shrink-0"
                                 >
                                   <img
@@ -1410,13 +1706,41 @@ export default function AttendanceLedgerView({
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                                   />
                                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
-                                    <Eye className="w-4 h-4" />
+                                    {secretAdminEditMode ? (
+                                      <Pencil className="w-4 h-4 text-rose-300" />
+                                    ) : (
+                                      <Eye className="w-4 h-4" />
+                                    )}
                                   </div>
                                 </button>
-                                <div>
+                                <div
+                                  onClick={() => {
+                                    if (secretAdminEditMode) {
+                                      openEditModal({
+                                        recordId: row.punchOut!.id,
+                                        employeeName: row.employeeName,
+                                        projectName: row.projectName,
+                                        formattedDate: row.date,
+                                        punchType: 'PUNCH_OUT',
+                                        time: row.punchOut!.time,
+                                        photoUrl: row.punchOut!.photoUrl,
+                                        distance: row.punchOut!.distance,
+                                      });
+                                    }
+                                  }}
+                                  className={
+                                    secretAdminEditMode
+                                      ? 'cursor-pointer hover:bg-rose-50 p-1 -m-1 rounded-lg transition-all group/out'
+                                      : ''
+                                  }
+                                  title={secretAdminEditMode ? 'Click to edit Punch Out time' : undefined}
+                                >
                                   <div className="flex items-center gap-1.5 font-bold text-slate-900 text-xs font-mono">
                                     <span className="w-2 h-2 rounded-full bg-rose-500"></span>
                                     <span>Out: {row.punchOut.time}</span>
+                                    {secretAdminEditMode && (
+                                      <Pencil className="w-2.5 h-2.5 text-rose-600 opacity-60 group-hover/out:opacity-100" />
+                                    )}
                                   </div>
                                   <span className="text-[10px] text-rose-700 font-semibold block">
                                     Verified at Site ({row.punchOut.distance}m)
@@ -1424,10 +1748,45 @@ export default function AttendanceLedgerView({
                                 </div>
                               </div>
                             ) : row.status === 'ON_SITE' ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                                <Clock className="w-3 h-3 text-amber-600" />
-                                Out Pending (On Site)
-                              </span>
+                              <div className="flex items-center gap-1.5">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                  <Clock className="w-3 h-3 text-amber-600" />
+                                  Out Pending (On Site)
+                                </span>
+                                {secretAdminEditMode && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      openEditModal({
+                                        employeeName: row.employeeName,
+                                        projectName: row.projectName,
+                                        formattedDate: row.date,
+                                        punchType: 'PUNCH_OUT',
+                                        time: '06:30:00 PM',
+                                      });
+                                    }}
+                                    className="text-[10.5px] font-bold text-rose-700 hover:underline cursor-pointer"
+                                  >
+                                    + Set Out
+                                  </button>
+                                )}
+                              </div>
+                            ) : secretAdminEditMode ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  openEditModal({
+                                    employeeName: row.employeeName,
+                                    projectName: row.projectName,
+                                    formattedDate: row.date,
+                                    punchType: 'PUNCH_OUT',
+                                    time: '06:30:00 PM',
+                                  });
+                                }}
+                                className="text-[11px] font-semibold text-rose-700 hover:text-rose-800 hover:underline cursor-pointer flex items-center gap-1 px-2 py-1 rounded bg-rose-50 border border-rose-200"
+                              >
+                                <Pencil className="w-2.5 h-2.5" /> + Set Punch Out
+                              </button>
                             ) : (
                               <span className="text-slate-400 font-mono text-[11px]">—</span>
                             )}
@@ -1823,17 +2182,30 @@ export default function AttendanceLedgerView({
                               <div className="flex items-center gap-3">
                                 <button
                                   type="button"
-                                  onClick={() =>
-                                    setActivePhotoModal({
-                                      url: row.punchIn!.photoUrl,
-                                      title: `Morning Punch In - ${row.date}`,
-                                      type: 'PUNCH_IN',
-                                      time: row.punchIn!.time,
-                                      date: row.date,
-                                      employeeName: row.employeeName,
-                                      distance: row.punchIn!.distance,
-                                    })
-                                  }
+                                  onClick={() => {
+                                    if (secretAdminEditMode) {
+                                      openEditModal({
+                                        recordId: row.punchIn!.id,
+                                        employeeName: row.employeeName,
+                                        projectName: row.projectName,
+                                        formattedDate: row.date,
+                                        punchType: 'PUNCH_IN',
+                                        time: row.punchIn!.time,
+                                        photoUrl: row.punchIn!.photoUrl,
+                                        distance: row.punchIn!.distance,
+                                      });
+                                    } else {
+                                      setActivePhotoModal({
+                                        url: row.punchIn!.photoUrl,
+                                        title: `Morning Punch In - ${row.date}`,
+                                        type: 'PUNCH_IN',
+                                        time: row.punchIn!.time,
+                                        date: row.date,
+                                        employeeName: row.employeeName,
+                                        distance: row.punchIn!.distance,
+                                      });
+                                    }
+                                  }}
                                   className="group relative w-12 h-12 rounded-xl overflow-hidden border-2 border-emerald-400 bg-slate-900 shadow-2xs hover:ring-2 hover:ring-emerald-500 transition-all cursor-pointer shrink-0"
                                 >
                                   <img
@@ -1842,19 +2214,63 @@ export default function AttendanceLedgerView({
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                                   />
                                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
-                                    <Eye className="w-4 h-4" />
+                                    {secretAdminEditMode ? (
+                                      <Pencil className="w-4 h-4 text-emerald-300" />
+                                    ) : (
+                                      <Eye className="w-4 h-4" />
+                                    )}
                                   </div>
                                 </button>
-                                <div>
+                                <div
+                                  onClick={() => {
+                                    if (secretAdminEditMode) {
+                                      openEditModal({
+                                        recordId: row.punchIn!.id,
+                                        employeeName: row.employeeName,
+                                        projectName: row.projectName,
+                                        formattedDate: row.date,
+                                        punchType: 'PUNCH_IN',
+                                        time: row.punchIn!.time,
+                                        photoUrl: row.punchIn!.photoUrl,
+                                        distance: row.punchIn!.distance,
+                                      });
+                                    }
+                                  }}
+                                  className={
+                                    secretAdminEditMode
+                                      ? 'cursor-pointer hover:bg-emerald-50 p-1 -m-1 rounded-lg transition-all group/in'
+                                      : ''
+                                  }
+                                  title={secretAdminEditMode ? 'Click to edit Punch In time' : undefined}
+                                >
                                   <div className="flex items-center gap-1.5 font-bold text-slate-900 text-xs font-mono">
                                     <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                                     <span>In: {row.punchIn.time}</span>
+                                    {secretAdminEditMode && (
+                                      <Pencil className="w-2.5 h-2.5 text-emerald-600 opacity-60 group-hover/in:opacity-100" />
+                                    )}
                                   </div>
                                   <span className="text-[10px] text-emerald-700 font-semibold block">
                                     Verified at Site ({row.punchIn.distance}m)
                                   </span>
                                 </div>
                               </div>
+                            ) : secretAdminEditMode ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  openEditModal({
+                                    employeeName: row.employeeName,
+                                    projectName: row.projectName,
+                                    formattedDate: row.date,
+                                    punchType: 'PUNCH_IN',
+                                    time: '09:30:00 AM',
+                                  });
+                                }}
+                                className="text-[11px] font-semibold text-emerald-700 hover:text-emerald-800 hover:underline cursor-pointer flex items-center gap-1 px-2 py-1 rounded bg-emerald-50 border border-emerald-200"
+                              >
+                                <Pencil className="w-2.5 h-2.5" /> + Set Punch In
+                              </button>
                             ) : (
                               <span className="text-slate-400 font-mono text-xs">—</span>
                             )}
@@ -1866,17 +2282,30 @@ export default function AttendanceLedgerView({
                               <div className="flex items-center gap-3">
                                 <button
                                   type="button"
-                                  onClick={() =>
-                                    setActivePhotoModal({
-                                      url: row.punchOut!.photoUrl,
-                                      title: `Evening Punch Out - ${row.date}`,
-                                      type: 'PUNCH_OUT',
-                                      time: row.punchOut!.time,
-                                      date: row.date,
-                                      employeeName: row.employeeName,
-                                      distance: row.punchOut!.distance,
-                                    })
-                                  }
+                                  onClick={() => {
+                                    if (secretAdminEditMode) {
+                                      openEditModal({
+                                        recordId: row.punchOut!.id,
+                                        employeeName: row.employeeName,
+                                        projectName: row.projectName,
+                                        formattedDate: row.date,
+                                        punchType: 'PUNCH_OUT',
+                                        time: row.punchOut!.time,
+                                        photoUrl: row.punchOut!.photoUrl,
+                                        distance: row.punchOut!.distance,
+                                      });
+                                    } else {
+                                      setActivePhotoModal({
+                                        url: row.punchOut!.photoUrl,
+                                        title: `Evening Punch Out - ${row.date}`,
+                                        type: 'PUNCH_OUT',
+                                        time: row.punchOut!.time,
+                                        date: row.date,
+                                        employeeName: row.employeeName,
+                                        distance: row.punchOut!.distance,
+                                      });
+                                    }
+                                  }}
                                   className="group relative w-12 h-12 rounded-xl overflow-hidden border-2 border-rose-400 bg-slate-900 shadow-2xs hover:ring-2 hover:ring-rose-500 transition-all cursor-pointer shrink-0"
                                 >
                                   <img
@@ -1885,19 +2314,87 @@ export default function AttendanceLedgerView({
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                                   />
                                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
-                                    <Eye className="w-4 h-4" />
+                                    {secretAdminEditMode ? (
+                                      <Pencil className="w-4 h-4 text-rose-300" />
+                                    ) : (
+                                      <Eye className="w-4 h-4" />
+                                    )}
                                   </div>
                                 </button>
-                                <div>
+                                <div
+                                  onClick={() => {
+                                    if (secretAdminEditMode) {
+                                      openEditModal({
+                                        recordId: row.punchOut!.id,
+                                        employeeName: row.employeeName,
+                                        projectName: row.projectName,
+                                        formattedDate: row.date,
+                                        punchType: 'PUNCH_OUT',
+                                        time: row.punchOut!.time,
+                                        photoUrl: row.punchOut!.photoUrl,
+                                        distance: row.punchOut!.distance,
+                                      });
+                                    }
+                                  }}
+                                  className={
+                                    secretAdminEditMode
+                                      ? 'cursor-pointer hover:bg-rose-50 p-1 -m-1 rounded-lg transition-all group/out'
+                                      : ''
+                                  }
+                                  title={secretAdminEditMode ? 'Click to edit Punch Out time' : undefined}
+                                >
                                   <div className="flex items-center gap-1.5 font-bold text-slate-900 text-xs font-mono">
                                     <span className="w-2 h-2 rounded-full bg-rose-500"></span>
                                     <span>Out: {row.punchOut.time}</span>
+                                    {secretAdminEditMode && (
+                                      <Pencil className="w-2.5 h-2.5 text-rose-600 opacity-60 group-hover/out:opacity-100" />
+                                    )}
                                   </div>
                                   <span className="text-[10px] text-rose-700 font-semibold block">
                                     Verified at Site ({row.punchOut.distance}m)
                                   </span>
                                 </div>
                               </div>
+                            ) : row.status === 'ON_SITE' ? (
+                              <div className="flex items-center gap-1.5">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                  <Clock className="w-3.5 h-3.5 text-amber-600" />
+                                  Out Pending (On Site)
+                                </span>
+                                {secretAdminEditMode && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      openEditModal({
+                                        employeeName: row.employeeName,
+                                        projectName: row.projectName,
+                                        formattedDate: row.date,
+                                        punchType: 'PUNCH_OUT',
+                                        time: '06:30:00 PM',
+                                      });
+                                    }}
+                                    className="text-[10.5px] font-bold text-rose-700 hover:underline cursor-pointer"
+                                  >
+                                    + Set Out
+                                  </button>
+                                )}
+                              </div>
+                            ) : secretAdminEditMode ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  openEditModal({
+                                    employeeName: row.employeeName,
+                                    projectName: row.projectName,
+                                    formattedDate: row.date,
+                                    punchType: 'PUNCH_OUT',
+                                    time: '06:30:00 PM',
+                                  });
+                                }}
+                                className="text-[11px] font-semibold text-rose-700 hover:text-rose-800 hover:underline cursor-pointer flex items-center gap-1 px-2 py-1 rounded bg-rose-50 border border-rose-200"
+                              >
+                                <Pencil className="w-2.5 h-2.5" /> + Set Punch Out
+                              </button>
                             ) : (
                               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
                                 <Clock className="w-3.5 h-3.5 text-amber-600" />
@@ -2142,6 +2639,256 @@ export default function AttendanceLedgerView({
           formattedDate={selectedTaskModal.formattedDate}
           projectName={selectedTaskModal.projectName}
         />
+      )}
+
+      {/* ─── SECRET ADMIN ATTENDANCE & SELFIE EDIT MODAL ─── */}
+      {isAdmin && editPunchModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="p-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400">
+                  <Pencil className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm tracking-tight text-white flex items-center gap-1.5">
+                    <span>Admin Edit: Attendance Punch &amp; Selfie</span>
+                  </h3>
+                  <p className="text-[11px] text-slate-300">
+                    {editPunchModal.employeeName} &bull; {editPunchModal.projectName}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditPunchModal(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 space-y-4 max-h-[80vh] overflow-y-auto text-xs">
+              {/* Punch Type Selector */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1.5">
+                  Punch Session:
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditPunchType('PUNCH_IN')}
+                    className={`py-2 px-3 rounded-xl font-bold flex items-center justify-center gap-2 border transition-all cursor-pointer ${
+                      editPunchType === 'PUNCH_IN'
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-300 ring-2 ring-emerald-400/30'
+                        : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                    <span>🟢 Morning Punch In</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditPunchType('PUNCH_OUT')}
+                    className={`py-2 px-3 rounded-xl font-bold flex items-center justify-center gap-2 border transition-all cursor-pointer ${
+                      editPunchType === 'PUNCH_OUT'
+                        ? 'bg-rose-50 text-rose-800 border-rose-300 ring-2 ring-rose-400/30'
+                        : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                    <span>🔴 Evening Punch Out</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Date Input */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1.5">
+                  Date:
+                </label>
+                <input
+                  type="text"
+                  value={editDate}
+                  onChange={(e) => setEditDate(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono"
+                  placeholder="e.g. 15 Oct 2026"
+                />
+              </div>
+
+              {/* Exact Time Pickers */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-[11px] font-bold text-slate-600 uppercase">
+                    Adjusted Punch Time (IST):
+                  </label>
+                  <span className="font-mono text-xs font-black text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                    {editHour}:{editMinute}:{editSecond} {editAmPm}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-4 gap-2">
+                  {/* Hours */}
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-bold block mb-0.5 text-center">HOUR</span>
+                    <select
+                      value={editHour}
+                      onChange={(e) => setEditHour(e.target.value)}
+                      className="w-full py-2 px-1 text-center font-mono font-bold text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                    >
+                      {Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0')).map((h) => (
+                        <option key={h} value={h}>{h}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Minutes */}
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-bold block mb-0.5 text-center">MINUTE</span>
+                    <select
+                      value={editMinute}
+                      onChange={(e) => setEditMinute(e.target.value)}
+                      className="w-full py-2 px-1 text-center font-mono font-bold text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                    >
+                      {Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0')).map((m) => (
+                        <option key={m} value={m}>{m}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Seconds */}
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-bold block mb-0.5 text-center">SECOND</span>
+                    <select
+                      value={editSecond}
+                      onChange={(e) => setEditSecond(e.target.value)}
+                      className="w-full py-2 px-1 text-center font-mono font-bold text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                    >
+                      {Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0')).map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* AM/PM */}
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-bold block mb-0.5 text-center">AM/PM</span>
+                    <select
+                      value={editAmPm}
+                      onChange={(e) => setEditAmPm(e.target.value as 'AM' | 'PM')}
+                      className="w-full py-2 px-1 text-center font-mono font-black text-xs bg-indigo-50 text-indigo-800 border border-indigo-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                    >
+                      <option value="AM">AM</option>
+                      <option value="PM">PM</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Quick Presets */}
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <span className="text-[10px] font-bold text-slate-400">Presets:</span>
+                  {(editPunchType === 'PUNCH_IN'
+                    ? [
+                        { label: '09:00 AM', h: '09', m: '00', s: '00', ap: 'AM' },
+                        { label: '09:15 AM', h: '09', m: '15', s: '00', ap: 'AM' },
+                        { label: '09:30 AM', h: '09', m: '30', s: '00', ap: 'AM' },
+                        { label: '10:00 AM', h: '10', m: '00', s: '00', ap: 'AM' },
+                      ]
+                    : [
+                        { label: '06:00 PM', h: '06', m: '00', s: '00', ap: 'PM' },
+                        { label: '06:30 PM', h: '06', m: '30', s: '00', ap: 'PM' },
+                        { label: '07:00 PM', h: '07', m: '00', s: '00', ap: 'PM' },
+                        { label: '07:30 PM', h: '07', m: '30', s: '00', ap: 'PM' },
+                      ]
+                  ).map((p) => (
+                    <button
+                      key={p.label}
+                      type="button"
+                      onClick={() => {
+                        setEditHour(p.h);
+                        setEditMinute(p.m);
+                        setEditSecond(p.s);
+                        setEditAmPm(p.ap as 'AM' | 'PM');
+                      }}
+                      className="px-2 py-0.5 rounded-md bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 border border-slate-200 text-[10px] font-mono font-bold transition-colors cursor-pointer"
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Photo & Watermark Section */}
+              {editPunchModal.photoUrl ? (
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2.5">
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-14 h-14 rounded-lg overflow-hidden border border-slate-300 bg-slate-900 shrink-0">
+                      <img
+                        src={editPunchModal.photoUrl}
+                        alt="Current Selfie"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <label className="flex items-start gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={updateWatermark}
+                          onChange={(e) => setUpdateWatermark(e.target.checked)}
+                          className="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                        />
+                        <div>
+                          <span className="font-bold text-slate-900 block">
+                            Selfie photo me bhi time watermark update karein
+                          </span>
+                          <span className="text-[10.5px] text-slate-500 block">
+                            Photo ke bottom bar par naya time &bull; {editHour}:{editMinute}:{editSecond} {editAmPm} stamp ho jayega.
+                          </span>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-[11px]">
+                  No photo was captured for this entry. Time will be saved directly.
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setEditPunchModal(null)}
+                disabled={savingEdit}
+                className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 font-bold rounded-xl border border-slate-200 text-xs transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveEditPunch}
+                disabled={savingEdit}
+                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold rounded-xl text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                {savingEdit ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Updating Photo &amp; Time...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>Save &amp; Update Attendance</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
