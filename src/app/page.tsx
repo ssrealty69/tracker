@@ -100,6 +100,7 @@ const VISIT_TIME_SLOTS = [
 ];
 
 export default function AgentFormPage() {
+  const [mounted, setMounted] = useState(false);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [agentId, setAgentId] = useState('');
 
@@ -165,6 +166,7 @@ export default function AgentFormPage() {
 
   // Load agents and live form options on start
   useEffect(() => {
+    setMounted(true);
     getActiveAgents().then((list) => {
       setAgents(list);
     });
@@ -455,8 +457,22 @@ export default function AgentFormPage() {
     }
   };
 
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-[#f8fafc] text-slate-900 p-4 sm:p-6 flex flex-col justify-center items-center font-sans">
+        <div className="max-w-md w-full text-center space-y-4">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center mx-auto border border-indigo-200">
+            <Building2 className="w-6 h-6 animate-pulse" />
+          </div>
+          <h2 className="text-lg font-bold text-slate-900">SS Realty Calling &amp; Lead Portal</h2>
+          <p className="text-xs text-slate-500">Loading form components...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-900 pb-20 selection:bg-indigo-600 selection:text-white">
+    <div suppressHydrationWarning className="min-h-screen bg-[#f8fafc] text-slate-900 pb-20 selection:bg-indigo-600 selection:text-white">
       {/* ── TOP HEADER ──────────────────────────────────────────────────────── */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
         <div className="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -471,7 +487,7 @@ export default function AgentFormPage() {
                   Lead Portal
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 font-medium">Domain: ssrealty.org • Calling & Site Visit Desk</p>
+              <p className="text-[11px] text-slate-500 font-medium">Domain: ssrealty.org &bull; Calling &amp; Site Visit Desk</p>
             </div>
           </div>
 
@@ -489,7 +505,12 @@ export default function AgentFormPage() {
 
       {/* ── MAIN FORM (SINGLE COLUMN: EK KE NICHE EK FIELD) ────────────────── */}
       <main className="max-w-xl mx-auto px-4 pt-6">
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 sm:p-7 space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          suppressHydrationWarning
+          autoComplete="off"
+          className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 sm:p-7 space-y-4"
+        >
           
           <div className="border-b border-slate-100 pb-3">
             <h1 className="text-lg font-extrabold text-slate-900">Sales Calling & Site Visit Entry</h1>

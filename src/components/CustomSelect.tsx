@@ -68,7 +68,7 @@ export default function CustomSelect({
 
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('touchstart', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside, { passive: true });
       document.addEventListener('keydown', handleKeyDown);
     }
 
@@ -93,13 +93,11 @@ export default function CustomSelect({
     >
       {/* Hidden input for form state */}
       <input
-        type="text"
+        type="hidden"
         id={id}
         value={value}
         readOnly
-        tabIndex={-1}
-        className="sr-only"
-        aria-hidden="true"
+        suppressHydrationWarning
       />
 
       {/* Trigger Button */}
