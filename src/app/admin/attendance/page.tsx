@@ -6,8 +6,8 @@ import Link from 'next/link';
 
 export default function AdminAttendancePage() {
   const adminHeader = (
-    <div className="bg-white border-b border-slate-200/90 px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
-      <div>
+    <div suppressHydrationWarning className="bg-white border-b border-slate-200/90 px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+      <div suppressHydrationWarning>
         <div className="flex items-center gap-2">
           <span className="font-extrabold text-base tracking-tight text-slate-900">
             Site Attendance &amp; Biometric Ledger
@@ -16,7 +16,7 @@ export default function AdminAttendancePage() {
             Admin View
           </span>
         </div>
-        <p className="text-xs text-slate-500 mt-0.5">
+        <p suppressHydrationWarning className="text-xs text-slate-500 mt-0.5">
           Real-time attendance logs, monthly timesheet calendar, and selfie verification for site staff.
         </p>
       </div>
