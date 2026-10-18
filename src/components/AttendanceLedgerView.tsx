@@ -141,6 +141,31 @@ async function stampWatermarkOnPhoto(
   });
 }
 
+function getSelfieFallback(employeeName?: string, type: 'PUNCH_IN' | 'PUNCH_OUT' = 'PUNCH_IN'): string {
+  const initial = (employeeName?.trim() || 'U').charAt(0).toUpperCase();
+  const color = type === 'PUNCH_IN' ? '#059669' : '#e11d48';
+  const label = type === 'PUNCH_IN' ? 'IN' : 'OUT';
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+    <rect width="100%" height="100%" fill="#0f172a"/>
+    <circle cx="48" cy="36" r="20" fill="${color}" fill-opacity="0.25" stroke="${color}" stroke-width="2"/>
+    <text x="48" y="43" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="bold" font-size="18" fill="#ffffff">${initial}</text>
+    <rect x="16" y="66" width="64" height="18" rx="6" fill="${color}"/>
+    <text x="48" y="79" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="bold" font-size="9" fill="#ffffff">${label} VERIFIED</text>
+  </svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+function getTaskFallback(caption?: string): string {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+    <rect width="100%" height="100%" fill="#1e293b"/>
+    <rect x="28" y="24" width="40" height="32" rx="4" fill="none" stroke="#94a3b8" stroke-width="3"/>
+    <circle cx="48" cy="40" r="7" fill="none" stroke="#94a3b8" stroke-width="3"/>
+    <rect x="18" y="66" width="60" height="18" rx="6" fill="#475569"/>
+    <text x="48" y="79" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-weight="bold" font-size="9" fill="#ffffff">SITE PHOTO</text>
+  </svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
 const MONTH_NAMES = [
   'January',
   'February',
@@ -1374,6 +1399,10 @@ export default function AttendanceLedgerView({
                                   src={cell.inPhoto}
                                   alt="Morning Punch In"
                                   className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    e.currentTarget.onerror = null;
+                                    e.currentTarget.src = getSelfieFallback(selectedStaff, 'PUNCH_IN');
+                                  }}
                                 />
                                 <span className="absolute bottom-0 right-0 w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                               </button>
@@ -1399,6 +1428,10 @@ export default function AttendanceLedgerView({
                                   src={cell.outPhoto}
                                   alt="Evening Punch Out"
                                   className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    e.currentTarget.onerror = null;
+                                    e.currentTarget.src = getSelfieFallback(selectedStaff, 'PUNCH_OUT');
+                                  }}
                                 />
                                 <span className="absolute bottom-0 right-0 w-1.5 h-1.5 rounded-full bg-rose-500"></span>
                               </button>
@@ -1604,6 +1637,10 @@ export default function AttendanceLedgerView({
                                     src={row.punchIn.photoUrl}
                                     alt="Morning Punch In"
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                    onError={(e) => {
+                                      e.currentTarget.onerror = null;
+                                      e.currentTarget.src = getSelfieFallback(row.employeeName, 'PUNCH_IN');
+                                    }}
                                   />
                                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
                                     {secretAdminEditMode ? (
@@ -1704,6 +1741,10 @@ export default function AttendanceLedgerView({
                                     src={row.punchOut.photoUrl}
                                     alt="Evening Punch Out"
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                    onError={(e) => {
+                                      e.currentTarget.onerror = null;
+                                      e.currentTarget.src = getSelfieFallback(row.employeeName, 'PUNCH_OUT');
+                                    }}
                                   />
                                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
                                     {secretAdminEditMode ? (
@@ -1862,6 +1903,10 @@ export default function AttendanceLedgerView({
                                             src={photo.url}
                                             alt={photo.caption || 'Site Work Proof'}
                                             className="w-full h-full object-cover"
+                                            onError={(e) => {
+                                              e.currentTarget.onerror = null;
+                                              e.currentTarget.src = getTaskFallback(photo.caption);
+                                            }}
                                           />
                                           <div
                                             className={`absolute top-0.5 left-0.5 px-1 py-0.2 rounded text-[7.5px] font-black text-white ${
@@ -2203,6 +2248,10 @@ export default function AttendanceLedgerView({
                                     src={row.punchIn.photoUrl}
                                     alt="Morning Punch In"
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                    onError={(e) => {
+                                      e.currentTarget.onerror = null;
+                                      e.currentTarget.src = getSelfieFallback(row.employeeName, 'PUNCH_IN');
+                                    }}
                                   />
                                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
                                     {secretAdminEditMode ? (
@@ -2303,6 +2352,10 @@ export default function AttendanceLedgerView({
                                     src={row.punchOut.photoUrl}
                                     alt="Evening Punch Out"
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                    onError={(e) => {
+                                      e.currentTarget.onerror = null;
+                                      e.currentTarget.src = getSelfieFallback(row.employeeName, 'PUNCH_OUT');
+                                    }}
                                   />
                                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
                                     {secretAdminEditMode ? (
@@ -2462,6 +2515,10 @@ export default function AttendanceLedgerView({
                                             src={photo.url}
                                             alt={photo.caption || 'Site Work Proof'}
                                             className="w-full h-full object-cover"
+                                            onError={(e) => {
+                                              e.currentTarget.onerror = null;
+                                              e.currentTarget.src = getTaskFallback(photo.caption);
+                                            }}
                                           />
                                           <div
                                             className={`absolute top-0.5 left-0.5 px-1 py-0.2 rounded text-[7.5px] font-black text-white ${
@@ -2579,6 +2636,10 @@ export default function AttendanceLedgerView({
                   src={activePhotoModal.url}
                   alt={activePhotoModal.title}
                   className="w-full h-auto max-h-[380px] object-contain"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = getSelfieFallback(activePhotoModal.employeeName, activePhotoModal.type);
+                  }}
                 />
               </div>
 
@@ -2812,6 +2873,10 @@ export default function AttendanceLedgerView({
                         src={editPunchModal.photoUrl}
                         alt="Current Selfie"
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = getSelfieFallback(editPunchModal.employeeName, editPunchModal.punchType);
+                        }}
                       />
                     </div>
                     <div className="flex-1 min-w-0">

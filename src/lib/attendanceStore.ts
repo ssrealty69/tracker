@@ -68,24 +68,38 @@ export async function getAttendanceRecordsAsync(): Promise<AttendanceRecord[]> {
     }
 
     if (dbRows && dbRows.length > 0) {
-      const formatted: AttendanceRecord[] = dbRows.map((r) => ({
-        id: r.id,
-        employeeName: r.employeeName,
-        projectName: r.projectName,
-        punchType: r.punchType as 'PUNCH_IN' | 'PUNCH_OUT',
-        timestamp: r.timestamp instanceof Date ? r.timestamp.toISOString() : new Date(r.timestamp).toISOString(),
-        formattedDate: r.formattedDate,
-        formattedTime: r.formattedTime,
-        latitude: r.latitude ?? undefined,
-        longitude: r.longitude ?? undefined,
-        distanceMeters: r.distanceMeters ?? 0,
-        isWithinRadius: r.isWithinRadius,
-        siteLatitude: r.siteLatitude ?? undefined,
-        siteLongitude: r.siteLongitude ?? undefined,
-        allowedRadiusMeters: r.allowedRadiusMeters ?? 50,
-        photoUrl: r.photoUrl,
-        createdAt: r.createdAt instanceof Date ? r.createdAt.toISOString() : new Date(r.createdAt).toISOString(),
-      }));
+      const formatted: AttendanceRecord[] = dbRows.map((r) => {
+        let photo = r.photoUrl;
+        if (photo && typeof photo === 'string' && photo.startsWith('/uploads/attendance/')) {
+          try {
+            const localFile = path.join(process.cwd(), 'public', photo.replace(/^\//, ''));
+            if (fs.existsSync(localFile)) {
+              const fileBuf = fs.readFileSync(localFile);
+              photo = `data:image/jpeg;base64,${fileBuf.toString('base64')}`;
+            }
+          } catch {
+            // Ignore
+          }
+        }
+        return {
+          id: r.id,
+          employeeName: r.employeeName,
+          projectName: r.projectName,
+          punchType: r.punchType as 'PUNCH_IN' | 'PUNCH_OUT',
+          timestamp: r.timestamp instanceof Date ? r.timestamp.toISOString() : new Date(r.timestamp).toISOString(),
+          formattedDate: r.formattedDate,
+          formattedTime: r.formattedTime,
+          latitude: r.latitude ?? undefined,
+          longitude: r.longitude ?? undefined,
+          distanceMeters: r.distanceMeters ?? 0,
+          isWithinRadius: r.isWithinRadius,
+          siteLatitude: r.siteLatitude ?? undefined,
+          siteLongitude: r.siteLongitude ?? undefined,
+          allowedRadiusMeters: r.allowedRadiusMeters ?? 50,
+          photoUrl: photo,
+          createdAt: r.createdAt instanceof Date ? r.createdAt.toISOString() : new Date(r.createdAt).toISOString(),
+        };
+      });
 
       // Merge any seeded disk records that might not be in DB yet
       const disk = getDiskAttendanceRecords();
@@ -202,9 +216,11 @@ export async function saveAttendanceRecord(record: AttendanceRecord): Promise<vo
 }
 
 export async function saveSelfieImage(base64Data: string, id: string): Promise<string> {
-  const isDataUri = base64Data.startsWith('data:image/');
+  const fullDataUri = base64Data.startsWith('data:image/')
+    ? base64Data
+    : `data:image/jpeg;base64,${base64Data}`;
 
-  // Try saving to disk if writable (local development)
+  // Optionally write to local disk as a backup copy if filesystem is writable
   try {
     ensureDirectories();
     const base64Clean = base64Data.replace(/^data:image\/\w+;base64,/, '');
@@ -212,16 +228,12 @@ export async function saveSelfieImage(base64Data: string, id: string): Promise<s
     const filename = `selfie_${id}_${Date.now()}.jpg`;
     const filePath = path.join(UPLOADS_DIR, filename);
     fs.writeFileSync(filePath, buffer);
-    return `/uploads/attendance/${filename}`;
   } catch (fsErr) {
-    // Vercel serverless functions have a read-only filesystem at /var/task.
-    // Instead of failing the user's punch, safely store the compressed photo directly as a data URL!
-    console.warn('Filesystem write not permitted (Vercel serverless). Using self-contained photo data URL.');
-    if (isDataUri) {
-      return base64Data;
-    }
-    return `data:image/jpeg;base64,${base64Data}`;
+    // Vercel serverless has read-only filesystem; safe to ignore
   }
+
+  // Always return self-contained data URI so it works reliably in PostgreSQL and on Vercel without broken images
+  return fullDataUri;
 }
 
 export async function updateAttendanceRecord(params: {
