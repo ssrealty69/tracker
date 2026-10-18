@@ -881,7 +881,6 @@ export default function DashboardClient({ initialStats }: Props) {
                                             <th className="py-2.5 px-3">Budget</th>
                                             <th className="py-2.5 px-3">Agent Remark</th>
                                             <th className="py-2.5 px-3">Last Updated</th>
-                                            <th className="py-2.5 px-3 text-center whitespace-nowrap">Action / Update</th>
                                           </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100">
@@ -1006,83 +1005,6 @@ export default function DashboardClient({ initialStats }: Props) {
                                                   {formatToDDMMYY(vLead.updatedAt || vLead.createdAt)}
                                                 </td>
 
-                                                {/* Actions: Reschedule / Done / Call Update */}
-                                                <td className="py-2 px-3 whitespace-nowrap">
-                                                  {rescheduleLeadId === vLead.id ? (
-                                                    <div className="flex items-center gap-1.5 bg-amber-50 p-1 rounded-lg border border-amber-200">
-                                                      <div className="relative inline-flex items-center">
-                                                        <div className="flex items-center gap-1 px-2 py-0.5 bg-white border border-slate-300 rounded text-[11px] font-mono font-bold text-slate-800 shadow-2xs">
-                                                          <Calendar size={12} className="text-amber-600 shrink-0" />
-                                                          <span className={rescheduleDate ? 'text-slate-900 font-extrabold' : 'text-slate-400 font-medium'}>
-                                                            {rescheduleDate ? formatDisplayDDMMYY(rescheduleDate) : 'dd/mm/yy'}
-                                                          </span>
-                                                        </div>
-                                                        <input
-                                                          type="date"
-                                                          value={rescheduleDate}
-                                                          onChange={(e) => setRescheduleDate(e.target.value)}
-                                                          min={new Date().toISOString().split('T')[0]}
-                                                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                                                          title="Select Reschedule Date (dd/mm/yy)"
-                                                        />
-                                                      </div>
-                                                      <button
-                                                        onClick={() => handleInlineReschedule(vLead.id)}
-                                                        disabled={actionLoadingId === vLead.id || !rescheduleDate}
-                                                        className="px-2 py-0.5 bg-amber-600 hover:bg-amber-700 text-white rounded text-[11px] font-bold shadow-xs disabled:opacity-50"
-                                                      >
-                                                        {actionLoadingId === vLead.id ? '...' : 'Save'}
-                                                      </button>
-                                                      <button
-                                                        onClick={() => {
-                                                          setRescheduleLeadId(null);
-                                                          setRescheduleDate('');
-                                                        }}
-                                                        className="px-1.5 py-0.5 text-slate-600 hover:text-slate-900 text-[11px]"
-                                                      >
-                                                        Cancel
-                                                      </button>
-                                                    </div>
-                                                  ) : (
-                                                    <div className="flex items-center gap-1.5">
-                                                      {(vLead.isDropped || vLead.isUpcoming || hasVisit) && (
-                                                        <>
-                                                          <button
-                                                            onClick={() => {
-                                                              setRescheduleLeadId(vLead.id);
-                                                              setRescheduleDate('');
-                                                            }}
-                                                            title="Reschedule to a new visit date"
-                                                            className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 transition-colors shadow-2xs"
-                                                          >
-                                                            <RotateCcw className="w-3 h-3" />
-                                                            Reschedule
-                                                          </button>
-                                                          <button
-                                                            onClick={() => handleInlineMarkDone(vLead.id)}
-                                                            disabled={actionLoadingId === vLead.id}
-                                                            title="Mark Site Visit Done"
-                                                            className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors shadow-2xs disabled:opacity-50"
-                                                          >
-                                                            <Check className="w-3 h-3" />
-                                                            {actionLoadingId === vLead.id ? '...' : 'Done'}
-                                                          </button>
-                                                        </>
-                                                      )}
-                                                      {vLead.phone && (
-                                                        <Link
-                                                          href={`/?phone=${encodeURIComponent(vLead.phone)}`}
-                                                          target="_blank"
-                                                          title="Open calling form with this customer's details to log new call or change status"
-                                                          className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-colors shadow-2xs"
-                                                        >
-                                                          <Phone className="w-3 h-3" />
-                                                          Update Call
-                                                        </Link>
-                                                      )}
-                                                    </div>
-                                                  )}
-                                                </td>
                                               </tr>
                                             );
                                           })}

@@ -1024,7 +1024,6 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                     <th className="py-3 px-3.5">Project &amp; Config</th>
                     <th className="py-3 px-3.5">Budget</th>
                     <th className="py-3 px-3.5">Agent Notes / Remark</th>
-                    <th className="py-3 px-3.5 text-center">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -1042,7 +1041,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                       <Fragment key={visit.id}>
                         {isNewAgentGroup && (
                           <tr className="bg-gradient-to-r from-slate-100 via-indigo-50/50 to-slate-100 border-y border-slate-200">
-                            <td colSpan={9} className="py-2 px-3.5">
+                            <td colSpan={8} className="py-2 px-3.5">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                   <span className="w-5 h-5 rounded-full bg-gradient-to-tr from-indigo-700 to-indigo-500 text-white font-black text-[11px] inline-flex items-center justify-center shadow-2xs">
@@ -1118,72 +1117,6 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                           >
                             {visit.latestRemark || '—'}
                           </p>
-                        </td>
-                        <td className="py-3 px-3.5 whitespace-nowrap text-center">
-                          {isDone ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-emerald-800 bg-emerald-50 border border-emerald-200 text-xs font-bold">
-                              <CheckCircle2 size={13} className="text-emerald-600" /> Completed
-                            </span>
-                          ) : rescheduleId === visit.id ? (
-                            <div className="flex items-center justify-center gap-1.5 animate-fade-in-up">
-                              <div className="relative inline-flex items-center">
-                                <div className="flex items-center gap-1 px-2 py-1 text-xs font-mono font-bold bg-white border border-slate-300 rounded-lg text-slate-800 shadow-2xs">
-                                  <Calendar size={12} className="text-amber-600 shrink-0" />
-                                  <span className={newDate ? 'text-slate-900 font-extrabold' : 'text-slate-400 font-medium'}>
-                                    {newDate ? formatDisplayDDMMYY(newDate) : 'dd/mmm/yy'}
-                                  </span>
-                                </div>
-                                <input
-                                  type="date"
-                                  value={newDate}
-                                  min={todayStr}
-                                  onChange={(e) => setNewDate(e.target.value)}
-                                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                                  title="Select Reschedule Date (dd/mmm/yy)"
-                                />
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => handleReschedule(visit.id)}
-                                disabled={!newDate}
-                                className="px-2.5 py-1 rounded-lg bg-amber-600 text-white text-xs font-bold hover:bg-amber-700 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
-                              >
-                                Save
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setRescheduleId(null);
-                                  setNewDate('');
-                                }}
-                                className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 text-xs font-semibold hover:bg-slate-200 transition-all cursor-pointer"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="flex items-center justify-center gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() => handleMarkDone(visit.id)}
-                                className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
-                                title="Mark visit completed"
-                              >
-                                <Check size={12} className="text-emerald-700" /> Done
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setRescheduleId(visit.id);
-                                  setNewDate('');
-                                }}
-                                className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
-                                title="Reschedule visit"
-                              >
-                                <RotateCcw size={12} className="text-amber-700" /> Reschedule
-                              </button>
-                            </div>
-                          )}
                         </td>
                       </tr>
                     </Fragment>
@@ -1429,7 +1362,6 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                     <th className="py-3 px-3.5">Project &amp; Config</th>
                     <th className="py-3 px-3.5">Budget</th>
                     <th className="py-3 px-3.5">Agent Notes / Remark</th>
-                    <th className="py-3 px-3.5 text-center">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -1445,7 +1377,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                       <Fragment key={lead.id}>
                         {isNewAgentGroup && (
                           <tr className="bg-gradient-to-r from-slate-100 via-emerald-50/50 to-slate-100 border-y border-slate-200">
-                            <td colSpan={9} className="py-2 px-3.5">
+                            <td colSpan={8} className="py-2 px-3.5">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                   <span className="w-5 h-5 rounded-full bg-gradient-to-tr from-emerald-700 to-teal-600 text-white font-black text-[11px] inline-flex items-center justify-center shadow-2xs">
@@ -1513,68 +1445,6 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                             >
                               {lead.latestRemark || '—'}
                             </p>
-                          </td>
-                          <td className="py-3 px-3.5 whitespace-nowrap text-center">
-                            {rescheduleId === lead.id ? (
-                              <div className="flex items-center justify-center gap-1.5 animate-fade-in-up">
-                                <div className="relative inline-flex items-center">
-                                  <div className="flex items-center gap-1 px-2 py-1 text-xs font-mono font-bold bg-white border border-slate-300 rounded-lg text-slate-800 shadow-2xs">
-                                    <Calendar size={12} className="text-amber-600 shrink-0" />
-                                    <span className={newDate ? 'text-slate-900 font-extrabold' : 'text-slate-400 font-medium'}>
-                                      {newDate ? formatDisplayDDMMYY(newDate) : 'dd/mmm/yy'}
-                                    </span>
-                                  </div>
-                                  <input
-                                    type="date"
-                                    value={newDate}
-                                    min={todayStr}
-                                    onChange={(e) => setNewDate(e.target.value)}
-                                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                                    title="Select Reschedule Date (dd/mmm/yy)"
-                                  />
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() => handleReschedule(lead.id)}
-                                  disabled={!newDate}
-                                  className="px-2.5 py-1 rounded-lg bg-amber-600 text-white text-xs font-bold hover:bg-amber-700 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
-                                >
-                                  Save
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setRescheduleId(null);
-                                    setNewDate('');
-                                  }}
-                                  className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 text-xs font-semibold hover:bg-slate-200 transition-all cursor-pointer"
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="flex items-center justify-center gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() => handleMarkDone(lead.id)}
-                                  className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
-                                  title="Mark visit completed (moves to Visit Done)"
-                                >
-                                  <Check size={12} className="text-emerald-700" /> Done
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setRescheduleId(lead.id);
-                                    setNewDate('');
-                                  }}
-                                  className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
-                                  title="Reschedule visit"
-                                >
-                                  <RotateCcw size={12} className="text-amber-700" /> Reschedule
-                                </button>
-                              </div>
-                            )}
                           </td>
                         </tr>
                       </Fragment>
@@ -1807,7 +1677,6 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                     <th className="py-3 px-3.5">Project &amp; Config</th>
                     <th className="py-3 px-3.5">Budget</th>
                     <th className="py-3 px-3.5">Agent Notes / Remark</th>
-                    <th className="py-3 px-3.5 text-center">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -1823,7 +1692,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                       <Fragment key={lead.id}>
                         {isNewAgentGroup && (
                           <tr className="bg-gradient-to-r from-slate-100 via-blue-50/50 to-slate-100 border-y border-slate-200">
-                            <td colSpan={9} className="py-2 px-3.5">
+                            <td colSpan={8} className="py-2 px-3.5">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                   <span className="w-5 h-5 rounded-full bg-gradient-to-tr from-blue-700 to-indigo-600 text-white font-black text-[11px] inline-flex items-center justify-center shadow-2xs">
@@ -1895,11 +1764,6 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                             >
                               {lead.latestRemark || '—'}
                             </p>
-                          </td>
-                          <td className="py-3 px-3.5 whitespace-nowrap text-center">
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-emerald-800 bg-emerald-50 border border-emerald-200 text-xs font-bold">
-                              <CheckCircle2 size={13} className="text-emerald-600" /> Completed
-                            </span>
                           </td>
                         </tr>
                       </Fragment>
@@ -2128,7 +1992,6 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                     <th className="py-3 px-3.5">Project &amp; Config</th>
                     <th className="py-3 px-3.5">Budget</th>
                     <th className="py-3 px-3.5">Agent Notes / Remark</th>
-                    <th className="py-3 px-3.5 text-center">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -2144,7 +2007,7 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                       <Fragment key={lead.id}>
                         {isNewAgentGroup && (
                           <tr className="bg-gradient-to-r from-slate-100 via-rose-50/50 to-slate-100 border-y border-slate-200">
-                            <td colSpan={9} className="py-2 px-3.5">
+                            <td colSpan={8} className="py-2 px-3.5">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                   <span className="w-5 h-5 rounded-full bg-gradient-to-tr from-rose-700 to-amber-600 text-white font-black text-[11px] inline-flex items-center justify-center shadow-2xs">
@@ -2216,68 +2079,6 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
                             >
                               {lead.latestRemark || '—'}
                             </p>
-                          </td>
-                          <td className="py-3 px-3.5 whitespace-nowrap text-center">
-                            {rescheduleId === lead.id ? (
-                              <div className="flex items-center justify-center gap-1.5 animate-fade-in-up">
-                                <div className="relative inline-flex items-center">
-                                  <div className="flex items-center gap-1 px-2 py-1 text-xs font-mono font-bold bg-white border border-slate-300 rounded-lg text-slate-800 shadow-2xs">
-                                    <Calendar size={12} className="text-amber-600 shrink-0" />
-                                    <span className={newDate ? 'text-slate-900 font-extrabold' : 'text-slate-400 font-medium'}>
-                                      {newDate ? formatDisplayDDMMYY(newDate) : 'dd/mmm/yy'}
-                                    </span>
-                                  </div>
-                                  <input
-                                    type="date"
-                                    value={newDate}
-                                    min={todayStr}
-                                    onChange={(e) => setNewDate(e.target.value)}
-                                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                                    title="Select Reschedule Date (dd/mmm/yy)"
-                                  />
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() => handleReschedule(lead.id)}
-                                  disabled={!newDate}
-                                  className="px-2.5 py-1 rounded-lg bg-amber-600 text-white text-xs font-bold hover:bg-amber-700 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
-                                >
-                                  Save &amp; Revive
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setRescheduleId(null);
-                                    setNewDate('');
-                                  }}
-                                  className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 text-xs font-semibold hover:bg-slate-200 transition-all cursor-pointer"
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="flex items-center justify-center gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setRescheduleId(lead.id);
-                                    setNewDate('');
-                                  }}
-                                  className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
-                                  title="Reschedule and revive visit to scheduled"
-                                >
-                                  <RotateCcw size={12} className="text-amber-700" /> Reschedule Date
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleMarkDone(lead.id)}
-                                  className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
-                                  title="Mark visit completed"
-                                >
-                                  <Check size={12} className="text-emerald-700" /> Done
-                                </button>
-                              </div>
-                            )}
                           </td>
                         </tr>
                       </Fragment>
