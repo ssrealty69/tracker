@@ -1939,7 +1939,7 @@ export default function AttendanceLedgerView({
         {viewMode === 'daily' && (
           <div className="space-y-6">
             {/* Daily KPI Metrics Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
                 <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
                   <span>Staff on Site Today</span>
@@ -1965,15 +1965,6 @@ export default function AttendanceLedgerView({
                 </div>
                 <p className="text-2xl font-black text-amber-600 mt-1.5">{todayOnSite}</p>
                 <span className="text-[11px] text-amber-600 font-medium">Working on site right now</span>
-              </div>
-
-              <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
-                <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
-                  <span>Geofence Compliance</span>
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                </div>
-                <p className="text-2xl font-black text-emerald-600 mt-1.5">100%</p>
-                <span className="text-[11px] text-emerald-600 font-medium">All verified &le;50m</span>
               </div>
             </div>
 
@@ -2606,14 +2597,6 @@ export default function AttendanceLedgerView({
                   <span className="text-slate-500">Site Coordinates:</span>
                   <span className="font-mono text-slate-700">28.465355, 77.185921</span>
                 </div>
-                {activePhotoModal.distance !== undefined && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Geofence Distance:</span>
-                    <span className="font-bold text-emerald-700">
-                      {activePhotoModal.distance}m &le; 50m (Verified at site)
-                    </span>
-                  </div>
-                )}
               </div>
             </div>
 

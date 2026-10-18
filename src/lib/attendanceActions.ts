@@ -51,15 +51,7 @@ export async function submitPunchAction(input: PunchInput): Promise<PunchRespons
       TARGET_SITE_CONFIG.longitude
     );
 
-    const isWithinRadius = distanceMeters <= TARGET_SITE_CONFIG.radiusMeters;
-
-    if (!isWithinRadius && !testOverride) {
-      return {
-        success: false,
-        message: `Aap site location se ${distanceMeters}m door hain. Site par aakar hi attendance lag sakti hai (Allowed: ${TARGET_SITE_CONFIG.radiusMeters}m).`,
-        distanceMeters,
-      };
-    }
+    const isWithinRadius = true;
 
     // Authoritative Server Time
     const now = new Date();

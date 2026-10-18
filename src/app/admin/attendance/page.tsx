@@ -17,7 +17,7 @@ export default function AdminAttendancePage() {
           </span>
         </div>
         <p className="text-xs text-slate-500 mt-0.5">
-          Real-time GPS geofenced attendance logs, monthly timesheet calendar, and selfie verification for site staff.
+          Real-time attendance logs, monthly timesheet calendar, and selfie verification for site staff.
         </p>
       </div>
 
