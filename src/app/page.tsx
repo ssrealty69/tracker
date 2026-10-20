@@ -262,13 +262,16 @@ export default function AgentFormPage() {
   }, [agentId, agents, projects]);
 
   // Support pre-filling phone from query params (e.g. /?phone=9811645856)
+  const queryPhoneChecked = useRef(false);
   useEffect(() => {
+    if (queryPhoneChecked.current) return;
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const queryPhone = params.get('phone');
       if (queryPhone) {
         const clean = queryPhone.replace(/\D/g, '').slice(0, 10);
         if (clean.length === 10) {
+          queryPhoneChecked.current = true;
           setPhone(clean);
           checkPhone(clean);
         }
@@ -494,6 +497,7 @@ export default function AgentFormPage() {
           <div className="flex items-center gap-2">
             <Link
               href="/admin"
+              prefetch={false}
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-all shadow-xs"
             >
               <Lock size={13} className="text-amber-400" />

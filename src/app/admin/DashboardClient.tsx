@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Fragment } from 'react';
+import { useState, Fragment } from 'react';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import {
@@ -267,33 +267,6 @@ export default function DashboardClient({ initialStats }: Props) {
     }
   };
 
-  // Live Auto-Sync every 8 seconds & on tab focus (respects activeFilter)
-  useEffect(() => {
-    const syncCurrentStats = () => {
-      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-        if (activeFilter === 'custom') {
-          if (customStart) {
-            applyCustomRange(true);
-          }
-        } else {
-          applyFilter(activeFilter, true);
-        }
-      }
-    };
-
-    const interval = setInterval(syncCurrentStats, 8000);
-    const handleFocus = () => syncCurrentStats();
-
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleFocus);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleFocus);
-    };
-  }, [activeFilter, customStart, customEnd]);
-
   const nf = new Intl.NumberFormat('en-IN');
   const overallVisitRatio =
     stats.totalLeads > 0
@@ -386,13 +359,6 @@ export default function DashboardClient({ initialStats }: Props) {
           <p className="text-slate-500 text-sm mt-0.5">Real-time caller velocity &amp; deduplicated pipeline tracking</p>
         </div>
         <div className="flex items-center gap-2.5">
-          <div className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold shadow-2xs">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            Auto-Sync Live
-          </div>
           <button
             onClick={() => {
               if (activeFilter === 'custom') {

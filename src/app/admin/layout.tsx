@@ -104,6 +104,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={false}
                 onClick={() => setMobileOpen(false)}
                 suppressHydrationWarning
                 className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
@@ -123,6 +124,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="p-3 border-t border-slate-100 space-y-1.5 bg-slate-50/50">
           <Link
             href="/"
+            prefetch={false}
             className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 transition-all"
           >
             <PhoneCall size={15} className="text-emerald-600" />

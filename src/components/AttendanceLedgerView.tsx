@@ -895,6 +895,20 @@ export default function AttendanceLedgerView({
       {/* Main Content Area */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
 
+        {/* Refresh (admin header replaces the built-in one, so keep a manual refresh here) */}
+        {customHeader && (
+          <div className="flex justify-end">
+            <button
+              onClick={fetchRecords}
+              disabled={loading}
+              className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs disabled:opacity-60"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-indigo-600' : ''}`} />
+              <span>Refresh</span>
+            </button>
+          </div>
+        )}
+
         {/* ─── PRIMARY VIEW MODE SWITCHER ─── */}
         <div className="bg-white p-2 sm:p-2.5 rounded-2xl border border-slate-200 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl w-full sm:w-auto">

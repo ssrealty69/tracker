@@ -414,38 +414,6 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
     }
   };
 
-  // Live Auto-Sync every 8 seconds & on tab focus
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (document.visibilityState === 'visible' && !rescheduleId) {
-        if (activeTab === 'daily') {
-          loadDate(selectedDate, true);
-        } else {
-          loadPortfolio(true);
-        }
-      }
-    }, 8000);
-
-    const handleFocus = () => {
-      if (!rescheduleId) {
-        if (activeTab === 'daily') {
-          loadDate(selectedDate, true);
-        } else {
-          loadPortfolio(true);
-        }
-      }
-    };
-
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleFocus);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleFocus);
-    };
-  }, [selectedDate, rescheduleId, activeTab]);
-
   useEffect(() => {
     if (activeTab !== 'daily' && !portfolio) {
       loadPortfolio();
@@ -711,14 +679,15 @@ export default function VisitsClient({ initialVisits, initialDate, initialPortfo
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Live Pulse Indicator */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            Auto-Sync Live
-          </div>
+          <button
+            type="button"
+            onClick={() => (activeTab === 'daily' ? loadDate(selectedDate) : loadPortfolio())}
+            className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all cursor-pointer shadow-xs"
+            title="Refresh Visits"
+            aria-label="Refresh visits"
+          >
+            <RefreshCcw size={15} className={loading || portfolioLoading ? 'animate-spin text-indigo-600' : ''} />
+          </button>
         </div>
       </div>
 

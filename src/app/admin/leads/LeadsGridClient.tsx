@@ -134,28 +134,6 @@ export default function LeadsGridClient({ initialLeads, agents }: Props) {
     }
   }, [filterAgent, filterDisposition, filterVisitStatus, filterInteractions, search]);
 
-  // Live Auto-Sync every 8 seconds & on tab focus
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        refreshLeads(true);
-      }
-    }, 8000);
-
-    const handleFocus = () => {
-      refreshLeads(true);
-    };
-
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleFocus);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleFocus);
-    };
-  }, [refreshLeads]);
-
   const filteredLeads = useMemo(() => {
     let result = leads;
 
@@ -314,13 +292,6 @@ export default function LeadsGridClient({ initialLeads, agents }: Props) {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold shadow-2xs">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            Auto-Sync Live
-          </div>
           <button
             onClick={() => refreshLeads(false)}
             className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all cursor-pointer shadow-xs"
