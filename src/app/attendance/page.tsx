@@ -722,8 +722,8 @@ export default function AttendancePage() {
                         : 'bg-slate-950 hover:bg-slate-800 text-slate-300 border-slate-700'
                     }`}
                   >
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-                    <span>🟢 Punch In (Morning)</span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0" />
+                    <span>Punch In (Morning)</span>
                   </button>
 
                   <button
@@ -738,8 +738,8 @@ export default function AttendancePage() {
                         : 'bg-slate-950 hover:bg-slate-800 text-slate-300 border-slate-700'
                     }`}
                   >
-                    <span className="w-2.5 h-2.5 rounded-full bg-rose-400" />
-                    <span>🔴 Punch Out (Evening)</span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-rose-400 shrink-0" />
+                    <span>Punch Out (Evening)</span>
                   </button>
                 </div>
               </div>

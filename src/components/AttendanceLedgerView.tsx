@@ -2744,8 +2744,8 @@ export default function AttendanceLedgerView({
                         : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                     }`}
                   >
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                    <span>🟢 Morning Punch In</span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
+                    <span>Morning Punch In</span>
                   </button>
                   <button
                     type="button"
@@ -2756,8 +2756,8 @@ export default function AttendanceLedgerView({
                         : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                     }`}
                   >
-                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
-                    <span>🔴 Evening Punch Out</span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0"></span>
+                    <span>Evening Punch Out</span>
                   </button>
                 </div>
               </div>
