@@ -228,7 +228,9 @@ function submitLeadToStore(
       totalInteractions: interactionCount,
       callOutcome: data.callOutcome,
       notConnectedReason: data.notConnectedReason ?? null,
-      disposition: data.disposition ?? existing.disposition,
+      disposition: data.callOutcome === CallOutcome.CONNECTED
+        ? (data.disposition ?? null)
+        : null,
       projectName: data.projectName || existing.projectName,
       microMarket: data.microMarket || existing.microMarket,
       requirement: data.requirement ?? existing.requirement,
@@ -444,7 +446,9 @@ export async function submitLead(data: LeadFormData): Promise<LeadFormResult> {
               totalInteractions: interactionCountLocal,
               callOutcome: data.callOutcome,
               notConnectedReason: data.notConnectedReason ?? null,
-              disposition: data.disposition ?? existingLead.disposition,
+              disposition: data.callOutcome === CallOutcome.CONNECTED
+                ? (data.disposition ?? null)
+                : null,
               requirement: prismaReq ?? existingLead.requirement,
               budget: prismaBudget ?? existingLead.budget,
               visitDate: finalVisitDate,
@@ -945,12 +949,14 @@ export async function getDashboardStats(startDate?: Date, endDate?: Date): Promi
             totalLeads > 0 ? Math.round((connectedCalls / totalLeads) * 100) : 0;
           const interested = agentLeads.filter(
             (l: any) => {
+              if (l.callOutcome !== CallOutcome.CONNECTED) return false;
               const disp = l.activityLogs?.[0]?.disposition || l.disposition;
               return disp === Disposition.INTERESTED_FOLLOW_UP;
             }
           ).length;
           const notInterested = agentLeads.filter(
             (l: any) => {
+              if (l.callOutcome !== CallOutcome.CONNECTED) return false;
               const disp = l.activityLogs?.[0]?.disposition || l.disposition;
               return (
                 disp === Disposition.NOT_INTERESTED ||
@@ -968,7 +974,10 @@ export async function getDashboardStats(startDate?: Date, endDate?: Date): Promi
           const allLeads: AgentVisitLead[] = agent.leads
             .map((l: any) => {
               const latestLog = l.activityLogs?.[0];
-              const disposition = latestLog?.disposition || l.disposition;
+              const isConnected = l.callOutcome === CallOutcome.CONNECTED;
+              const disposition = isConnected
+                ? (latestLog?.disposition || l.disposition)
+                : (latestLog?.disposition || null);
               const latestRemark = latestLog?.remark || l.latestRemark;
 
               const isDone = l.visitStatus === VisitStatus.VISIT_DONE;
@@ -1116,13 +1125,16 @@ export async function getDashboardStats(startDate?: Date, endDate?: Date): Promi
 
     const contactRate =
       agentTotalLeads > 0 ? Math.round((connectedCalls / agentTotalLeads) * 100) : 0;
-    const interested = agentLeads.filter((l) => l.disposition === Disposition.INTERESTED_FOLLOW_UP).length;
+    const interested = agentLeads.filter(
+      (l) => l.callOutcome === CallOutcome.CONNECTED && l.disposition === Disposition.INTERESTED_FOLLOW_UP
+    ).length;
     const notInterested = agentLeads.filter(
       (l) =>
-        l.disposition === Disposition.NOT_INTERESTED ||
-        l.disposition === Disposition.BUDGET_MISMATCH ||
-        l.disposition === Disposition.LOCATION_MISMATCH ||
-        l.disposition === Disposition.JUNK_BROKER
+        l.callOutcome === CallOutcome.CONNECTED &&
+        (l.disposition === Disposition.NOT_INTERESTED ||
+          l.disposition === Disposition.BUDGET_MISMATCH ||
+          l.disposition === Disposition.LOCATION_MISMATCH ||
+          l.disposition === Disposition.JUNK_BROKER)
     ).length;
 
     let visitsUpcoming = 0;

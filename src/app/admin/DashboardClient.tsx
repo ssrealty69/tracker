@@ -700,7 +700,7 @@ export default function DashboardClient({ initialStats }: Props) {
                           const droppedLeadsList = allLeadsList.filter((l) => l.isDropped);
                           const doneLeadsList = allLeadsList.filter((l) => l.isDone);
                           const followUpLeadsList = allLeadsList.filter(
-                            (l) => l.disposition === 'INTERESTED_FOLLOW_UP' || (l.followUpDate && !l.isUpcoming && !l.isDone)
+                            (l) => l.callOutcome === 'CONNECTED' && (l.disposition === 'INTERESTED_FOLLOW_UP' || (l.followUpDate && !l.isUpcoming && !l.isDone))
                           );
                           const notConnectedLeadsList = allLeadsList.filter(
                             (l) => l.callOutcome === 'NOT_CONNECTED'
@@ -882,13 +882,13 @@ export default function DashboardClient({ initialStats }: Props) {
                                                     <span className="inline-flex items-center px-2 py-0.5 rounded text-[10.5px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
                                                       Visit Completed
                                                     </span>
-                                                  ) : vLead.disposition === 'INTERESTED_FOLLOW_UP' ? (
-                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10.5px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                                                      Callback / Follow-up
-                                                    </span>
                                                   ) : vLead.callOutcome === 'NOT_CONNECTED' ? (
                                                     <span className="inline-flex items-center px-2 py-0.5 rounded text-[10.5px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
                                                       Not Connected
+                                                    </span>
+                                                  ) : vLead.disposition === 'INTERESTED_FOLLOW_UP' ? (
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10.5px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                                      Callback / Follow-up
                                                     </span>
                                                   ) : vLead.disposition === 'NOT_INTERESTED' ? (
                                                     <span className="inline-flex items-center px-2 py-0.5 rounded text-[10.5px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
